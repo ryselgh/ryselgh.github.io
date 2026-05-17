@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      font-family: Arial, sans-serif;
+      color: white;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      padding: 40px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      animation: fadeIn 1s ease;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 15px;
+      letter-spacing: 2px;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 30px;
+      font-size: 1.1rem;
+    }
+
+    a.button {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 12px;
+      text-decoration: none;
+      background: #3b82f6;
+      color: white;
+      font-weight: bold;
+      transition: all 0.25s ease;
+    }
+
+    a.button:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59,130,246,0.4);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Games</h1>
+
+    <a class="button" href="untethered.html">
+      UN|TETHERED
+    </a>
+  </div>
+</body>
+</html>
