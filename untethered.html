@@ -377,7 +377,7 @@ function pollGamepad() {
     if(padState[k]&&!keys[k]){
       keys[k]=true;
       physActivate(k);
-      if(!hasStarted){ hasStarted=true; titleEl.classList.add('hidden'); setTimeout(()=>titleEl.style.display='none',1900); unlockPerformanceAudio(); }
+      if(!hasStarted){ hasStarted=true; titleEl.classList.add('hidden'); setTimeout(()=>titleEl.style.display='none',4000); unlockPerformanceAudio(); }
     } else if(!padState[k]&&keys[k]&&!_keyboardKeys[k]){
       keys[k]=false;
       physDeactivate(k);
@@ -403,8 +403,11 @@ let touchStart=null;
 const SWIPE_THRESHOLD=30;
 document.addEventListener('touchstart', e=>{
   touchStart={ x:e.touches[0].clientX, y:e.touches[0].clientY };
-  if(!hasStarted){ hasStarted=true; titleEl.classList.add('hidden'); setTimeout(()=>titleEl.style.display='none',1900); unlockPerformanceAudio(); }
+  if(!hasStarted){ hasStarted=true; titleEl.classList.add('hidden'); setTimeout(()=>titleEl.style.display='none',4000);}
   e.preventDefault();
+  unlockPerformanceAudio();
+  requestFullscreenSafe();
+  requestAccelerometer();
 },{ passive:false });
 document.addEventListener('touchmove', e=>{
   if(!touchStart||!hasStarted) return;
