@@ -313,13 +313,21 @@ function physDeactivate(code) {
   _holdTimers[code] = null;
 }
 
+// ─── FULLSCREEN HELPER ───────────────────────────────────────────────────────
+function requestFullscreenSafe(){
+  const el = document.documentElement;
+  const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn){ try{ fn.call(el); }catch(_){} }
+  // iOS Safari has no fullscreen API – hide browser chrome via scroll trick
+  else { try{ window.scrollTo(0,1); }catch(_){} }
+}
 window.addEventListener('keydown', e => {
   if(e.repeat) return;
   keys[e.code] = true;
   physActivate(e.code);
   if(!hasStarted){
     hasStarted=true;
-    document.documentElement.requestFullscreen();
+    requestFullscreenSafe();
     titleEl.classList.add('hidden');
     setTimeout(()=>titleEl.style.display='none', 4000);
     unlockPerformanceAudio();
@@ -584,7 +592,11 @@ function keyHarmIndex(code){ let h=0; for(let i=0;i<code.length;i++) h=((h<<5)-h
 function makeDistCurve(amt){ const n=512,c=new Float32Array(n); for(let i=0;i<n;i++){ const x=(i*2)/n-1; c[i]=(Math.PI+amt)*x/(Math.PI+amt*Math.abs(x)); } return c; }
 
 function tryTitleDrone(){
-  try{ audioCtx=new(window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') return; spawnTitleDrone(); }catch(_){}
+  try{
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') return;
+    spawnTitleDrone();
+  }catch(_){}
 }
 tryTitleDrone();
 
@@ -623,9 +635,18 @@ function buildPerformanceAudio(){
 }
 
 function unlockPerformanceAudio(){
-  if(!audioCtx){ try{ audioCtx=new(window.AudioContext||window.webkitAudioContext)(); }catch(_){ return; } spawnTitleDrone(); }
-  if(audioCtx.state==='suspended') audioCtx.resume().then(buildPerformanceAudio);
-  else buildPerformanceAudio();
+  function _build(){
+    // Spawn title drone if it never started (mobile: context was suspended at page load)
+    if(!titleDroneGain) spawnTitleDrone();
+    buildPerformanceAudio();
+  }
+  if(!audioCtx){
+    try{ audioCtx=new(window.AudioContext||window.webkitAudioContext)(); }catch(_){ return; }
+    _build();
+    return;
+  }
+  if(audioCtx.state==='suspended') audioCtx.resume().then(_build);
+  else _build();
 }
 
 function syncHarmonicOscs(){
