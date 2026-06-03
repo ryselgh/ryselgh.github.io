@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.ryselgh.twa",
+      "sha256_cert_fingerprints": [
+        "70:65:B8:39:A2:B0:A3:16:B4:42:B2:45:12:77:07:DB:E9:CA:A0:09:D7:54:1F:96:AC:81:1B:6B:72:A8:ED:A6"
+      ]
+    }
+  }
+]
