@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0a0a0f"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="WORKOUT"/>
+<title>WORKOUT</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:        #0a0a0f;
+  --surface:   #13131a;
+  --border:    #1e1e2e;
+  --accent:    #e8ff47;
+  --accent2:   #47c8ff;
+  --accent3:   #ff6b47;
+  --text:      #f0f0f5;
+  --muted:     #6b6b80;
+  --font-head: 'Bebas Neue', 'Impact', sans-serif;
+  --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --radius:    12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; width: 100%;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-body);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.screen.active { opacity: 1; pointer-events: all; }
+.hidden { display: none !important; }
+
+/* ── HOME ─────────────────────────────────────────── */
+#screen-home {
+  padding: 20px 20px 16px;
+  justify-content: space-between; gap: 12px;
+  background: radial-gradient(ellipse at 50% 0%, #1a1a2e 0%, var(--bg) 70%);
+}
+.home-header { text-align: center; padding-top: 8px; }
+.home-label  { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.home-title  { font-family: var(--font-head); font-size: clamp(44px,15vw,72px); line-height: .9; color: var(--text); margin-top: 4px; }
+.home-date   { font-size: 13px; color: var(--muted); margin-top: 6px; letter-spacing: 1px; }
+
+.day-selector { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+.day-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; transition: all .2s; }
+.day-btn .day-abbr { font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; display: block; }
+.day-btn .day-num  { font-family: var(--font-head); font-size: 18px; line-height: 1.1; color: var(--text); display: block; }
+.day-btn .day-type { font-size: 7px; color: var(--muted); display: block; margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+.day-btn.today    { border-color: var(--accent); }
+.day-btn.today .day-num { color: var(--accent); }
+.day-btn.selected { background: var(--accent); border-color: var(--accent); }
+.day-btn.selected .day-abbr,
+.day-btn.selected .day-num,
+.day-btn.selected .day-type { color: var(--bg); }
+.day-btn.fullrest { opacity: .4; }
+
+.today-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; flex-shrink: 0; transition: border-color .2s; }
+.today-card:active { border-color: var(--accent2); }
+.today-card-label  { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.today-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.today-card-title  { font-family: var(--font-head); font-size: 26px; color: var(--accent); line-height: 1; }
+.today-card-sub    { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.today-card-arrow  { font-size: 18px; color: var(--muted); padding-left: 8px; flex-shrink: 0; margin-top: 16px; }
+.exercise-preview  { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.ex-chip { background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: var(--muted); }
+
+.btn-start { width: 100%; background: var(--accent); color: var(--bg); border: none; border-radius: var(--radius); padding: 16px; font-family: var(--font-head); font-size: 22px; letter-spacing: 2px; cursor: pointer; transition: transform .15s; box-shadow: 0 0 30px rgba(232,255,71,.2); flex-shrink: 0; }
+.btn-start:active { transform: scale(.97); }
+.btn-start.rest-day { background: var(--surface); color: var(--muted); box-shadow: none; cursor: default; }
+
+/* ── OVERVIEW ─────────────────────────────────────── */
+#screen-overview { padding: 0; background: var(--bg); }
+.ov-topbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.ov-back   { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; color: var(--muted); font-size: 13px; cursor: pointer; }
+.ov-title  { font-family: var(--font-head); font-size: 22px; color: var(--accent); }
+.ov-list   { flex: 1; overflow-y: auto; padding: 12px 20px 20px; }
+
+.ov-item { border-radius: 10px; margin-bottom: 6px; overflow: hidden; }
+.ov-item-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; }
+.ov-item.type-exercise .ov-item-row { background: rgba(232,255,71,.05);  border: 1px solid rgba(232,255,71,.12); border-radius: 10px; }
+.ov-item.type-rest     .ov-item-row { background: rgba(71,200,255,.05);  border: 1px solid rgba(71,200,255,.1);  border-radius: 10px; }
+.ov-item.type-warmup   .ov-item-row { background: rgba(255,107,71,.05);  border: 1px solid rgba(255,107,71,.1);  border-radius: 10px; }
+.ov-item.expanded .ov-item-row { border-radius: 10px 10px 0 0; }
+
+.ov-num  { font-family: var(--font-head); font-size: 16px; color: var(--muted); width: 22px; flex-shrink: 0; text-align: right; }
+.ov-emoji { font-size: 26px; flex-shrink: 0; width: 36px; text-align: center; }
+.ov-info  { flex: 1; min-width: 0; }
+.ov-name  { font-size: 14px; font-weight: 500; color: var(--text); }
+.ov-meta  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ov-time  { font-family: var(--font-head); font-size: 20px; flex-shrink: 0; }
+.ov-time.ex  { color: var(--accent); }
+.ov-time.rst { color: var(--accent2); }
+.ov-time.wu  { color: var(--accent3); }
+.ov-chevron { font-size: 14px; color: var(--muted); flex-shrink: 0; transition: transform .2s; }
+.ov-item.expanded .ov-chevron { transform: rotate(90deg); }
+
+.ov-detail { display: none; padding: 10px 14px 12px 80px; font-size: 12px; color: var(--muted); line-height: 1.6; border: 1px solid transparent; border-top: none; border-radius: 0 0 10px 10px; }
+.ov-item.type-exercise.expanded .ov-detail { display: block; background: rgba(232,255,71,.03); border-color: rgba(232,255,71,.12); }
+.ov-item.type-warmup.expanded   .ov-detail { display: block; background: rgba(255,107,71,.03); border-color: rgba(255,107,71,.1); }
+.ov-item.type-rest.expanded     .ov-detail { display: block; background: rgba(71,200,255,.03); border-color: rgba(71,200,255,.1); }
+
+.ov-total { margin-top: 10px; padding: 12px; background: var(--surface); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+.ov-total-label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+.ov-total-val   { font-family: var(--font-head); font-size: 24px; color: var(--text); }
+
+/* ── WORKOUT ──────────────────────────────────────── */
+#screen-workout { padding: 0; background: var(--bg); justify-content: flex-start; }
+.workout-topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.wt-day-label    { font-family: var(--font-head); font-size: 18px; color: var(--accent); }
+.wt-progress-text { font-size: 12px; color: var(--muted); }
+.workout-progress-bar  { height: 3px; background: var(--border); flex-shrink: 0; }
+.workout-progress-fill { height: 100%; background: var(--accent); transition: width .5s ease; }
+
+.phase-banner { text-align: center; padding: 8px 20px 4px; flex-shrink: 0; }
+.phase-label  { display: inline-block; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; padding: 3px 12px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+.phase-label.exercise { border-color: var(--accent);  color: var(--accent); }
+.phase-label.rest     { border-color: var(--accent2); color: var(--accent2); }
+.phase-label.warmup   { border-color: var(--accent3); color: var(--accent3); }
+
+.exercise-display { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 20px; min-height: 0; }
+.exercise-emoji { font-size: 100px; line-height: 1; margin-bottom: 8px; flex-shrink: 0; }
+.exercise-name  { font-family: var(--font-head); font-size: clamp(20px,6vw,28px); text-align: center; line-height: 1.1; color: var(--text); }
+.exercise-meta  { font-size: 13px; color: var(--muted); margin-top: 4px; text-align: center; }
+.exercise-cue   { font-size: 11px; color: var(--accent2); margin-top: 5px; text-align: center; font-style: italic; max-width: 280px; }
+
+.next-up { margin: 4px 16px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.next-up-emoji { font-size: 22px; flex-shrink: 0; }
+.next-up-label { font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.next-up-name  { font-size: 13px; color: var(--text); margin-top: 1px; }
+
+.timer-section  { padding: 6px 20px 4px; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.timer-display  { font-family: var(--font-head); font-size: clamp(64px,22vw,96px); color: var(--text); line-height: 1; transition: color .3s; }
+.timer-display.urgent { color: var(--accent3); }
+
+.workout-controls { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; gap: 8px; padding: 6px 16px 16px; flex-shrink: 0; }
+.ctrl-btn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 6px; font-family: var(--font-head); font-size: 14px; letter-spacing: 1px; color: var(--text); cursor: pointer; text-align: center; transition: background .15s; line-height: 1.2; }
+.ctrl-btn:active  { background: var(--border); }
+.ctrl-btn.pause   { font-size: 18px; }
+.ctrl-btn.pause.active { border-color: var(--accent); color: var(--accent); }
+.ctrl-btn.home-btn { border-color: var(--accent3); color: var(--accent3); }
+.ctrl-icon { font-size: 16px; display: block; margin-bottom: 2px; }
+.ctrl-lbl  { font-size: 9px; color: var(--muted); display: block; letter-spacing: 1px; }
+
+/* ── MODAL ────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal-box   { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px 20px; width: calc(100% - 48px); max-width: 320px; text-align: center; }
+.modal-title { font-family: var(--font-head); font-size: 26px; color: var(--text); margin-bottom: 8px; }
+.modal-sub   { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.modal-btns  { display: flex; gap: 10px; }
+.modal-btn   { flex: 1; padding: 13px; border-radius: var(--radius); font-family: var(--font-head); font-size: 18px; letter-spacing: 1px; cursor: pointer; border: none; }
+.modal-btn.cancel  { background: var(--border); color: var(--muted); }
+.modal-btn.confirm { background: var(--accent3); color: #fff; }
+
+/* ── COMPLETE ─────────────────────────────────────── */
+#screen-complete { justify-content: center; align-items: center; text-align: center; padding: 32px 24px; background: radial-gradient(ellipse at 50% 40%, #1a2e1a 0%, var(--bg) 70%); }
+.complete-icon  { font-size: 64px; margin-bottom: 12px; }
+.complete-title { font-family: var(--font-head); font-size: 56px; color: var(--accent); line-height: .9; }
+.complete-sub   { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 260px; }
+.complete-stats { display: flex; gap: 20px; margin: 20px 0; }
+.stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 20px; }
+.stat-num { font-family: var(--font-head); font-size: 36px; color: var(--accent2); }
+.stat-lbl { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+.btn-home-end { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 32px; font-family: var(--font-head); font-size: 20px; letter-spacing: 2px; color: var(--text); cursor: pointer; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="home-header">
+    <div class="home-label">Daily Training</div>
+    <div class="home-title">WORK<br>OUT</div>
+    <div class="home-date" id="home-date"></div>
+  </div>
+  <div class="day-selector" id="day-selector"></div>
+  <div class="today-card" id="today-card" onclick="openOverview()">
+    <div class="today-card-label">Allenamento di oggi</div>
+    <div class="today-card-header">
+      <div>
+        <div class="today-card-title" id="card-title"></div>
+        <div class="today-card-sub"   id="card-sub"></div>
+      </div>
+      <div class="today-card-arrow" id="card-arrow">›</div>
+    </div>
+    <div class="exercise-preview" id="card-exercises"></div>
+  </div>
+  <button class="btn-start" id="btn-start" onclick="startWorkout()">INIZIA</button>
+</div>
+
+<!-- OVERVIEW -->
+<div id="screen-overview" class="screen">
+  <div class="ov-topbar">
+    <button class="ov-back" onclick="closeOverview()">← Indietro</button>
+    <div class="ov-title" id="ov-title"></div>
+  </div>
+  <div class="ov-list" id="ov-list"></div>
+</div>
+
+<!-- WORKOUT -->
+<div id="screen-workout" class="screen">
+  <div class="workout-topbar">
+    <div class="wt-day-label"     id="wt-day-label"></div>
+    <div class="wt-progress-text" id="wt-progress-text"></div>
+  </div>
+  <div class="workout-progress-bar">
+    <div class="workout-progress-fill" id="wt-progress-fill" style="width:0%"></div>
+  </div>
+  <div class="phase-banner">
+    <span class="phase-label" id="phase-label">ESERCIZIO</span>
+  </div>
+  <div class="exercise-display">
+    <div class="exercise-emoji" id="exercise-emoji"></div>
+    <div class="exercise-name"  id="exercise-name"></div>
+    <div class="exercise-meta"  id="exercise-meta"></div>
+    <div class="exercise-cue"   id="exercise-cue"></div>
+  </div>
+  <div class="next-up" id="next-up-bar">
+    <div class="next-up-emoji" id="next-up-emoji"></div>
+    <div>
+      <div class="next-up-label">Prossimo</div>
+      <div class="next-up-name" id="next-up-name"></div>
+    </div>
+  </div>
+  <div class="timer-section">
+    <div class="timer-display" id="timer-display">00</div>
+  </div>
+  <div class="workout-controls">
+    <button class="ctrl-btn" onclick="stepBack()">
+      <span class="ctrl-icon">⏮</span><span class="ctrl-lbl">BACK</span>
+    </button>
+    <button class="ctrl-btn pause" id="btn-pause" onclick="togglePause()">
+      <span class="ctrl-icon" id="pause-icon">⏸</span><span class="ctrl-lbl" id="pause-lbl">PAUSA</span>
+    </button>
+    <button class="ctrl-btn home-btn" onclick="requestHome()">
+      <span class="ctrl-icon">⌂</span><span class="ctrl-lbl">HOME</span>
+    </button>
+    <button class="ctrl-btn" onclick="stepSkip()">
+      <span class="ctrl-icon">⏭</span><span class="ctrl-lbl">SKIP</span>
+    </button>
+  </div>
+</div>
+
+<!-- COMPLETE -->
+<div id="screen-complete" class="screen">
+  <div class="complete-icon">💪</div>
+  <div class="complete-title">DONE!</div>
+  <div class="complete-sub">Allenamento completato. Riposo e recupero ora.</div>
+  <div class="complete-stats">
+    <div class="stat-box"><div class="stat-num" id="stat-time">0</div><div class="stat-lbl">Minuti</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-ex">0</div><div class="stat-lbl">Esercizi</div></div>
+  </div>
+  <button class="btn-home-end" onclick="goHome()">← HOME</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-exit">
+  <div class="modal-box">
+    <div class="modal-title">Uscire?</div>
+    <div class="modal-sub">L'allenamento in corso verrà abbandonato.</div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel"  onclick="closeModal()">Continua</button>
+      <button class="modal-btn confirm" onclick="confirmHome()">Esci</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const CONFIG = {
+  warmupDuration:     60,
+  exerciseDuration:   45,   // sec per esercizi a tempo
+  restBetweenSets:    30,   // sec riposo tra serie
+  restBetweenEx:      60,   // sec riposo tra esercizi
+  urgentThreshold:    10,
+  tickIntervalNormal: 1000,
+  tickIntervalFast:   350,
+};
+
+/* ============================================================
+   EMOJI MAP
+   ============================================================ */
+const EMOJI = {
+  plank:          '🙇',
+  pushup:         '🫷',
+  diamondpushup:  '💎',
+  widepushup:     '👐',
+  pikepushup:     '📐',
+  shouldertap:    '🫱',
+  lateralraise:   '🪽',
+  superman:       '🦸',
+  birdddog:       '🐕',
+  plankside:      '🦭',
+  deadbug:        '🪲',
+  hollowbody:     '🌙',
+  glutebridge:    '🍑',
+  squat:          '🦵',
+  reverselunge:   '🧎',
+  elasticrow:     '🏹',
+  elasticcurl:    '💪',
+  reverseangel:   '👼',
+  catcow:         '🐈',
+  latpulldown:    '⬇️',
+  faceull:        '🎯',
+  hipthrust:      '🔺',
+  stepup:         '🪜',
+  triceppushdown: '⬇️',
+  shoulderpress:  '🏋️',
+  warmup:         '🔥',
+  rest:           '😮‍💨',
+};
+
+/* ============================================================
+   EXERCISE LIBRARY
+   ============================================================ */
+const EXERCISES = {
+  warmup: {
+    emoji: '🔥',
+    desc: 'Rotazioni delle braccia, mobilità del collo, cat-cow lenti, leg swing. Muoviti senza forzare per preparare le articolazioni.'
+  },
+  rest: {
+    emoji: '😮‍💨',
+    desc: 'Respira lentamente. Inspira dal naso 4 sec, espira dalla bocca 4 sec. Preparati per il prossimo esercizio.'
+  },
+  plank: {
+    emoji: '🙇',
+    desc: 'Posizione prona sulle avambracci. Corpo rigido in linea dalla testa ai talloni. Glutei contratti, lombare neutro (non inarcato). Non trattenere il respiro.'
+  },
+  plankside: {
+    emoji: '🦭',
+    desc: 'Appoggiato su un avambraccio lateralmente. Fianchi sollevati, corpo allineato. Braccio libero verso il soffitto oppure sul fianco. Tieni per il tempo indicato poi cambia lato.'
+  },
+  birdddog: {
+    emoji: '🐕',
+    desc: 'A quattro zampe, schiena piatta. Estendi simultaneamente il braccio destro e la gamba sinistra fino all\'orizzontale. Mantieni 2 sec, ritorna lentamente. Il lombare non deve ruotare.'
+  },
+  deadbug: {
+    emoji: '🪲',
+    desc: 'Sdraiato sulla schiena, braccia verticali verso il soffitto, gambe a 90° in aria. Abbassa lentamente braccio destro e gamba sinistra senza staccare il lombare dal pavimento. Ritorna e alterna.'
+  },
+  hollowbody: {
+    emoji: '🌙',
+    desc: 'Sdraiato, schiena piatta al suolo. Solleva testa, spalle e gambe di pochi centimetri. Il lombare deve rimanere incollato a terra — questo è il punto critico. Tieni la posizione respirando.'
+  },
+  catcow: {
+    emoji: '🐈',
+    desc: 'A quattro zampe. Cow: inspira e lascia cadere la pancia verso il basso, testa su. Cat: espira e inarca la schiena verso il soffitto, testa giù. Movimento lento e controllato con il respiro.'
+  },
+  pushup: {
+    emoji: '🫷',
+    desc: 'Mani alla larghezza delle spalle, corpo rigido. Scendi fino a sfiorare il petto a terra, gomiti a 45° dal busto. Spingi espirando. Scapole retratte in cima. Non inarcate il lombare.'
+  },
+  widepushup: {
+    emoji: '👐',
+    desc: 'Come il push-up standard ma mani più larghe delle spalle (circa 1.5x). Questo aumenta il coinvolgimento del petto esterno e del deltoide anteriore. Stessa tecnica, gomiti aperti.'
+  },
+  diamondpushup: {
+    emoji: '💎',
+    desc: 'Mani vicine sotto il petto a formare un triangolo (pollici e indici si toccano). I gomiti scivolano lungo i fianchi. Lavoro primario sui tricipiti. Più difficile: inizia dalle ginocchia se necessario.'
+  },
+  pikepushup: {
+    emoji: '📐',
+    desc: 'Parti in posizione plank, poi alza i fianchi formando una V rovesciata (come Downward Dog). Piega i gomiti abbassando la testa verso il suolo tra le mani. Spingi su. Il carico va sulle spalle.'
+  },
+  shouldertap: {
+    emoji: '🫱',
+    desc: 'In posizione plank sulle mani. Senza ruotare il bacino, tocca la spalla opposta con una mano. Alterna lato. I fianchi devono rimanere fermi — immagina un bicchiere d\'acqua sulla schiena.'
+  },
+  lateralraise: {
+    emoji: '🪽',
+    desc: 'In piedi, elastico sotto i piedi. Alza le braccia lateralmente fino all\'altezza delle spalle, gomiti leggermente piegati. Abbassa lentamente (3 sec). Non usare lo slancio della schiena.'
+  },
+  superman: {
+    emoji: '🦸',
+    desc: 'A pancia in giù, braccia avanti. Solleva simultaneamente braccia e gambe contraendo i glutei e la schiena. Tieni 2 sec in alto, scendi lentamente. Non iperestendere il collo: guarda il pavimento.'
+  },
+  reverseangel: {
+    emoji: '👼',
+    desc: 'A pancia in giù, braccia distese lungo i fianchi con i pollici verso l\'alto. Solleva le braccia dal pavimento e portale lentamente sopra la testa radenti al suolo, poi ritorna. Lavoro su romboidi e trapezio medio.'
+  },
+  elasticrow: {
+    emoji: '🏹',
+    desc: 'Elastico ancorato davanti (porta, piede). Busto inclinato avanti a 45°, schiena dritta. Tira i gomiti indietro oltre il fianco, scapole che si avvicinano in cima. Non tirare con le braccia: guida coi gomiti.'
+  },
+  elasticcurl: {
+    emoji: '💪',
+    desc: 'In piedi, elastico sotto i piedi. Gomiti fermi ai fianchi. Piega le braccia supinando il polso (palmo verso su) in cima al movimento. Abbassa lentamente in 3 sec. Non dondolare il busto.'
+  },
+  latpulldown: {
+    emoji: '⬇️',
+    desc: 'Elastico ancorato in alto (sopra la porta). Siediti o inginocchiati. Tira l\'elastico verso il petto allargando i gomiti verso il basso. Immagina di voler mettere le scapole nelle tasche posteriori dei pantaloni.'
+  },
+  glutebridge: {
+    emoji: '🍑',
+    desc: 'Sdraiato, ginocchia piegate, piedi a terra. Spingi i fianchi verso il soffitto contraendo i glutei. Tieni 2 sec in cima. Scendi lentamente. Non estendere con la schiena: il movimento viene dai glutei.'
+  },
+  hipthrust: {
+    emoji: '🔺',
+    desc: 'Come il glute bridge ma con le spalle appoggiate su una superficie rialzata (divano, sedia). Questo aumenta il range di movimento e il picco di contrazione glutea. Spingi i fianchi verso l\'alto explosivamente, abbassa lento.'
+  },
+  squat: {
+    emoji: '🦵',
+    desc: 'Piedi larghezza spalle o leggermente più larghi, punte leggermente ruotate fuori. Scendi come se ti sedessi, schiena dritta, petto alto. Ginocchia seguono la direzione delle punte. Scendi almeno a 90°.'
+  },
+  reverselunge: {
+    emoji: '🧎',
+    desc: 'In piedi, fai un passo indietro con una gamba. Il ginocchio posteriore scende quasi a terra. Busto eretto, il ginocchio anteriore non supera la punta del piede. Spingi col tallone anteriore per tornare su.'
+  },
+  stepup: {
+    emoji: '🪜',
+    desc: 'Usa una sedia solida. Metti un piede sulla sedia e spingi con quel tallone per salire. Non rimbalzare: il lavoro deve venire dalla gamba sulla sedia. Scendi lentamente. Alterna le gambe.'
+  },
+  shoulderpress: {
+    emoji: '🏋️',
+    desc: 'In piedi, elastico sotto i piedi. Mani alle orecchie, gomiti a 90°. Spingi verso l\'alto fino a distendere le braccia senza chiudere completamente i gomiti. Abbassa lento. Core attivo per non inarcare la schiena.'
+  },
+  triceppushdown: {
+    emoji: '⬇️',
+    desc: 'Elastico ancorato in alto. Gomiti fermi ai fianchi, avambracci paralleli al suolo. Estendi le braccia verso il basso fino a bloccare i gomiti. Ritorna lentamente. Solo l\'avambraccio si muove.'
+  },
+  faceull: {
+    emoji: '🎯',
+    desc: 'Elastico ancorato all\'altezza del viso. Tira verso il viso allargando i gomiti lateralmente, dita verso le orecchie. Le scapole si avvicinano. Ottimo per il deltoide posteriore e i romboidi. Abbassa lento.'
+  },
+};
+
+/* ============================================================
+   WORKOUT PLAN
+   ============================================================ */
+const WORKOUT_PLAN = {
+
+  /* LUNEDÌ — Push A: Petto + Tricipiti + Core */
+  1: {
+    label: 'PUSH A', focus: 'Petto · Tricipiti · Core',
+    isRest: false,
+    exercises: [
+      { key:'warmup',        sets:1, reps:'60 sec',     cue:'Scalda spalle e polsi',               timed:true,  duration:60 },
+      { key:'pushup',        sets:4, reps:'12 rip',     cue:'Scapole retratte, no lombare iperesteso', timed:false },
+      { key:'widepushup',    sets:4, reps:'10 rip',     cue:'Petto esterno, gomiti aperti',        timed:false },
+      { key:'diamondpushup', sets:4, reps:'8 rip',      cue:'Gomiti lungo i fianchi, tricipiti',   timed:false },
+      { key:'plank',         sets:3, reps:'40 sec',     cue:'Glutei stretti, lombare neutro',      timed:true,  duration:40 },
+    ]
+  },
+
+  /* MARTEDÌ — Pull A: Dorsali + Bicipiti + Core */
+  2: {
+    label: 'PULL A', focus: 'Dorsali · Bicipiti · Core',
+    isRest: false,
+    exercises: [
+      { key:'warmup',       sets:1, reps:'60 sec',     cue:'Mobilità spalle e schiena',           timed:true,  duration:60 },
+      { key:'elasticrow',   sets:4, reps:'12 rip',     cue:'Guida coi gomiti, non con le mani',   timed:false },
+      { key:'latpulldown',  sets:4, reps:'12 rip',     cue:'Scapole nelle tasche posteriori',     timed:false },
+      { key:'elasticcurl',  sets:4, reps:'12 rip',     cue:'Gomiti fermi, supina il polso',       timed:false },
+      { key:'birdddog',     sets:3, reps:'10/lato',    cue:'Lombare fermo, braccio opposto gamba',timed:false },
+    ]
+  },
+
+  /* MERCOLEDÌ — Push B: Spalle + Core */
+  3: {
+    label: 'PUSH B', focus: 'Spalle · Trapezio · Core',
+    isRest: false,
+    exercises: [
+      { key:'warmup',        sets:1, reps:'60 sec',     cue:'Rotazioni spalle, neck rolls',        timed:true,  duration:60 },
+      { key:'pikepushup',    sets:4, reps:'10 rip',     cue:'Fianchi alti a V, carico sulle spalle', timed:false },
+      { key:'shoulderpress', sets:4, reps:'12 rip',     cue:'Core attivo, non inarcare la schiena', timed:false },
+      { key:'lateralraise',  sets:4, reps:'15 rip',     cue:'Nessuno slancio, abbassa in 3 sec',   timed:false },
+      { key:'deadbug',       sets:3, reps:'8/lato',     cue:'Lombare incollato a terra sempre',    timed:false },
+    ]
+  },
+
+  /* GIOVEDÌ — Legs A: Glutei + Catena posteriore + Core */
+  4: {
+    label: 'LEGS A', focus: 'Glutei · Femorali · Core',
+    isRest: false,
+    exercises: [
+      { key:'warmup',       sets:1, reps:'60 sec',     cue:'Leg swing, mobilità anca',            timed:true,  duration:60 },
+      { key:'glutebridge',  sets:4, reps:'15 rip',     cue:'Spingi coi glutei, non con la schiena', timed:false },
+      { key:'hipthrust',    sets:4, reps:'12 rip',     cue:'Range pieno, contrai 2 sec in cima',  timed:false },
+      { key:'reverselunge', sets:4, reps:'10/gamba',   cue:'Busto eretto, tallone anteriore',     timed:false },
+      { key:'superman',     sets:3, reps:'12 rip',     cue:'2 sec su, 2 sec giù, guarda il suolo', timed:false },
+    ]
+  },
+
+  /* VENERDÌ — Pull B: Romboidi + Spalla post. + Core */
+  5: {
+    label: 'PULL B', focus: 'Romboidi · Spalla post. · Core',
+    isRest: false,
+    exercises: [
+      { key:'warmup',       sets:1, reps:'60 sec',     cue:'Mobilità toracica e spalle',          timed:true,  duration:60 },
+      { key:'faceull',      sets:4, reps:'15 rip',     cue:'Gomiti alti, scapole che si toccano', timed:false },
+      { key:'reverseangel', sets:4, reps:'12 rip',     cue:'Braccia radenti al suolo, lento',     timed:false },
+      { key:'elasticrow',   sets:4, reps:'12 rip',     cue:'Variante stretta, gomiti ai fianchi', timed:false },
+      { key:'plankside',    sets:3, reps:'30 sec/lato', cue:'Fianchi allineati, obliqui attivi',  timed:true,  duration:30 },
+    ]
+  },
+
+  /* SABATO — Full Body leggero */
+  6: {
+    label: 'FULL BODY', focus: 'Full body leggero · Mobilità',
+    isRest: false,
+    exercises: [
+      { key:'warmup',       sets:1, reps:'60 sec',     cue:'Scalda tutto il corpo',               timed:true,  duration:60 },
+      { key:'squat',        sets:3, reps:'15 rip',     cue:'Schiena dritta, ginocchia fuori',     timed:false },
+      { key:'pushup',       sets:3, reps:'10 rip',     cue:'Tecnica curata, nessuna fretta',      timed:false },
+      { key:'stepup',       sets:3, reps:'10/gamba',   cue:'Spingi col tallone, lento in discesa', timed:false },
+      { key:'elasticcurl',  sets:3, reps:'12 rip',     cue:'Movimento controllato',               timed:false },
+      { key:'catcow',       sets:1, reps:'10 rip',     cue:'Respira con il movimento, mobilità',  timed:false },
+      { key:'hollowbody',   sets:3, reps:'25 sec',     cue:'Lombare a terra, respira',            timed:true,  duration:25 },
+    ]
+  },
+
+  /* DOMENICA — Riposo completo */
+  0: {
+    label: 'RIPOSO', focus: 'Recupero completo',
+    isRest: true, exercises: []
+  },
+};
+
+/* ============================================================
+   BUILD SEQUENCE
+   ============================================================ */
+function buildSequence(dayPlan) {
+  const seq = [];
+  dayPlan.exercises.forEach((ex, exIdx) => {
+    const def = EXERCISES[ex.key] || {};
+    for (let s = 1; s <= ex.sets; s++) {
+      const label = ex.sets > 1 ? `${exName(ex.key)} — ${s}/${ex.sets}` : exName(ex.key);
+      seq.push({
+        type:     ex.key === 'warmup' ? 'warmup' : 'exercise',
+        label,
+        key:      ex.key,
+        emoji:    def.emoji || EMOJI[ex.key] || '🏋️',
+        cue:      ex.cue,
+        desc:     def.desc || '',
+        meta:     ex.reps,
+        duration: ex.timed ? (ex.duration || CONFIG.exerciseDuration) : CONFIG.exerciseDuration,
+        timed:    ex.timed,
+      });
+      const isLastSet = s === ex.sets;
+      const isLastEx  = exIdx === dayPlan.exercises.length - 1;
+      if (!(isLastSet && isLastEx)) {
+        const dur = isLastSet ? CONFIG.restBetweenEx : CONFIG.restBetweenSets;
+        seq.push({
+          type:  'rest', label: isLastSet ? 'Riposo' : 'Riposo breve',
+          key:   'rest', emoji: '😮‍💨',
+          cue:   'Respira, preparati',
+          desc:  EXERCISES.rest.desc,
+          meta:  `${dur}s`, duration: dur, timed: true,
+        });
+      }
+    }
+  });
+  return seq;
+}
+
+function exName(key) {
+  const names = {
+    warmup:'Riscaldamento', plank:'Plank', plankside:'Plank laterale',
+    birdddog:'Bird-Dog', deadbug:'Dead Bug', hollowbody:'Hollow Body Hold',
+    catcow:'Cat-Cow', pushup:'Push-up', widepushup:'Wide Push-up',
+    diamondpushup:'Diamond Push-up', pikepushup:'Pike Push-up',
+    shouldertap:'Shoulder Tap', lateralraise:'Lateral Raise',
+    superman:'Superman Hold', reverseangel:'Reverse Snow Angel',
+    elasticrow:'Row con elastico', elasticcurl:'Curl con elastico',
+    latpulldown:'Lat Pulldown elastico', glutebridge:'Glute Bridge',
+    hipthrust:'Hip Thrust', squat:'Squat', reverselunge:'Reverse Lunge',
+    stepup:'Step-up', shoulderpress:'Shoulder Press elastico',
+    triceppushdown:'Tricep Pushdown', faceull:'Face Pull elastico',
+  };
+  return names[key] || key;
+}
+
+/* ============================================================
+   AUDIO
+   ============================================================ */
+const Audio = (() => {
+  let ctx = null;
+  const init = () => { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); };
+  const beep = (freq, dur, vol=.3, type='sine') => {
+    if (!ctx) return;
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type=type; o.frequency.setValueAtTime(freq,ctx.currentTime);
+    g.gain.setValueAtTime(vol,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+    o.start(); o.stop(ctx.currentTime+dur);
+  };
+  return {
+    init,
+    tick:     ()=>beep(880,.06,.12,'square'),
+    tickFast: ()=>beep(1100,.05,.18,'square'),
+    whistle:  ()=>{ beep(1500,.08,.4); setTimeout(()=>beep(1800,.15,.5),80); setTimeout(()=>beep(1600,.3,.4),220); },
+    start:    ()=>{ beep(660,.1,.3); setTimeout(()=>beep(880,.15,.4),150); },
+    complete: ()=>[660,880,1100,1320].forEach((f,i)=>setTimeout(()=>beep(f,.2,.4),i*180)),
+  };
+})();
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = {
+  selectedDay:null, sequence:[], seqIndex:0,
+  timeLeft:0, paused:false,
+  intervalId:null, tickIntervalId:null,
+  workoutStartTime:null, exerciseCount:0, tickIsFast:false,
+};
+
+/* ============================================================
+   HOME
+   ============================================================ */
+function initHome() {
+  const now=new Date(), today=now.getDay();
+  document.getElementById('home-date').textContent = now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+
+  const container=document.getElementById('day-selector');
+  container.innerHTML='';
+  const abbr=['Do','Lu','Ma','Me','Gi','Ve','Sa'];
+  for(let i=0;i<7;i++){
+    const d=new Date(now); d.setDate(now.getDate()-today+i);
+    const plan=WORKOUT_PLAN[i];
+    const typeShort=plan.isRest?'Rest':plan.label.split(' ')[0].substring(0,4);
+    const btn=document.createElement('div');
+    btn.className='day-btn'+(i===today?' today':'')+(plan.isRest?' fullrest':'')+(i===(state.selectedDay??today)?' selected':'');
+    btn.innerHTML=`<span class="day-abbr">${abbr[i]}</span><span class="day-num">${d.getDate()}</span><span class="day-type">${typeShort}</span>`;
+    btn.addEventListener('click',()=>selectDay(i));
+    container.appendChild(btn);
+  }
+  if(state.selectedDay===null) state.selectedDay=today;
+  updateTodayCard(state.selectedDay);
+}
+
+function selectDay(idx){
+  state.selectedDay=idx;
+  document.querySelectorAll('.day-btn').forEach((b,i)=>b.classList.toggle('selected',i===idx));
+  updateTodayCard(idx);
+}
+
+function updateTodayCard(idx){
+  const plan=WORKOUT_PLAN[idx];
+  document.getElementById('card-title').textContent=plan.label;
+  document.getElementById('card-sub').textContent=plan.focus;
+  const preview=document.getElementById('card-exercises');
+  preview.innerHTML='';
+  plan.exercises.forEach(ex=>{
+    if(ex.key==='warmup') return;
+    const chip=document.createElement('div'); chip.className='ex-chip';
+    chip.textContent=(EXERCISES[ex.key]?.emoji||EMOJI[ex.key]||'🏋️')+' '+exName(ex.key);
+    preview.appendChild(chip);
+  });
+  const arrow=document.getElementById('card-arrow');
+  const btn=document.getElementById('btn-start');
+  if(plan.isRest){
+    arrow.style.display='none';
+    document.getElementById('today-card').style.cursor='default';
+    btn.textContent='RIPOSO COMPLETO'; btn.className='btn-start rest-day';
+  } else {
+    arrow.style.display='';
+    document.getElementById('today-card').style.cursor='pointer';
+    btn.textContent='INIZIA'; btn.className='btn-start';
+  }
+}
+
+/* ============================================================
+   OVERVIEW
+   ============================================================ */
+function openOverview(){
+  const plan=WORKOUT_PLAN[state.selectedDay];
+  if(plan.isRest) return;
+  const seq=buildSequence(plan);
+  document.getElementById('ov-title').textContent=plan.label;
+  const list=document.getElementById('ov-list');
+  list.innerHTML='';
+
+  let totalSec=0;
+  seq.forEach((step,i)=>{
+    totalSec+=step.duration;
+    const timeClass=step.type==='rest'?'rst':step.type==='warmup'?'wu':'ex';
+    const timeLabel=step.duration>=60
+      ?`${Math.floor(step.duration/60)}m${step.duration%60>0?step.duration%60+'s':''}`
+      :`${step.duration}s`;
+
+    const item=document.createElement('div');
+    item.className=`ov-item type-${step.type}`;
+
+    const row=document.createElement('div');
+    row.className='ov-item-row';
+    row.innerHTML=`
+      <div class="ov-num">${i+1}</div>
+      <div class="ov-emoji">${step.emoji}</div>
+      <div class="ov-info">
+        <div class="ov-name">${step.label}</div>
+        <div class="ov-meta">${step.meta||''}</div>
+      </div>
+      <div class="ov-time ${timeClass}">${timeLabel}</div>
+      <div class="ov-chevron">›</div>
+    `;
+
+    const detail=document.createElement('div');
+    detail.className='ov-detail';
+    detail.textContent=step.desc||'';
+
+    row.addEventListener('click',()=>{
+      const wasOpen=item.classList.contains('expanded');
+      // chiudi tutti
+      list.querySelectorAll('.ov-item.expanded').forEach(el=>el.classList.remove('expanded'));
+      if(!wasOpen) item.classList.add('expanded');
+    });
+
+    item.appendChild(row);
+    item.appendChild(detail);
+    list.appendChild(item);
+  });
+
+  const totalMin=Math.ceil(totalSec/60);
+  const total=document.createElement('div');
+  total.className='ov-total';
+  total.innerHTML=`<span class="ov-total-label">Durata totale stimata</span><span class="ov-total-val">~${totalMin} min</span>`;
+  list.appendChild(total);
+
+  showScreen('screen-overview');
+}
+
+function closeOverview(){ showScreen('screen-home'); }
+
+/* ============================================================
+   WORKOUT
+   ============================================================ */
+function startWorkout(){
+  const plan=WORKOUT_PLAN[state.selectedDay];
+  if(plan.isRest) return;
+  Audio.init(); Audio.start();
+  state.sequence=buildSequence(plan);
+  state.seqIndex=0; state.paused=false;
+  state.workoutStartTime=Date.now();
+  state.exerciseCount=plan.exercises.filter(e=>e.key!=='warmup').length;
+  document.getElementById('wt-day-label').textContent=plan.label;
+  setPauseBtn(false);
+  showScreen('screen-workout');
+  renderStep(); startTimer();
+}
+
+/* ── TIMER ── */
+function startTimer(){
+  clearInterval(state.intervalId); clearInterval(state.tickIntervalId);
+  if(state.paused) return;
+  scheduleTick();
+  state.intervalId=setInterval(()=>{
+    state.timeLeft--;
+    updateTimerDisplay();
+    if(state.timeLeft<=0){
+      clearInterval(state.intervalId); clearInterval(state.tickIntervalId);
+      Audio.whistle();
+      setTimeout(advanceStep,400);
+    }
+  },1000);
+}
+
+function scheduleTick(){
+  clearInterval(state.tickIntervalId);
+  const fast=state.timeLeft<=CONFIG.urgentThreshold;
+  state.tickIsFast=fast;
+  if(fast) Audio.tickFast(); else Audio.tick();
+  state.tickIntervalId=setInterval(()=>{
+    if(state.paused) return;
+    const nowFast=state.timeLeft<=CONFIG.urgentThreshold;
+    if(nowFast) Audio.tickFast(); else Audio.tick();
+    if(nowFast!==state.tickIsFast){ state.tickIsFast=nowFast; scheduleTick(); }
+  }, fast?CONFIG.tickIntervalFast:CONFIG.tickIntervalNormal);
+}
+
+function updateTimerDisplay(){
+  const el=document.getElementById('timer-display');
+  el.textContent=String(state.timeLeft).padStart(2,'0');
+  el.classList.toggle('urgent',state.timeLeft<=CONFIG.urgentThreshold);
+}
+
+function togglePause(){
+  state.paused=!state.paused;
+  setPauseBtn(state.paused);
+  if(state.paused){ clearInterval(state.intervalId); clearInterval(state.tickIntervalId); }
+  else startTimer();
+}
+
+function setPauseBtn(isPaused){
+  document.getElementById('pause-icon').textContent=isPaused?'▶':'⏸';
+  document.getElementById('pause-lbl').textContent=isPaused?'RIPRENDI':'PAUSA';
+  document.getElementById('btn-pause').classList.toggle('active',isPaused);
+}
+
+/* ── STEP NAV ── */
+function advanceStep(){
+  state.seqIndex++;
+  if(state.seqIndex>=state.sequence.length){ finishWorkout(); return; }
+  renderStep(); state.paused=false; setPauseBtn(false); startTimer();
+}
+function stepSkip(){ clearInterval(state.intervalId); clearInterval(state.tickIntervalId); advanceStep(); }
+function stepBack(){
+  if(state.seqIndex===0) return;
+  clearInterval(state.intervalId); clearInterval(state.tickIntervalId);
+  state.seqIndex--;
+  renderStep(); state.paused=false; setPauseBtn(false); startTimer();
+}
+
+/* ── RENDER ── */
+function renderStep(){
+  const seq=state.sequence, step=seq[state.seqIndex];
+  const pct=Math.round((state.seqIndex/seq.length)*100);
+  document.getElementById('wt-progress-fill').style.width=pct+'%';
+  document.getElementById('wt-progress-text').textContent=`${state.seqIndex+1} / ${seq.length}`;
+
+  const phaseEl=document.getElementById('phase-label');
+  phaseEl.textContent=step.type==='rest'?'RIPOSO':step.type==='warmup'?'RISCALDAMENTO':'ESERCIZIO';
+  phaseEl.className='phase-label '+step.type;
+
+  document.getElementById('exercise-emoji').textContent=step.emoji;
+  document.getElementById('exercise-name').textContent=step.label;
+  document.getElementById('exercise-meta').textContent=step.meta||'';
+  document.getElementById('exercise-cue').textContent=step.cue||'';
+
+  state.timeLeft=step.duration;
+  updateTimerDisplay();
+
+  const nextStep=seq[state.seqIndex+1];
+  const nextBar=document.getElementById('next-up-bar');
+  if(nextStep){
+    nextBar.classList.remove('hidden');
+    document.getElementById('next-up-emoji').textContent=nextStep.emoji;
+    document.getElementById('next-up-name').textContent=nextStep.label;
+  } else { nextBar.classList.add('hidden'); }
+}
+
+/* ── MODAL HOME ── */
+function requestHome(){
+  if(!state.paused){ state.paused=true; setPauseBtn(true); clearInterval(state.intervalId); clearInterval(state.tickIntervalId); }
+  document.getElementById('modal-exit').classList.add('active');
+}
+function closeModal(){ document.getElementById('modal-exit').classList.remove('active'); }
+function confirmHome(){ document.getElementById('modal-exit').classList.remove('active'); goHome(); }
+
+/* ── COMPLETE ── */
+function finishWorkout(){
+  clearInterval(state.intervalId); clearInterval(state.tickIntervalId);
+  Audio.complete();
+  const elapsed=Math.round((Date.now()-state.workoutStartTime)/60000);
+  document.getElementById('stat-time').textContent=elapsed;
+  document.getElementById('stat-ex').textContent=state.exerciseCount;
+  showScreen('screen-complete');
+}
+
+/* ── NAVIGATION ── */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome(){
+  clearInterval(state.intervalId); clearInterval(state.tickIntervalId);
+  state.selectedDay=null; state.paused=false;
+  showScreen('screen-home'); initHome();
+}
+
+/* ── PWA ── */
+if('serviceWorker' in navigator){
+  const sw=`const C='workout-v3';self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(['/']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+}
+
+window.addEventListener('load', initHome);
+</script>
+</body>
+</html>
