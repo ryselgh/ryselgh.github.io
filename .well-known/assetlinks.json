@@ -5,9 +5,9 @@
     ],
     "target": {
       "namespace": "android_app",
-      "package_name": "io.github.ryselgh.twa",
+      "package_name": "io.github.ryselgh.fsapp",
       "sha256_cert_fingerprints": [
-        "AE:4A:57:62:9D:87:F6:DA:B8:FC:6E:64:EF:95:ED:E7:70:3E:5D:21:25:20:0E:DA:1C:7E:0E:BD:45:18:8F:F3"
+        "2B:0E:78:90:98:66:D1:97:D4:AD:07:D9:F4:70:A1:D3:F4:86:AD:CD:07:08:E7:55:C2:0C:42:8A:BA:C8:B0:49"
       ]
     }
   }
