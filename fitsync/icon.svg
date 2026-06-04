@@ -1,0 +1,10 @@
+<svg width="100%" viewBox="0 0 690 690" role="img" xmlns="http://www.w3.org/2000/svg" style="">
+  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Logo FS</title>
+  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Logo PWA con le lettere FS su sfondo scuro, F gialla-verde e S bianca, font Impact centrato</desc>
+
+  <rect width="680" height="680" fill="#0a0a0f" rx="80" style="fill:rgb(10, 10, 15);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <text x="340" y="490" text-anchor="middle" dominant-baseline="auto" font-family="Impact, sans-serif" font-size="400" fill="none" style="fill:none;stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Impact, sans-serif;font-size:400px;font-weight:400;text-anchor:middle;dominant-baseline:auto">
+    <tspan fill="#e8ff47" style="fill:rgb(232, 255, 71);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Impact, sans-serif;font-size:400px;font-weight:400;text-anchor:middle;dominant-baseline:auto">F</tspan><tspan fill="#f0f0f5" style="fill:rgb(240, 240, 245);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Impact, sans-serif;font-size:400px;font-weight:400;text-anchor:middle;dominant-baseline:auto">S</tspan>
+  </text>
+</svg>

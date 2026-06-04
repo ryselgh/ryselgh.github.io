@@ -1,0 +1,18 @@
+{
+  "name": "FitSync",
+  "short_name": "FitSync",
+  "description": "La tua dose di SALUTE giornaliera",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

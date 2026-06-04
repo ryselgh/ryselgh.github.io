@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0a0a0f"/>
+<title>FitSync</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+<!-- ═══════════════════════════════════════════════
+     CONFIG BLOCK
+════════════════════════════════════════════════ -->
+<script id="fitsync-config" type="application/json">
+{
+  "defaults": {
+    "moduleId": "fullbody",
+    "workSec":  40,
+    "restSec":  20,
+    "prepSec":  5
+  },
+
+  "sliders": {
+    "work": { "min": 20, "max": 90, "step": 5 },
+    "rest": { "min": 10, "max": 60, "step": 5 },
+    "prep": { "min": 3,  "max": 15, "step": 1 }
+  },
+
+  "urgentThreshold": 5,
+
+  "audio": {
+    "_comment": "type: sine | square | sawtooth | triangle",
+    "workTick":  { "freq": 400,  "dur": 0.04, "vol": 0.25, "type": "square" },
+    "urgentTick":{ "freq": 600, "dur": 0.035,"vol": 0.32, "type": "square" },
+    "restTick":  { "freq": 420,  "dur": 0.09, "vol": 0.15, "type": "sine"   },
+    "whistleA":  { "freq": 1800, "dur": 0.08, "vol": 0.50, "type": "sine"   },
+    "whistleB":  { "freq": 2200, "dur": 0.15, "vol": 0.60, "type": "sine"   },
+    "urgentBpm": 200
+  }
+}
+</script>
+
+<style>
+:root {
+  --bg:        #0a0a0f;
+  --surface:   #13131a;
+  --surface2:  #1a1a25;
+  --border:    #1e1e2e;
+  --accent:    #e8ff47;
+  --accent2:   #47c8ff;
+  --accent3:   #ff6b47;
+  --text:      #f0f0f5;
+  --muted:     #6b6b80;
+  --font-head: 'Bebas Neue', 'Impact', sans-serif;
+  --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --radius:    12px;
+  --radius-lg: 20px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-body);}
+#app{height:100%;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;height:100%;overflow-y:auto;overflow-x:hidden;}
+.screen.active{display:flex;}
+
+/* ── HOME ── */
+#home{padding-bottom:32px;}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:16px 20px 0;flex-shrink:0;}
+.logo{font-family:var(--font-head);font-size:46px;letter-spacing:3px;color:var(--accent);}
+.logo span{color:var(--text);}
+.subtitle{font-family:var(--font-head);font-size:28px;letter-spacing:3px;color:var(--accent);}
+.subtitle span{color:var(--text);}
+
+.home-logo-area{display:flex;align-items:center;justify-content:center;padding:12px 20px 18px;border-bottom:1px solid var(--border);}
+/*.home-logo-slot{width:100%;max-width:240px;height:56px;border:1.5px dashed var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;letter-spacing:2px;text-transform:uppercase;}*/
+
+/* 2x2 grid uguale per tutti i moduli */
+.module-picker{padding:18px 20px 0;}
+.section-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.module-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;}
+.module-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:16px 14px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;justify-content:center;min-height:100px;}
+.module-card.selected{border-color:var(--accent);background:rgba(232,255,71,.06);}
+.module-card:active{transform:scale(.97);}
+.module-card .mc-icon{font-size:26px;margin-bottom:6px;}
+.module-card .mc-name{font-family:var(--font-head);font-size:20px;letter-spacing:1px;color:var(--text);}
+.module-card .mc-desc{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4;}
+.module-card.selected .mc-name{color:var(--accent);}
+
+/* Slider timer */
+.timer-config{padding:18px 20px;}
+.timer-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.timer-label{font-size:13px;color:var(--muted);flex:1;}
+.timer-val{font-family:var(--font-head);font-size:22px;color:var(--text);min-width:48px;text-align:right;}
+.slider-wrap{flex:2;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:var(--border);outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:none;}
+
+/* Esercizi con expand click */
+.exercise-list-section{padding:0 20px;}
+.ex-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.ex-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.ex-item.gear-band{border-left:3px solid var(--accent2);}
+.ex-item.gear-bar{border-left:3px solid var(--accent3);}
+.ex-item.gear-body{border-left:3px solid var(--muted);}
+.ex-item-row{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer;}
+.ex-item-row:active{background:var(--surface2);}
+.ex-emoji{font-size:20px;flex-shrink:0;width:28px;text-align:center;}
+.ex-info{flex:1;min-width:0;}
+.ex-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ex-meta{font-size:10px;color:var(--muted);margin-top:2px;}
+.ex-chevron{color:var(--muted);font-size:12px;transition:transform .2s;flex-shrink:0;}
+.ex-chevron.open{transform:rotate(180deg);}
+.ex-detail-panel{display:none;padding:0 12px 12px;border-top:1px solid var(--border);}
+.ex-detail-panel.open{display:block;}
+.ex-detail-text{font-size:12px;color:var(--muted);line-height:1.6;padding-top:10px;}
+.ex-partner-note{font-size:11px;color:var(--accent2);margin-top:6px;}
+.ex-swap-btn{display:inline-block;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;padding:5px 10px;cursor:pointer;}
+.ex-swap-btn:active{background:var(--border);}
+
+.start-btn{display:flex;align-items:center;justify-content:center;gap:10px;margin:22px 20px 8px;background:var(--accent);color:#0a0a0f;border:none;border-radius:var(--radius-lg);padding:18px;font-family:var(--font-head);font-size:26px;letter-spacing:2px;cursor:pointer;transition:all .2s;}
+.start-btn:active{transform:scale(.97);background:#d4e840;}
+
+/* ── SWAP MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:24px 20px 40px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;}
+.modal-title{font-family:var(--font-head);font-size:24px;color:var(--text);margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
+.alt-option{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;cursor:pointer;transition:all .2s;}
+.alt-option:active{border-color:var(--accent);}
+.alt-option .ao-name{font-size:15px;font-weight:600;}
+.alt-option .ao-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.modal-cancel{width:100%;background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);padding:12px;font-family:var(--font-body);font-size:14px;cursor:pointer;margin-top:8px;}
+
+/* ── WORKOUT ── */
+#workout{background:var(--bg);}
+.wu-header{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border);}
+.wu-title{font-family:var(--font-head);font-size:20px;letter-spacing:1px;color:var(--text);}
+.wu-progress-wrap{padding:0 20px;flex-shrink:0;}
+.wu-progress-bar{height:3px;background:var(--border);border-radius:2px;margin:8px 0;}
+.wu-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s;}
+.wu-progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+
+/* Circular timer */
+.timer-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 20px;}
+.timer-ring-wrap{position:relative;width:220px;height:220px;margin-bottom:8px;flex-shrink:0;}
+#timer-ring-svg{transform:rotate(-90deg);width:220px;height:220px;}
+#ring-bg{stroke:var(--border);stroke-width:10;fill:none;}
+#ring-fill{stroke:var(--accent);stroke-width:10;fill:none;stroke-linecap:round;transition:stroke .3s,stroke-dashoffset .9s linear;}
+.timer-ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+.timer-seconds{font-family:var(--font-head);font-size:76px;line-height:1;color:var(--text);letter-spacing:2px;}
+.timer-seconds.urgent{color:var(--accent3);}
+.timer-phase-label{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);}
+
+/* Rest banner */
+.rest-banner{background:rgba(71,200,255,.08);border:1px solid rgba(71,200,255,.2);border-radius:var(--radius);padding:8px 16px;margin:0 16px 8px;font-size:12px;color:var(--accent2);flex-shrink:0;}
+
+/* Dual partner cards */
+.partner-dual{display:flex;gap:10px;padding:0 16px;flex-shrink:0;margin-bottom:6px;align-items:stretch;}
+.partner-card{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:10px;min-width:0;transition:border-color .3s,background .3s;}
+.partner-card.active-a{border-color:var(--accent);background:rgba(232,255,71,.06);}
+.partner-card.active-b{border-color:var(--accent2);background:rgba(71,200,255,.06);}
+.pc-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.pc-label.a{color:var(--accent);}
+.pc-label.b{color:var(--accent2);}
+.pc-emoji{font-size:22px;display:block;margin-bottom:4px;}
+.pc-name{font-family:var(--font-head);font-size:15px;line-height:1.15;color:var(--text);}
+.pc-gear{font-size:10px;color:var(--muted);margin-top:2px;}
+.dual-swap-icon{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px;flex-shrink:0;align-self:center;}
+
+/* Single ex card */
+.ex-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin:0 16px;flex-shrink:0;}
+.ex-card-phase{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.ex-card-row{display:flex;align-items:center;gap:12px;}
+.ex-card-emoji{font-size:34px;flex-shrink:0;}
+.ex-card-body{flex:1;min-width:0;}
+.ex-card-name{font-family:var(--font-head);font-size:26px;line-height:1.1;color:var(--text);}
+.ex-card-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-top:3px;}
+.ex-card-gear{display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--accent2);margin-top:6px;}
+
+.next-preview{padding:0 16px 4px;flex-shrink:0;}
+.next-preview p{font-size:11px;color:var(--muted);}
+.next-preview strong{color:var(--text);}
+
+.wu-controls{display:flex;gap:10px;padding:10px 16px 28px;flex-shrink:0;}
+.ctrl-btn{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px;font-size:18px;cursor:pointer;transition:all .2s;color:var(--text);}
+.ctrl-btn.primary{background:var(--accent);color:#0a0a0f;border-color:var(--accent);}
+.ctrl-btn:active{transform:scale(.95);}
+.ctrl-btn.danger{border-color:var(--accent3);color:var(--accent3);}
+
+/* ── SUMMARY ── */
+#summary{padding-bottom:40px;}
+.summary-hero{padding:24px 20px;text-align:center;border-bottom:1px solid var(--border);}
+.summary-hero .sh-icon{font-size:56px;margin-bottom:12px;}
+.summary-hero h2{font-family:var(--font-head);font-size:40px;color:var(--accent);letter-spacing:2px;}
+.summary-hero p{font-size:13px;color:var(--muted);margin-top:4px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:24px 20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.stat-val{font-family:var(--font-head);font-size:36px;color:var(--accent);}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.done-list{padding:0 20px;}
+.done-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.done-item:last-child{border-bottom:none;}
+.done-check{font-size:16px;}
+.done-name{font-size:14px;}
+.home-again-btn{margin:24px 20px 0;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#0a0a0f;border:none;border-radius:var(--radius-lg);padding:18px;font-family:var(--font-head);font-size:26px;letter-spacing:2px;cursor:pointer;width:calc(100% - 40px);}
+
+/* ── CONFIRM MODAL ── */
+.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.confirm-overlay.open{display:flex;}
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;width:100%;max-width:320px;text-align:center;}
+.confirm-box h3{font-family:var(--font-head);font-size:26px;color:var(--text);margin-bottom:8px;}
+.confirm-box p{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.confirm-btns{display:flex;gap:10px;}
+.confirm-btns button{flex:1;padding:14px;border-radius:var(--radius);border:none;font-family:var(--font-head);font-size:18px;cursor:pointer;}
+.confirm-yes{background:var(--accent3);color:#fff;}
+.confirm-no{background:var(--surface2);color:var(--text);border:1px solid var(--border) !important;}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+@media(min-width:480px){
+  #app{max-width:480px;margin:0 auto;}
+  html,body{background:#050508;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="top-bar">
+    <div class="logo">FIT<span>SYNC</span></div>
+  </div>
+  <div class="home-logo-area">
+    <div class="home-logo-slot"><img src="home-logo.png" width="150"></div>
+	<div class="subtitle" style="width: 250px; margin: 0 auto;"><span>La tua dose di </span>SALUTE<span> giornaliera</span></div>
+  </div>
+  <div class="module-picker">
+    <div class="section-label">Modulo</div>
+    <div class="module-grid" id="module-grid"></div>
+  </div>
+  <div class="timer-config">
+    <div class="section-label">Timer</div>
+    <div class="timer-row">
+      <span class="timer-label">⚡ Lavoro</span>
+      <div class="slider-wrap"><input type="range" id="sl-work"/></div>
+      <span class="timer-val" id="tv-work"></span>
+    </div>
+    <div class="timer-row">
+      <span class="timer-label">😮‍💨 Riposo</span>
+      <div class="slider-wrap"><input type="range" id="sl-rest"/></div>
+      <span class="timer-val" id="tv-rest"></span>
+    </div>
+    <div class="timer-row">
+      <span class="timer-label">🔁 Preparazione</span>
+      <div class="slider-wrap"><input type="range" id="sl-prep"/></div>
+      <span class="timer-val" id="tv-prep"></span>
+    </div>
+  </div>
+  <button class="start-btn" id="start-btn">▶ INIZIA</button>
+  <div class="exercise-list-section">
+    <div class="section-label">▼ Esercizi <span id="ex-count-label"></span></div>
+    <div class="ex-list" id="ex-list"></div>
+  </div>
+</div>
+
+<!-- WORKOUT -->
+<div id="workout" class="screen">
+  <div class="wu-header">
+    <div class="wu-title" id="wu-title">FULL BODY</div>
+    <div style="font-size:12px;color:var(--muted)" id="wu-set-label"></div>
+  </div>
+  <div class="wu-progress-wrap">
+    <div class="wu-progress-bar"><div class="wu-progress-fill" id="wu-progress-fill" style="width:0%"></div></div>
+    <div class="wu-progress-label">
+      <span id="wu-step-label">0 / 0</span>
+      <span id="wu-elapsed">0:00</span>
+    </div>
+  </div>
+
+  <div id="rest-banner" class="rest-banner" style="display:none">😮‍💨 Riposo</div>
+
+  <div class="timer-area">
+    <div class="timer-ring-wrap">
+      <svg id="timer-ring-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+        <circle id="ring-bg"   cx="110" cy="110" r="100"/>
+        <circle id="ring-fill" cx="110" cy="110" r="100"/>
+      </svg>
+      <div class="timer-ring-inner">
+        <span class="timer-seconds" id="big-timer">5</span>
+        <span class="timer-phase-label" id="phase-label">PREPARATI</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dual cards (esercizi con attrezzo condiviso) -->
+  <div class="partner-dual" id="partner-dual" style="display:none">
+    <div class="partner-card" id="pc-a">
+      <div class="pc-label a" id="pc-a-label">PERSONA A</div>
+      <span class="pc-emoji" id="pc-a-emoji">💪</span>
+      <div class="pc-name"  id="pc-a-name">—</div>
+      <div class="pc-gear"  id="pc-a-gear"></div>
+    </div>
+    <div class="dual-swap-icon">⇄</div>
+    <div class="partner-card" id="pc-b">
+      <div class="pc-label b" id="pc-b-label">PERSONA B</div>
+      <span class="pc-emoji" id="pc-b-emoji">🏃</span>
+      <div class="pc-name"  id="pc-b-name">—</div>
+      <div class="pc-gear"  id="pc-b-gear"></div>
+    </div>
+  </div>
+
+  <!-- Single card -->
+  <div class="ex-card" id="ex-card">
+    <div class="ex-card-phase" id="ex-card-phase">ORA</div>
+    <div class="ex-card-row">
+      <span class="ex-card-emoji" id="ex-card-emoji">💪</span>
+      <div class="ex-card-body">
+        <div class="ex-card-name" id="ex-card-name">—</div>
+        <div class="ex-card-desc" id="ex-card-desc"></div>
+      </div>
+    </div>
+    <div class="ex-card-gear" id="ex-card-gear"></div>
+  </div>
+
+  <div class="next-preview" id="next-preview"></div>
+  <div class="wu-controls">
+    <button class="ctrl-btn" id="prev-btn">⏮</button>
+    <button class="ctrl-btn primary" id="pause-btn">⏸</button>
+    <button class="ctrl-btn" id="next-btn">⏭</button>
+    <button class="ctrl-btn danger" id="stop-btn">⏹</button>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div id="summary" class="screen">
+  <div class="top-bar"><div class="logo">FIT<span>SYNC</span></div></div>
+  <div class="summary-hero">
+    <div class="sh-icon">🏆</div>
+    <h2>FATTO!</h2>
+    <p id="summary-date"></p>
+  </div>
+  <div class="stats-grid" id="stats-grid"></div>
+  <div class="done-list">
+    <div class="section-label" style="padding:0 0 12px">Esercizi completati</div>
+    <div id="done-list-inner"></div>
+  </div>
+  <button class="home-again-btn" onclick="goHome()">🏠 TORNA ALLA HOME</button>
+</div>
+
+</div><!-- /app -->
+
+<!-- SWAP MODAL -->
+<div class="modal-overlay" id="swap-modal">
+  <div class="modal-box">
+    <div class="modal-title">CAMBIA ESERCIZIO</div>
+    <div class="modal-sub" id="swap-modal-sub">Seleziona un'alternativa</div>
+    <div id="swap-options"></div>
+    <button class="modal-cancel" onclick="closeSwapModal()">Annulla</button>
+  </div>
+</div>
+
+<!-- CONFIRM STOP -->
+<div class="confirm-overlay" id="confirm-modal">
+  <div class="confirm-box">
+    <h3>STOP</h3>
+    <p>Vuoi interrompere l'allenamento e tornare alla home?</p>
+    <div class="confirm-btns">
+      <button class="confirm-yes" onclick="confirmStop()">Sì</button>
+      <button class="confirm-no" onclick="closeConfirm()">No</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════
+   LOAD CONFIG
+════════════════════════════════════════════ */
+const CFG  = JSON.parse(document.getElementById('fitsync-config').textContent);
+const DEF  = CFG.defaults;
+const ACFG = CFG.audio;
+const CIRCUMFERENCE = 2 * Math.PI * 100;
+
+/* ════════════════════════════════════════════
+   DATABASE
+════════════════════════════════════════════ */
+const EX = {
+  /* ── CORPO LIBERO ── */
+  squat:           {id:'squat',          emoji:'🦵',name:'Squat',                   gear:'body',group:'lower',     shared:false,desc:'Piedi larghezza spalle, punte leggermente extraruotate. Scendi fino a parallelo, ginocchia in linea con le punte, schiena dritta.',alts:['lunge','glute_bridge','step_up']},
+  lunge:           {id:'lunge',          emoji:'🦿',name:'Affondi alternati',        gear:'body',group:'lower',     shared:false,desc:'Un passo lungo in avanti, abbassa il ginocchio posteriore verso terra senza toccarla. Alterna il lato.',alts:['squat','glute_bridge','step_up']},
+  glute_bridge:    {id:'glute_bridge',   emoji:'🍑',name:'Hip Thrust corpo lib.',    gear:'body',group:'glutes',    shared:false,desc:'Sdraiati, piedi a terra, ginocchia flesse. Spingi i fianchi verso l\'alto contraendo i glutei. Tieni 1 sec in alto.',alts:['squat','lunge','donkey_kick']},
+  donkey_kick:     {id:'donkey_kick',    emoji:'🦶',name:'Donkey Kick',              gear:'body',group:'glutes',    shared:false,desc:'In quadrupedia, schiena piatta. Solleva un ginocchio piegato verso il soffitto contraendo il gluteo. Alterna i lati.',alts:['glute_bridge','fire_hydrant']},
+  fire_hydrant:    {id:'fire_hydrant',   emoji:'🔥',name:'Fire Hydrant',             gear:'body',group:'glutes',    shared:false,desc:'In quadrupedia, apri il ginocchio lateralmente. Mantieni la schiena piatta e il core stabile.',alts:['donkey_kick','glute_bridge']},
+  step_up:         {id:'step_up',        emoji:'📦',name:'Step Up su sedia',         gear:'body',group:'lower',     shared:false,desc:'Sali su una sedia o gradino alternando le gambe, spingendo col tallone. Usa una superficie stabile.',alts:['squat','lunge']},
+  push_up:         {id:'push_up',        emoji:'💪',name:'Push Up',                  gear:'body',group:'push',      shared:false,desc:'Mani larghezza spalle, corpo in linea. Scendi fino a sfiorare il petto, gomiti a ~45° dal busto.',alts:['push_up_wide','diamond_push_up','incline_push_up']},
+  push_up_wide:    {id:'push_up_wide',   emoji:'🤸',name:'Push Up Largo',            gear:'body',group:'push',      shared:false,desc:'Mani più larghe delle spalle. Stressano maggiormente il petto rispetto al push up classico.',alts:['push_up','incline_push_up']},
+  diamond_push_up: {id:'diamond_push_up',emoji:'💎',name:'Push Up Diamante',         gear:'body',group:'push',      shared:false,desc:'Mani vicine formando un rombo sotto il petto. Carico sui tricipiti e parte interna del petto.',alts:['push_up','push_up_wide']},
+  incline_push_up: {id:'incline_push_up',emoji:'📐',name:'Push Up Inclinato',        gear:'body',group:'push',      shared:false,desc:'Mani su una superficie sopraelevata (tavolo/sedia). Più facile, ottimo per principianti.',alts:['push_up','push_up_wide']},
+  pike_push_up:    {id:'pike_push_up',   emoji:'🔺',name:'Pike Push Up (spalle)',    gear:'body',group:'shoulders', shared:false,desc:'Posizione a V rovesciata. Piega i gomiti abbassando la testa verso il suolo. Sposta il lavoro sulle spalle.',alts:['push_up','band_lateral_raise']},
+  dip_chair:       {id:'dip_chair',      emoji:'🪑',name:'Dip su sedia',             gear:'body',group:'push',      shared:false,desc:'Mani sul bordo di una sedia alle spalle, gambe tese o piegate. Scendi piegando i gomiti, risali estendendo.',alts:['diamond_push_up','push_up']},
+  plank:           {id:'plank',          emoji:'🏋',name:'Plank',                   gear:'body',group:'core',      shared:false,desc:'Posizione di push up su avambracci. Tieni il corpo in linea, contrai addome e glutei. Non far cedere i fianchi.',alts:['mountain_climber','plank_lateral']},
+  plank_lateral:   {id:'plank_lateral',  emoji:'↔️',name:'Plank Laterale',          gear:'body',group:'core',      shared:false,desc:'Appoggio su un avambraccio, corpo in linea di lato. Alterna i lati. Lavora obliqui e stabilizzatori.',alts:['plank','mountain_climber']},
+  mountain_climber:{id:'mountain_climber',emoji:'⛰',name:'Mountain Climber',        gear:'body',group:'core',      shared:false,desc:'Posizione di push up alta. Porta alternativamente le ginocchia al petto in modo rapido.',alts:['plank','burpee_nojump']},
+  burpee_nojump:   {id:'burpee_nojump',  emoji:'🌀',name:'Burpee (senza salto)',     gear:'body',group:'full',      shared:false,desc:'Squat → mani a terra → piedi indietro in plank → push up opzionale → torna in squat → alzati.',alts:['mountain_climber','squat']},
+  crunch:          {id:'crunch',         emoji:'🎯',name:'Crunch',                   gear:'body',group:'core',      shared:false,desc:'Sdraiati, mani alla nuca, ginocchia piegate. Solleva le spalle contraendo l\'addome. Espirazione nella contrazione.',alts:['leg_raise','bicycle_crunch']},
+  leg_raise:       {id:'leg_raise',      emoji:'🦵',name:'Leg Raise',                gear:'body',group:'core',      shared:false,desc:'Sdraiati, mani sotto i glutei. Solleva le gambe tese a 90°, poi abbassale lentamente senza toccare terra.',alts:['crunch','bicycle_crunch']},
+  bicycle_crunch:  {id:'bicycle_crunch', emoji:'🚴',name:'Bicycle Crunch',           gear:'body',group:'core',      shared:false,desc:'Crunch con rotazione: porta un gomito al ginocchio opposto alternando in modo fluido.',alts:['crunch','leg_raise']},
+  dead_bug:        {id:'dead_bug',       emoji:'🐛',name:'Dead Bug (lombare)',       gear:'body',group:'core',      shared:false,desc:'Sdraiato, braccia al soffitto, ginocchia a 90°. Abbassa braccio dx e gamba sx simultaneamente tenendo il lower back incollato al suolo.',alts:['plank','bird_dog']},
+  bird_dog:        {id:'bird_dog',       emoji:'🐕',name:'Bird Dog (lombare)',       gear:'body',group:'core',      shared:false,desc:'In quadrupedia, estendi braccio dx e gamba sx simultaneamente, tieni 2 sec, torna. Stabilizza lombare e migliora equilibrio.',alts:['dead_bug','plank']},
+  superman:        {id:'superman',       emoji:'🦸',name:'Superman (erettori)',      gear:'body',group:'core',      shared:false,desc:'Prono a terra, braccia avanti. Solleva contemporaneamente braccia e gambe. Tieni 2 sec. Rinforza erettori spinali.',alts:['bird_dog','dead_bug']},
+  hip_hinge:       {id:'hip_hinge',      emoji:'🔄',name:'Hip Hinge / Good Morning',gear:'body',group:'posterior', shared:false,desc:'Piedi larghezza fianchi, piega i fianchi mantenendo la schiena piatta. Senti lo stretch nei femorali. Torna su estendendo.',alts:['glute_bridge','superman']},
+  calf_raise:      {id:'calf_raise',     emoji:'👟',name:'Calf Raise',              gear:'body',group:'lower',     shared:false,desc:'In piedi, sali sulla punta dei piedi. Puoi tenerti a una parete. Scendi lentamente. Lavora i polpacci.',alts:['squat','step_up']},
+  wall_sit:        {id:'wall_sit',       emoji:'🧱',name:'Wall Sit',                gear:'body',group:'lower',     shared:false,desc:'Schiena contro il muro, scendi a 90° come seduto su una sedia invisibile. Isometria per quadricipiti e glutei.',alts:['squat','lunge']},
+
+  /* ── BANDE ── */
+  band_squat:         {id:'band_squat',        emoji:'🟢',name:'Squat con banda',           gear:'band',group:'lower',     shared:true,partner:'plank',          desc:'Banda sotto i piedi, maniglie alle spalle. Esegui uno squat. La resistenza aumenta l\'attivazione muscolare.',alts:['squat','band_deadlift','lunge']},
+  band_deadlift:      {id:'band_deadlift',     emoji:'🟣',name:'Romanian DL con banda',     gear:'band',group:'posterior', shared:true,partner:'push_up',         desc:'Banda sotto i piedi, maniglie davanti. Piega i fianchi mantenendo schiena piatta fino allo stretch dei femorali.',alts:['hip_hinge','band_squat','glute_bridge']},
+  band_row:           {id:'band_row',          emoji:'🔵',name:'Rematore con banda',        gear:'band',group:'pull',      shared:true,partner:'push_up',         desc:'Banda ancorata a porta o barra. Tira le maniglie verso i fianchi tenendo i gomiti vicini al busto.',alts:['band_pull_apart','pull_up_assist']},
+  band_pull_apart:    {id:'band_pull_apart',   emoji:'↔️',name:'Band Pull Apart',           gear:'band',group:'pull',      shared:true,partner:'pike_push_up',    desc:'Tieni la banda davanti con entrambe le mani, apri le braccia orizzontalmente portando la banda al petto.',alts:['band_row','band_face_pull']},
+  band_face_pull:     {id:'band_face_pull',    emoji:'😤',name:'Face Pull con banda',       gear:'band',group:'shoulders', shared:true,partner:'dip_chair',       desc:'Banda ancorata in alto. Tira verso il viso con gomiti alti e larghi. Rinforza la cuffia dei rotatori.',alts:['band_pull_apart','band_lateral_raise']},
+  band_lateral_raise: {id:'band_lateral_raise',emoji:'🦅',name:'Lateral Raise banda',     gear:'band',group:'shoulders', shared:true,partner:'plank_lateral',   desc:'Banda sotto i piedi. Solleva le braccia lateralmente fino all\'altezza delle spalle con gomiti leggermente piegati.',alts:['pike_push_up','band_face_pull','band_shoulder_press']},
+  band_shoulder_press:{id:'band_shoulder_press',emoji:'🏋️',name:'Shoulder Press banda',   gear:'band',group:'shoulders', shared:true,partner:'mountain_climber',desc:'Banda sotto i piedi, maniglie all\'altezza delle orecchie. Spingi verso l\'alto estendendo le braccia.',alts:['pike_push_up','band_lateral_raise']},
+  band_bicep_curl:    {id:'band_bicep_curl',   emoji:'💪',name:'Bicep Curl con banda',     gear:'band',group:'arms',      shared:true,partner:'dip_chair',       desc:'Banda sotto i piedi, palme in su. Fletti i gomiti portando le maniglie verso le spalle. Gomiti fermi ai fianchi.',alts:['band_hammer_curl','chin_up']},
+  band_hammer_curl:   {id:'band_hammer_curl',  emoji:'🔨',name:'Hammer Curl con banda',    gear:'band',group:'arms',      shared:true,partner:'diamond_push_up', desc:'Come bicep curl ma con mani in posizione neutra (pollici in su). Lavora anche brachioradiale e brachiale.',alts:['band_bicep_curl','chin_up']},
+  band_tricep_ext:    {id:'band_tricep_ext',   emoji:'🔙',name:'Tricep Ext. con banda',    gear:'band',group:'arms',      shared:true,partner:'band_bicep_curl', desc:'Banda ancorata in alto. Gomiti vicini alla testa, estendi le braccia verso il basso. Tricipiti capo lungo.',alts:['dip_chair','diamond_push_up']},
+  band_glute_kick:    {id:'band_glute_kick',   emoji:'🦵',name:'Kickback gluteo banda',    gear:'band',group:'glutes',    shared:true,partner:'donkey_kick',     desc:'Banda ancorata bassa. Allaccia la maniglia alla caviglia. In piedi, porta il piede indietro contraendo il gluteo.',alts:['donkey_kick','fire_hydrant','band_squat']},
+  band_hip_abduct:    {id:'band_hip_abduct',   emoji:'🦴',name:'Hip Abduction banda',      gear:'band',group:'glutes',    shared:true,partner:'fire_hydrant',    desc:'Banda intorno alle cosce sopra le ginocchia. Apri le gambe contro la resistenza. Attiva il gluteo medio.',alts:['fire_hydrant','band_glute_kick']},
+  band_chest_press:   {id:'band_chest_press',  emoji:'💛',name:'Chest Press con banda',    gear:'band',group:'push',      shared:true,partner:'band_row',        desc:'Banda ancorata dietro all\'altezza del petto. In piedi, spingi in avanti come una panca piana.',alts:['push_up','band_fly']},
+  band_fly:           {id:'band_fly',          emoji:'🕊',name:'Fly con banda',            gear:'band',group:'push',      shared:true,partner:'band_pull_apart', desc:'Banda ancorata dietro. Tieni le braccia aperte e portale davanti come abbracciando un albero. Petto isolato.',alts:['push_up_wide','band_chest_press']},
+  band_woodchop:      {id:'band_woodchop',     emoji:'🪓',name:'Woodchop obliqui',         gear:'band',group:'core',      shared:true,partner:'plank_lateral',   desc:'Banda ancorata in alto a lato. Ruota il tronco dal basso verso l\'alto e viceversa. Alterna i lati.',alts:['bicycle_crunch','plank_lateral']},
+
+  /* ── BARRA ── */
+  pull_up:        {id:'pull_up',        emoji:'🔴',name:'Trazioni Presa Larga',     gear:'bar',group:'pull',shared:true,partner:'push_up',        desc:'Presa prona più larga delle spalle. Tira fino a portare il mento sopra la barra, scendi lentamente.',alts:['chin_up','neutral_pull_up','band_row']},
+  chin_up:        {id:'chin_up',        emoji:'🟠',name:'Trazioni Presa Stretta',   gear:'bar',group:'pull',shared:true,partner:'diamond_push_up', desc:'Presa supina stretta. Tira portando il mento alla barra. Bilancia maggiormente i bicipiti.',alts:['pull_up','neutral_pull_up','band_bicep_curl']},
+  neutral_pull_up:{id:'neutral_pull_up',emoji:'⚫',name:'Trazioni Neutro',          gear:'bar',group:'pull',shared:true,partner:'push_up_wide',    desc:'Usa i manici perpendicolari. Presa più naturale per i polsi, riduce lo stress articolare.',alts:['pull_up','chin_up','band_row']},
+  pull_up_assist: {id:'pull_up_assist', emoji:'🟡',name:'Trazioni Assistite',       gear:'bar',group:'pull',shared:true,partner:'plank',           desc:'Aggancia una banda alla barra e inginocchiati nel cappio. La banda supporta parte del peso corporeo.',alts:['band_row','chin_up','neutral_pull_up']},
+  dead_hang:      {id:'dead_hang',      emoji:'🫳',name:'Dead Hang (grip/spalla)',  gear:'bar',group:'pull',shared:true,partner:'wall_sit',        desc:'Appenditi alla barra con presa larga il più a lungo possibile. Rinforza la presa e decomprime la colonna.',alts:['pull_up_assist','band_row']},
+  scapular_pull:  {id:'scapular_pull',  emoji:'🔃',name:'Retrazione Scapolare',     gear:'bar',group:'pull',shared:true,partner:'bird_dog',        desc:'Appeso alla barra, senza piegare i gomiti, abbassa e ritrae le scapole. Attiva gli stabilizzatori della spalla.',alts:['dead_hang','band_pull_apart']},
+};
+
+/* ════════════════════════════════════════════
+   MODULI
+════════════════════════════════════════════ */
+const MODULES = [
+  {id:'fullbody',name:'FULL BODY',icon:'🔥',desc:'Tutto in una sessione',
+   exercises:['scapular_pull','dead_hang','squat','band_hip_abduct','push_up','band_row','glute_bridge','pull_up_assist','dead_bug','band_shoulder_press','bicycle_crunch','band_bicep_curl','bird_dog','band_tricep_ext','mountain_climber']},
+  {id:'upper',   name:'UPPER',    icon:'💪',desc:'Spalle · Petto · Braccia · Core',
+   exercises:['scapular_pull','dead_hang','push_up_wide','band_chest_press','pike_push_up','band_face_pull','chin_up','band_bicep_curl','diamond_push_up','band_tricep_ext','band_lateral_raise','band_pull_apart','plank','dead_bug']},
+  {id:'lower',   name:'LOWER',    icon:'🦵',desc:'Glutei · Cosce · Gambe · Lombare',
+   exercises:['squat','band_squat','lunge','band_deadlift','glute_bridge','band_glute_kick','donkey_kick','band_hip_abduct','fire_hydrant','step_up','calf_raise','wall_sit','bird_dog','superman','hip_hinge']},
+  {id:'rest',    name:'RIPOSO ATTIVO',   icon:'🧘',desc:'Mobilità · Stretching · Respirazione',
+   exercises:['bird_dog','dead_bug','superman','plank','hip_hinge','plank_lateral']},
+];
+
+/* ════════════════════════════════════════════
+   localStorage
+════════════════════════════════════════════ */
+const LS = 'fitsync_v2';
+function saveSession(){
+  try {
+    localStorage.setItem(LS, JSON.stringify({
+      moduleId: state.moduleId,
+      workSec:  state.workSec,
+      restSec:  state.restSec,
+      prepSec:  state.prepSec,
+      swaps:    state.exercises.map(e=>({id:e.id, overrideId:e.overrideId||null}))
+    }));
+  } catch(e){}
+}
+function loadSession(){
+  try { return JSON.parse(localStorage.getItem(LS)); } catch(e){ return null; }
+}
+
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+const saved = loadSession();
+let state = {
+  moduleId: saved?.moduleId || DEF.moduleId,
+  workSec:  saved?.workSec  || DEF.workSec,
+  restSec:  saved?.restSec  || DEF.restSec,
+  prepSec:  saved?.prepSec  || DEF.prepSec,
+  exercises: [],
+  _savedSwaps:  saved?.swaps || null,
+  _lastModuleId: null,
+};
+let workout = {
+  steps:[], current:0, timerSec:0, totalSec:0,
+  paused:false, interval:null, elapsedSec:0, elapsedInterval:null, completedIds:[]
+};
+
+/* ════════════════════════════════════════════
+   AUDIO
+════════════════════════════════════════════ */
+let audioCtx = null;
+let urgentInterval = null;
+function getACtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(c){
+  try {
+    const ctx=getACtx(), osc=ctx.createOscillator(), g=ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type=c.type; osc.frequency.setValueAtTime(c.freq,ctx.currentTime);
+    g.gain.setValueAtTime(c.vol,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+c.dur);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime+c.dur+0.05);
+  } catch(e){}
+}
+function playWhistle(){
+  setTimeout(()=>{ beep(ACFG.whistleA); setTimeout(()=>beep(ACFG.whistleB),90); },80);
+}
+function startUrgentTick(){
+  stopUrgentTick();
+  const ms = Math.round(60000/ACFG.urgentBpm);
+  urgentInterval = setInterval(()=>{ if(!workout.paused) beep(ACFG.urgentTick); }, ms);
+}
+function stopUrgentTick(){
+  if(urgentInterval){ clearInterval(urgentInterval); urgentInterval=null; }
+}
+
+/* ════════════════════════════════════════════
+   RING SVG
+════════════════════════════════════════════ */
+function setRing(fraction, phase){
+  const fill = document.getElementById('ring-fill');
+  const offset = CIRCUMFERENCE*(1-Math.max(0,Math.min(1,fraction)));
+  fill.style.strokeDasharray  = CIRCUMFERENCE;
+  fill.style.strokeDashoffset = offset;
+  fill.style.stroke = phase==='work'?'var(--accent)':phase==='rest'?'var(--accent2)':'var(--accent3)';
+}
+
+/* ════════════════════════════════════════════
+   HOME / INIT
+════════════════════════════════════════════ */
+function getModule(){ return MODULES.find(m=>m.id===state.moduleId); }
+
+function resolveExercises(){
+  const mod = getModule();
+  if(!state.exercises.length || state._lastModuleId !== state.moduleId){
+    const swaps = (state._savedSwaps && state._lastModuleId === null) ? state._savedSwaps : null;
+    state.exercises = mod.exercises.map((id,i)=>{
+      let overrideId = null;
+      if(swaps && swaps[i] && swaps[i].id===id) overrideId = swaps[i].overrideId;
+      return {id, overrideId};
+    });
+    state._lastModuleId = state.moduleId;
+    state._savedSwaps   = null; // consume once
+  }
+  return state.exercises.map(e=>EX[e.overrideId||e.id]);
+}
+
+function init(){
+  /* Module 2x2 grid */
+  const grid = document.getElementById('module-grid');
+  grid.innerHTML='';
+  MODULES.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'module-card'+(m.id===state.moduleId?' selected':'');
+    div.innerHTML = `<div class="mc-icon">${m.icon}</div><div class="mc-name">${m.name}</div><div class="mc-desc">${m.desc}</div>`;
+    div.onclick = ()=>{ state.moduleId=m.id; state.exercises=[]; state._lastModuleId=null; saveSession(); renderHome(); };
+    grid.appendChild(div);
+  });
+
+  /* Sliders */
+  ['work','rest','prep'].forEach(k=>{
+    const sl=document.getElementById('sl-'+k);
+    const tv=document.getElementById('tv-'+k);
+    const r=CFG.sliders[k];
+    sl.min=r.min; sl.max=r.max; sl.step=r.step;
+    sl.value=state[k+'Sec'];
+    tv.textContent=state[k+'Sec']+'s';
+    sl.oninput=()=>{ state[k+'Sec']=parseInt(sl.value); tv.textContent=sl.value+'s'; saveSession(); };
+  });
+
+  renderExList();
+}
+function renderHome(){ init(); }
+
+function renderExList(){
+  const exs=resolveExercises();
+  document.getElementById('ex-count-label').textContent=`(${exs.length})`;
+  const list=document.getElementById('ex-list');
+  list.innerHTML='';
+  exs.forEach((ex,i)=>{
+    const gL = ex.gear==='band'?'🎗 Banda':(ex.gear==='bar'?'🔴 Barra':'🏃 Corpo');
+    const partnerEx = ex.shared && ex.partner ? EX[ex.partner] : null;
+    const partnerNote = partnerEx ? ` · 👥 +${partnerEx.name}` : (ex.shared?' · 👥 alternato':'');
+    const hasAlts = ex.alts && ex.alts.length;
+
+    const div=document.createElement('div');
+    div.className=`ex-item gear-${ex.gear}`;
+    div.innerHTML=`
+      <div class="ex-item-row">
+        <span class="ex-emoji">${ex.emoji}</span>
+        <div class="ex-info">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-meta">${gL} · ${ex.group}${partnerNote}</div>
+        </div>
+        <span class="ex-chevron">▾</span>
+      </div>
+      <div class="ex-detail-panel" id="det-${i}">
+        <div class="ex-detail-text">${ex.desc}</div>
+        ${partnerEx?`<div class="ex-partner-note">👥 In contemporanea: <strong style="color:var(--text)">${partnerEx.emoji} ${partnerEx.name}</strong></div>`:''}
+        ${hasAlts?`<button class="ex-swap-btn" data-i="${i}">↔ Cambia esercizio</button>`:''}
+      </div>`;
+
+    div.querySelector('.ex-item-row').onclick=()=>{
+      const p=document.getElementById(`det-${i}`);
+      const c=div.querySelector('.ex-chevron');
+      p.classList.toggle('open'); c.classList.toggle('open');
+    };
+    if(hasAlts){
+      div.querySelector('.ex-swap-btn').onclick=e=>{ e.stopPropagation(); openSwapModal(i,ex); };
+    }
+    list.appendChild(div);
+  });
+}
+
+/* ════════════════════════════════════════════
+   SWAP MODAL
+════════════════════════════════════════════ */
+function openSwapModal(idx,ex){
+  document.getElementById('swap-modal-sub').textContent=`Sostituzione per: ${ex.name}`;
+  const opts=document.getElementById('swap-options');
+  opts.innerHTML='';
+  if(state.exercises[idx].overrideId){
+    const orig=EX[state.exercises[idx].id];
+    const d=document.createElement('div'); d.className='alt-option';
+    d.innerHTML=`<div class="ao-name">↩ ${orig.name} (originale)</div><div class="ao-meta">Ripristina l'esercizio originale</div>`;
+    d.onclick=()=>{ state.exercises[idx].overrideId=null; saveSession(); closeSwapModal(); renderExList(); };
+    opts.appendChild(d);
+  }
+  ex.alts.forEach(altId=>{
+    const alt=EX[altId]; if(!alt) return;
+    const gL=alt.gear==='band'?'🎗 Banda':(alt.gear==='bar'?'🔴 Barra':'🏃 Corpo');
+    const d=document.createElement('div'); d.className='alt-option';
+    d.innerHTML=`<div class="ao-name">${alt.emoji} ${alt.name}</div><div class="ao-meta">${gL} · ${alt.group}</div>`;
+    d.onclick=()=>{ state.exercises[idx].overrideId=altId; saveSession(); closeSwapModal(); renderExList(); };
+    opts.appendChild(d);
+  });
+  document.getElementById('swap-modal').classList.add('open');
+}
+function closeSwapModal(){ document.getElementById('swap-modal').classList.remove('open'); }
+
+/* ════════════════════════════════════════════
+   BUILD STEPS
+════════════════════════════════════════════ */
+function buildSteps(exs){
+  const steps=[];
+  exs.forEach((ex,i)=>{
+    const partnerEx = ex.shared && ex.partner ? EX[ex.partner] : null;
+    if(ex.shared){
+      // Round 1: A all'attrezzo, B fa partner
+      steps.push({type:'prep',exIdx:i,shared:true,flip:false,partnerEx});
+      steps.push({type:'work',exIdx:i,shared:true,flip:false,partnerEx});
+      steps.push({type:'rest',exIdx:i,shared:true,flip:false,partnerEx});
+      // Round 2: B all'attrezzo, A fa partner
+      steps.push({type:'prep',exIdx:i,shared:true,flip:true, partnerEx});
+      steps.push({type:'work',exIdx:i,shared:true,flip:true, partnerEx});
+      steps.push({type:'rest',exIdx:i,shared:true,flip:true, partnerEx});
+    } else {
+      steps.push({type:'prep',exIdx:i,shared:false,flip:false,partnerEx:null});
+      steps.push({type:'work',exIdx:i,shared:false,flip:false,partnerEx:null});
+      steps.push({type:'rest',exIdx:i,shared:false,flip:false,partnerEx:null});
+    }
+  });
+  if(steps.length && steps[steps.length-1].type==='rest') steps.pop();
+  return steps;
+}
+
+/* ════════════════════════════════════════════
+   START
+════════════════════════════════════════════ */
+document.getElementById('start-btn').onclick=()=>{
+  try{ getACtx().resume(); } catch(e){}
+  const exs=resolveExercises();
+  workout.steps=buildSteps(exs);
+  workout.current=0; workout.paused=false;
+  workout.elapsedSec=0; workout.completedIds=[];
+  showScreen('workout');
+  document.getElementById('wu-title').textContent=getModule().name;
+  startElapsedTimer();
+  goToStep(0);
+};
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome(){ clearTimers(); showScreen('home'); }
+
+/* ════════════════════════════════════════════
+   TIMER ENGINE
+════════════════════════════════════════════ */
+function clearTimers(){
+  if(workout.interval){ clearInterval(workout.interval); workout.interval=null; }
+  if(workout.elapsedInterval){ clearInterval(workout.elapsedInterval); workout.elapsedInterval=null; }
+  stopUrgentTick();
+}
+function startElapsedTimer(){
+  if(workout.elapsedInterval) clearInterval(workout.elapsedInterval);
+  workout.elapsedInterval=setInterval(()=>{
+    if(!workout.paused){
+      workout.elapsedSec++;
+      const m=Math.floor(workout.elapsedSec/60),s=workout.elapsedSec%60;
+      document.getElementById('wu-elapsed').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+    }
+  },1000);
+}
+function stepDur(step){
+  return step.type==='prep'?state.prepSec:step.type==='work'?state.workSec:state.restSec;
+}
+function goToStep(idx){
+  if(idx<0) idx=0;
+  if(idx>=workout.steps.length){ finishWorkout(); return; }
+  workout.current=idx;
+  const step=workout.steps[idx];
+  workout.timerSec=workout.totalSec=stepDur(step);
+  workout.paused=false;
+  stopUrgentTick();
+  document.getElementById('pause-btn').textContent='⏸';
+  setRing(1,step.type);
+  updateWorkoutUI(step);
+  updateProgress();
+  clearInterval(workout.interval);
+  workout.interval=setInterval(tickTimer,1000);
+}
+
+function tickTimer(){
+  if(workout.paused) return;
+  const step=workout.steps[workout.current];
+  const rem=workout.timerSec;
+  const isUrgent=rem<=CFG.urgentThreshold;
+
+  // Sound
+  if(step.type==='rest'){
+    beep(ACFG.restTick);
+    stopUrgentTick();
+  } else if(isUrgent){
+    if(!urgentInterval) startUrgentTick();
+  } else {
+    beep(ACFG.workTick);
+    stopUrgentTick();
+  }
+
+  document.getElementById('big-timer').textContent=rem;
+  document.getElementById('big-timer').classList.toggle('urgent',isUrgent&&step.type!=='rest');
+  setRing(rem/workout.totalSec, step.type);
+
+  workout.timerSec--;
+  if(workout.timerSec<0){
+    if(step.type==='work'||step.type==='prep') playWhistle();
+    stopUrgentTick();
+    clearInterval(workout.interval);
+    if(step.type==='work'){
+      const ex=resolveExercises()[step.exIdx];
+      if(!workout.completedIds.includes(ex.id)) workout.completedIds.push(ex.id);
+    }
+    setTimeout(()=>goToStep(workout.current+1),200);
+  }
+}
+
+/* ════════════════════════════════════════════
+   WORKOUT UI
+════════════════════════════════════════════ */
+function gearText(ex){
+  return ex.gear==='band'?'🎗 Banda elastica':ex.gear==='bar'?'🔴 Barra trazioni':'🏃 Corpo libero';
+}
+
+function updateWorkoutUI(step){
+  const exs=resolveExercises();
+  const ex=exs[step.exIdx];
+
+  document.getElementById('phase-label').textContent =
+    step.type==='work'?'LAVORA':step.type==='rest'?'RIPOSO':'PREPARATI';
+  document.getElementById('big-timer').textContent=stepDur(step);
+  document.getElementById('big-timer').classList.remove('urgent');
+
+  // Rest banner
+  const rb=document.getElementById('rest-banner');
+  if(step.type==='rest'){
+    rb.style.display='block';
+    rb.textContent=step.shared
+      ?(step.flip?'⇄ Cambio — ora Persona A all\'attrezzo':'⇄ Cambio — ora Persona B all\'attrezzo')
+      :'😮‍💨 Riposo — prepara il prossimo esercizio';
+  } else {
+    rb.style.display='none';
+  }
+
+  // Dual vs single
+  const dualEl=document.getElementById('partner-dual');
+  const singEl=document.getElementById('ex-card');
+
+  if(step.shared && step.partnerEx && step.type!=='rest'){
+    dualEl.style.display='flex';
+    singEl.style.display='none';
+
+    // A = chi usa l'attrezzo nel round corrente
+    const mainEx=ex; const partnerEx=step.partnerEx;
+    const aEx=step.flip?partnerEx:mainEx;  // flip=true → nel round 2, A fa il partner
+    const bEx=step.flip?mainEx:partnerEx;
+    const aHasGear=!step.flip;
+
+    document.getElementById('pc-a-emoji').textContent=aEx.emoji;
+    document.getElementById('pc-a-name').textContent =aEx.name;
+    document.getElementById('pc-a-gear').textContent =gearText(aEx);
+    document.getElementById('pc-a').className='partner-card'+(aHasGear?' active-a':'');
+
+    document.getElementById('pc-b-emoji').textContent=bEx.emoji;
+    document.getElementById('pc-b-name').textContent =bEx.name;
+    document.getElementById('pc-b-gear').textContent =gearText(bEx);
+    document.getElementById('pc-b').className='partner-card'+(!aHasGear?' active-b':'');
+  } else {
+    dualEl.style.display='none';
+    singEl.style.display='block';
+
+    let showEx=ex;
+    if(step.type==='rest'){
+      const ns=workout.steps[workout.current+1];
+      if(ns) showEx=exs[ns.exIdx];
+    }
+    document.getElementById('ex-card-phase').textContent =
+      step.type==='rest'?'PROSSIMO':step.type==='prep'?'IN ARRIVO':'ORA';
+    document.getElementById('ex-card-emoji').textContent=showEx.emoji;
+    document.getElementById('ex-card-name').textContent =showEx.name;
+    document.getElementById('ex-card-desc').textContent =showEx.desc;
+    document.getElementById('ex-card-gear').textContent =gearText(showEx);
+  }
+
+  // Next preview
+  const np=document.getElementById('next-preview');
+  const ni=workout.current+1;
+  if(ni<workout.steps.length&&step.type!=='rest'){
+    const ne=exs[workout.steps[ni].exIdx];
+    np.innerHTML=`<p>Dopo: <strong>${ne.emoji} ${ne.name}</strong></p>`;
+  } else np.innerHTML='';
+
+  // Label series
+  const tw=workout.steps.filter(s=>s.type==='work').length;
+  const dw=workout.steps.slice(0,workout.current+1).filter(s=>s.type==='work').length;
+  document.getElementById('wu-set-label').textContent=`${dw}/${tw} serie`;
+}
+
+function updateProgress(){
+  const t=workout.steps.length, pct=t>0?workout.current/t*100:0;
+  document.getElementById('wu-progress-fill').style.width=pct+'%';
+  document.getElementById('wu-step-label').textContent=`${workout.current+1}/${t}`;
+}
+
+/* ════════════════════════════════════════════
+   CONTROLS
+════════════════════════════════════════════ */
+document.getElementById('pause-btn').onclick=()=>{
+  workout.paused=!workout.paused;
+  document.getElementById('pause-btn').textContent=workout.paused?'▶':'⏸';
+  if(workout.paused) stopUrgentTick();
+};
+document.getElementById('next-btn').onclick=()=>{ stopUrgentTick(); clearInterval(workout.interval); goToStep(workout.current+1); };
+document.getElementById('prev-btn').onclick=()=>{ stopUrgentTick(); clearInterval(workout.interval); goToStep(Math.max(0,workout.current-1)); };
+document.getElementById('stop-btn').onclick=()=>{
+  workout.paused=true; stopUrgentTick();
+  document.getElementById('confirm-modal').classList.add('open');
+};
+function closeConfirm(){ workout.paused=false; document.getElementById('confirm-modal').classList.remove('open'); }
+function confirmStop(){ clearTimers(); document.getElementById('confirm-modal').classList.remove('open'); goHome(); }
+
+/* ════════════════════════════════════════════
+   END WORKOUT
+════════════════════════════════════════════ */
+function finishWorkout(){
+  clearTimers(); playWhistle(); setTimeout(()=>playWhistle(),400);
+  const totalMin=Math.round(workout.elapsedSec/60);
+  const wSteps=workout.steps.filter(s=>s.type==='work').length;
+  const kcal=Math.round((totalMin||1)*7);
+  document.getElementById('summary-date').textContent=
+    new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-val">${totalMin}m</div><div class="stat-label">Durata totale</div></div>
+    <div class="stat-card"><div class="stat-val">${workout.completedIds.length}</div><div class="stat-label">Esercizi</div></div>
+    <div class="stat-card"><div class="stat-val">${Math.round(wSteps*state.workSec/60)}m</div><div class="stat-label">Lavoro effettivo</div></div>
+    <div class="stat-card"><div class="stat-val">~${kcal}</div><div class="stat-label">kcal stimate</div></div>`;
+  const dl=document.getElementById('done-list-inner'); dl.innerHTML='';
+  resolveExercises().forEach(ex=>{
+    const d=document.createElement('div'); d.className='done-item';
+    d.innerHTML=`<span class="done-check">${workout.completedIds.includes(ex.id)?'✅':'⬜'}</span><span class="done-name">${ex.emoji} ${ex.name}</span>`;
+    dl.appendChild(d);
+  });
+  showScreen('summary');
+}
+
+/* ════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
