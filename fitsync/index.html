@@ -796,7 +796,7 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
-function goHome(){ clearTimers(); showScreen('home'); }
+function goHome(){ clearTimers(); showScreen('home'); releaseWakeLock();}
 
 /* ════════════════════════════════════════════
    TIMER ENGINE
@@ -826,7 +826,7 @@ function goToStep(idx){
   const step=workout.steps[idx];
   workout.timerSec=workout.totalSec=stepDur(step);
   workout.paused=false;
-  requestWakeLock();
+  if(step.type==='work'||step.type==='rest'||step.type==='round-rest') requestWakeLock(); else releaseWakeLock();
   stopUrgentTick();
   document.getElementById('pause-btn').textContent='\u23F8\uFE0E';
   setRing(1,step.type);
@@ -1006,20 +1006,15 @@ function updateProgress(){
 document.getElementById('pause-btn').onclick=async()=>{
   workout.paused=!workout.paused;
   document.getElementById('pause-btn').textContent=workout.paused?'▶':'⏸';
-  if(workout.paused){
-    stopUrgentTick();
-    await releaseWakeLock();
-  } else {
-    requestWakeLock();
-  }
+  if(workout.paused) stopUrgentTick();
 };
-document.getElementById('next-btn').onclick=()=>{ stopUrgentTick(); clearInterval(workout.interval); goToStep(workout.current+1); };
-document.getElementById('prev-btn').onclick=()=>{ stopUrgentTick(); clearInterval(workout.interval); goToStep(Math.max(0,workout.current-1)); };
+document.getElementById('next-btn').onclick=()=>{ stopUrgentTick(); releaseWakeLock(); clearInterval(workout.interval); goToStep(workout.current+1); };
+document.getElementById('prev-btn').onclick=()=>{ stopUrgentTick(); releaseWakeLock(); clearInterval(workout.interval); goToStep(Math.max(0,workout.current-1)); };
 document.getElementById('stop-btn').onclick=()=>{
-  workout.paused=true; stopUrgentTick();
+  workout.paused=true; stopUrgentTick(); releaseWakeLock();
   document.getElementById('confirm-modal').classList.add('open');
 };
-function closeConfirm(){ workout.paused=false; document.getElementById('confirm-modal').classList.remove('open'); }
+function closeConfirm(){ workout.paused=false; releaseWakeLock(); document.getElementById('confirm-modal').classList.remove('open'); }
 async function confirmStop(){ clearTimers(); await releaseWakeLock(); document.getElementById('confirm-modal').classList.remove('open'); goHome(); }
 
 /* ════════════════════════════════════════════
