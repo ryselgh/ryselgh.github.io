@@ -826,7 +826,6 @@ function goToStep(idx){
   const step=workout.steps[idx];
   workout.timerSec=workout.totalSec=stepDur(step);
   workout.paused=false;
-  requestWakeLock();
   stopUrgentTick();
   document.getElementById('pause-btn').textContent='\u23F8\uFE0E';
   setRing(1,step.type);
@@ -869,6 +868,8 @@ function tickTimer(){
     }
     setTimeout(()=>goToStep(workout.current+1),200);
   }
+  
+  requestWakeLock();
 }
 
 /* ════════════════════════════════════════════
@@ -1079,9 +1080,6 @@ async function requestWakeLock(){
     wakeLock = await navigator.wakeLock.request('screen');
   } catch(e){}
 }
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible') requestWakeLock();
-});
 </script>
 </body>
 </html>
