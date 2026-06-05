@@ -773,10 +773,6 @@ function buildSteps(exs){
   return steps;
 }
 
-async function releaseWakeLock(){
-  if(wakeLock){ try{ await wakeLock.release(); }catch(e){} wakeLock=null; }
-}
-
 /* ════════════════════════════════════════════
    START
 ════════════════════════════════════════════ */
@@ -827,6 +823,7 @@ function goToStep(idx){
   workout.timerSec=workout.totalSec=stepDur(step);
   workout.paused=false;
   stopUrgentTick();
+  requestWakeLock();
   document.getElementById('pause-btn').textContent='\u23F8\uFE0E';
   setRing(1,step.type);
   updateWorkoutUI(step);
@@ -868,8 +865,6 @@ function tickTimer(){
     }
     setTimeout(()=>goToStep(workout.current+1),200);
   }
-  
-  requestWakeLock();
 }
 
 /* ════════════════════════════════════════════
@@ -1007,16 +1002,24 @@ function updateProgress(){
 document.getElementById('pause-btn').onclick=async()=>{
   workout.paused=!workout.paused;
   document.getElementById('pause-btn').textContent=workout.paused?'▶':'⏸';
-  if(workout.paused) stopUrgentTick();
+  if(workout.paused){
+    stopUrgentTick();
+    await releaseWakeLock();
+  } else {
+    await requestWakeLock();
+  }
 };
-document.getElementById('next-btn').onclick=()=>{ stopUrgentTick(); releaseWakeLock(); clearInterval(workout.interval); goToStep(workout.current+1); };
-document.getElementById('prev-btn').onclick=()=>{ stopUrgentTick(); releaseWakeLock(); clearInterval(workout.interval); goToStep(Math.max(0,workout.current-1)); };
-document.getElementById('stop-btn').onclick=()=>{
-  workout.paused=true; stopUrgentTick(); releaseWakeLock();
-  document.getElementById('confirm-modal').classList.add('open');
+document.getElementById('next-btn').onclick=()=>{ stopUrgentTick(); clearInterval(workout.interval); goToStep(workout.current+1); };
+document.getElementById('prev-btn').onclick=()=>{ stopUrgentTick(); clearInterval(workout.interval); goToStep(Math.max(0,workout.current-1)); };
+document.getElementById('stop-btn').onclick=async()=>{
+  workout.paused = true;
+  stopUrgentTick();
+  await releaseWakeLock();
+  document.getElementById('confirm-modal')
+    .classList.add('open');
 };
-function closeConfirm(){ workout.paused=false; releaseWakeLock(); document.getElementById('confirm-modal').classList.remove('open'); }
-async function confirmStop(){ clearTimers(); await releaseWakeLock(); document.getElementById('confirm-modal').classList.remove('open'); goHome(); }
+async function closeConfirm(){ workout.paused = false; await requestWakeLock(); document.getElementById('confirm-modal').classList.remove('open'); }
+function confirmStop(){ clearTimers(); document.getElementById('confirm-modal').classList.remove('open'); goHome(); }
 
 /* ════════════════════════════════════════════
    END WORKOUT
@@ -1076,10 +1079,57 @@ async function finishWorkout(){
 window.addEventListener('DOMContentLoaded', init);
 let wakeLock = null;
 async function requestWakeLock(){
+  if (wakeLock) return;
   try {
     wakeLock = await navigator.wakeLock.request('screen');
+    console.log('WAKELOCK ACQUIRED');
+    wakeLock.addEventListener('release', () => {
+      console.log('WAKELOCK RELEASED');
+      wakeLock = null;
+    });
   } catch(e){}
 }
+
+async function releaseWakeLock(){
+  if (!wakeLock) return;
+  try {
+    await wakeLock.release();
+    console.log('WAKELOCK MANUAL RELEASE');
+  } catch(e){}
+  wakeLock = null;
+}
+
+let autoPaused = false;
+document.addEventListener('visibilitychange', async () => {
+  const workoutActive =
+    document.getElementById('workout').classList.contains('active');
+  if (document.visibilityState === 'hidden') {
+    if (workoutActive && !workout.paused) {
+      autoPaused = true;
+      workout.paused = true;
+      document.getElementById('pause-btn').textContent = '▶';
+      stopUrgentTick();
+      await releaseWakeLock();
+    }
+    return;
+  }
+  if (document.visibilityState === 'visible') {
+    if (autoPaused) { autoPaused = false; return; }
+    if (workoutActive && !workout.paused && wakeLock === null) await requestWakeLock();
+  }
+});
+
+window.addEventListener('pagehide', async () => {
+  const workoutActive =
+    document.getElementById('workout').classList.contains('active');
+  if (workoutActive && !workout.paused) {
+    autoPaused = true;
+    workout.paused = true;
+    document.getElementById('pause-btn').textContent = '▶';
+    stopUrgentTick();
+    await releaseWakeLock();
+  }
+});
 </script>
 </body>
 </html>
