@@ -264,7 +264,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <span class="timer-val" id="tv-prep"></span>
     </div>
   </div>
-  <button class="start-btn" id="start-btn">▶ INIZIA</button>
+  <button class="start-btn" id="start-btn">&#x25BA;&#xFE0E; START</button>
   <div class="exercise-list-section">
     <div class="section-label">▼ Esercizi <span id="ex-count-label"></span></div>
     <div class="ex-list" id="ex-list"></div>
@@ -332,10 +332,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
   <div class="next-preview" id="next-preview"></div>
   <div class="wu-controls">
-    <button class="ctrl-btn" id="prev-btn">⏮</button>
-    <button class="ctrl-btn primary" id="pause-btn">⏸</button>
-    <button class="ctrl-btn" id="next-btn">⏭</button>
-    <button class="ctrl-btn danger" id="stop-btn">⏹</button>
+    <button class="ctrl-btn" id="prev-btn">&#x23EE;&#xFE0E;</button>
+    <button class="ctrl-btn primary" id="pause-btn">&#x23F8;&#xFE0E;</button>
+    <button class="ctrl-btn" id="next-btn">&#x23ED;&#xFE0E;</button>
+    <button class="ctrl-btn danger" id="stop-btn">&#x23F9;&#xFE0E;</button>
   </div>
 </div>
 
@@ -727,7 +727,7 @@ function goToStep(idx){
   workout.timerSec=workout.totalSec=stepDur(step);
   workout.paused=false;
   stopUrgentTick();
-  document.getElementById('pause-btn').textContent='⏸';
+  document.getElementById('pause-btn').textContent='\u23F8\uFE0E';
   setRing(1,step.type);
   updateWorkoutUI(step);
   updateProgress();
@@ -861,7 +861,7 @@ function updateProgress(){
 ════════════════════════════════════════════ */
 document.getElementById('pause-btn').onclick=()=>{
   workout.paused=!workout.paused;
-  document.getElementById('pause-btn').textContent=workout.paused?'▶':'⏸';
+  document.getElementById('pause-btn').textContent=workout.paused?'▶':'\u23F8\uFE0E';
   if(workout.paused) stopUrgentTick();
 };
 document.getElementById('next-btn').onclick=()=>{ stopUrgentTick(); clearInterval(workout.interval); goToStep(workout.current+1); };
