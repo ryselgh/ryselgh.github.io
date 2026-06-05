@@ -650,6 +650,11 @@ function init(){
     tvRR.textContent=slRR.value+'s';
     saveSession();
   };
+  
+  ['sl-work','sl-rest','sl-prep','sl-rounds','sl-round-rest'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.addEventListener('touchstart',e=>{ if(isScrolling) e.preventDefault(); },{passive:false});
+  });
 
   renderExList();
 }
@@ -1129,6 +1134,14 @@ window.addEventListener('pagehide', async () => {
     stopUrgentTick();
     await releaseWakeLock();
   }
+});
+
+let isScrolling = false;
+let scrollTimer = null;
+document.getElementById('home').addEventListener('scroll',()=>{
+  isScrolling=true;
+  clearTimeout(scrollTimer);
+  scrollTimer=setTimeout(()=>{ isScrolling=false; },150);
 });
 </script>
 </body>
