@@ -1003,12 +1003,12 @@ function updateProgress(){
 /* ════════════════════════════════════════════
    CONTROLS
 ════════════════════════════════════════════ */
-document.getElementById('pause-btn').onclick=()=>{
+document.getElementById('pause-btn').onclick=async()=>{
   workout.paused=!workout.paused;
   document.getElementById('pause-btn').textContent=workout.paused?'▶':'⏸';
   if(workout.paused){
     stopUrgentTick();
-    releaseWakeLock();
+    await releaseWakeLock();
   } else {
     requestWakeLock();
   }
@@ -1020,13 +1020,13 @@ document.getElementById('stop-btn').onclick=()=>{
   document.getElementById('confirm-modal').classList.add('open');
 };
 function closeConfirm(){ workout.paused=false; document.getElementById('confirm-modal').classList.remove('open'); }
-function confirmStop(){ clearTimers(); releaseWakeLock(); document.getElementById('confirm-modal').classList.remove('open'); goHome(); }
+async function confirmStop(){ clearTimers(); await releaseWakeLock(); document.getElementById('confirm-modal').classList.remove('open'); goHome(); }
 
 /* ════════════════════════════════════════════
    END WORKOUT
 ════════════════════════════════════════════ */
-function finishWorkout(){
-  clearTimers(); releaseWakeLock(); playWhistle(); setTimeout(()=>playWhistle(),400);
+async function finishWorkout(){
+  clearTimers(); await releaseWakeLock(); playWhistle(); setTimeout(()=>playWhistle(),400);
   const totalMin=Math.round(workout.elapsedSec/60);
   const wSteps=workout.steps.filter(s=>s.type==='work').length;
   const kcal=Math.round((totalMin||1)*7);
