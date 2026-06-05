@@ -826,7 +826,7 @@ function goToStep(idx){
   const step=workout.steps[idx];
   workout.timerSec=workout.totalSec=stepDur(step);
   workout.paused=false;
-  if(step.type==='work') requestWakeLock(); else releaseWakeLock();
+  requestWakeLock();
   stopUrgentTick();
   document.getElementById('pause-btn').textContent='\u23F8\uFE0E';
   setRing(1,step.type);
@@ -925,7 +925,7 @@ function updateWorkoutUI(step){
   if(step.type==='rest'){
     rb.style.display='block';
     rb.textContent=step.shared
-      ?(step.flip?'⇄ Cambio — ora Persona A all\'attrezzo':'⇄ Cambio — ora Persona B all\'attrezzo')
+      ?(step.flip?'⇄ Cambio — Persona A all\'attrezzo':'⇄ Cambio — Persona B all\'attrezzo')
       :'😮‍💨 Riposo — prepara il prossimo esercizio';
   } else {
     rb.style.display='none';
