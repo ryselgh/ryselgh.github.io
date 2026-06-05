@@ -826,7 +826,7 @@ function goToStep(idx){
   const step=workout.steps[idx];
   workout.timerSec=workout.totalSec=stepDur(step);
   workout.paused=false;
-  if(step.type==='work'||step.type==='rest'||step.type==='round-rest') requestWakeLock(); else releaseWakeLock();
+  requestWakeLock();
   stopUrgentTick();
   document.getElementById('pause-btn').textContent='\u23F8\uFE0E';
   setRing(1,step.type);
