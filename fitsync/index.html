@@ -9,6 +9,7 @@
 <title>FitSync</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep.js/0.12.0/NoSleep.min.js"></script>
 
 <!-- ═══════════════════════════════════════════════
      CONFIG BLOCK
@@ -72,7 +73,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 /* ── HOME ── */
 #home{padding-bottom:32px;}
-.top-bar{display:flex;align-items:center;justify-content:center;padding:12px 20px 0;flex-shrink:0;}
+.top-bar{position:relative;display:flex;align-items:center;justify-content:center;padding:16px 20px 0;flex-shrink:0;}
+.wiki-btn{position:absolute;right:20px;top:50%;transform:translateY(-50%) translateY(8px);background:var(--bg);color:var(--muted);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.wiki-btn:active{background:var(--surface2);}
 .logo{font-family:var(--font-head);font-size:46px;letter-spacing:3px;color:var(--accent);}
 .logo span{color:var(--text);}
 .subtitle{font-family:var(--font-head);font-size:28px;letter-spacing:3px;color:var(--accent);}
@@ -253,6 +256,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 <div id="home" class="screen active">
   <div class="top-bar">
     <div class="logo">FIT<span>SYNC</span></div>
+    <button onclick="showScreen('wiki')" class="wiki-btn">≡</button>
   </div>
   <div class="home-logo-area">
     <div class="home-logo-slot"><img src="home-logo.png" width="150"></div>
@@ -365,6 +369,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       </div>
     </div>
     <div class="ex-card-gear" id="ex-card-gear"></div>
+	<div id="ex-card-partner" style="display:none;font-size:11px;color:var(--accent2);margin-top:6px;"></div>
   </div>
 
   <div class="next-preview" id="next-preview"></div>
@@ -390,6 +395,15 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <div class="section-label" style="padding:0 0 12px">Esercizi completati</div>
     <div id="done-list-inner"></div>
   </div>
+</div>
+
+<!-- WIKI -->
+<div id="wiki" class="screen">
+  <div class="wu-header">
+    <div class="wu-title">LISTA ESERCIZI</div>
+    <button onclick="showScreen('home')" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;">✕ Chiudi</button>
+  </div>
+  <div style="padding:0 20px 40px;" id="wiki-content"></div>
 </div>
 
 </div><!-- /app -->
@@ -436,48 +450,48 @@ const EX = {
   donkey_kick:     {id:'donkey_kick',    emoji:'🦶',name:'Donkey Kick',              gear:'body',group:'glutes',    shared:false,desc:'In quadrupedia, schiena piatta. Solleva un ginocchio piegato verso il soffitto contraendo il gluteo. Alterna i lati.',alts:['glute_bridge','fire_hydrant']},
   fire_hydrant:    {id:'fire_hydrant',   emoji:'🔥',name:'Fire Hydrant',             gear:'body',group:'glutes',    shared:false,desc:'In quadrupedia, apri il ginocchio lateralmente. Mantieni la schiena piatta e il core stabile.',alts:['donkey_kick','glute_bridge']},
   step_up:         {id:'step_up',        emoji:'📦',name:'Step Up su sedia',         gear:'body',group:'lower',     shared:false,desc:'Sali su una sedia o gradino alternando le gambe, spingendo col tallone. Usa una superficie stabile.',alts:['squat','lunge']},
-  push_up:         {id:'push_up',        emoji:'💪',name:'Push Up',                  gear:'body',group:'push',      shared:false,desc:'Mani larghezza spalle, corpo in linea. Scendi fino a sfiorare il petto, gomiti a ~45° dal busto.',alts:['push_up_wide','diamond_push_up','incline_push_up']},
+  push_up:         {id:'push_up',        emoji:'🙌',name:'Push Up',                  gear:'body',group:'push',      shared:false,desc:'Mani larghezza spalle, corpo in linea. Scendi fino a sfiorare il petto, gomiti a ~45° dal busto.',alts:['push_up_wide','diamond_push_up','incline_push_up']},
   push_up_wide:    {id:'push_up_wide',   emoji:'🤸',name:'Push Up Largo',            gear:'body',group:'push',      shared:false,desc:'Mani più larghe delle spalle. Stressano maggiormente il petto rispetto al push up classico.',alts:['push_up','incline_push_up']},
   diamond_push_up: {id:'diamond_push_up',emoji:'💎',name:'Push Up Diamante',         gear:'body',group:'push',      shared:false,desc:'Mani vicine formando un rombo sotto il petto. Carico sui tricipiti e parte interna del petto.',alts:['push_up','push_up_wide']},
   incline_push_up: {id:'incline_push_up',emoji:'📐',name:'Push Up Inclinato',        gear:'body',group:'push',      shared:false,desc:'Mani su una superficie sopraelevata (tavolo/sedia). Più facile, ottimo per principianti.',alts:['push_up','push_up_wide']},
-  pike_push_up:    {id:'pike_push_up',   emoji:'🔺',name:'Pike Push Up (spalle)',    gear:'body',group:'shoulders', shared:false,desc:'Posizione a V rovesciata. Piega i gomiti abbassando la testa verso il suolo. Sposta il lavoro sulle spalle.',alts:['push_up','band_lateral_raise']},
+  pike_push_up:    {id:'pike_push_up',   emoji:'🔺',name:'Pike Push Up',    gear:'body',group:'shoulders', shared:false,desc:'Posizione a V rovesciata. Piega i gomiti abbassando la testa verso il suolo. Sposta il lavoro sulle spalle.',alts:['push_up','band_lateral_raise']},
   dip_chair:       {id:'dip_chair',      emoji:'🪑',name:'Dip su sedia',             gear:'body',group:'push',      shared:false,desc:'Mani sul bordo di una sedia alle spalle, gambe tese o piegate. Scendi piegando i gomiti, risali estendendo.',alts:['diamond_push_up','push_up']},
-  plank:           {id:'plank',          emoji:'🏋',name:'Plank',                   gear:'body',group:'core',      shared:false,desc:'Posizione di push up su avambracci. Tieni il corpo in linea, contrai addome e glutei. Non far cedere i fianchi.',alts:['mountain_climber','plank_lateral']},
-  plank_lateral:   {id:'plank_lateral',  emoji:'↔️',name:'Plank Laterale',          gear:'body',group:'core',      shared:false,desc:'Appoggio su un avambraccio, corpo in linea di lato. Alterna i lati. Lavora obliqui e stabilizzatori.',alts:['plank','mountain_climber']},
+  plank:           {id:'plank',          emoji:'🪵',name:'Plank',                   gear:'body',group:'core',      shared:false,desc:'Posizione di push up su avambracci. Tieni il corpo in linea, contrai addome e glutei. Non far cedere i fianchi.',alts:['mountain_climber','plank_lateral']},
+  plank_lateral:   {id:'plank_lateral',  emoji:'↔️',name:'Plank Laterale',          gear:'body',group:'core',      shared:true,partner:'plank_lateral',desc:'Appoggio su un avambraccio, corpo in linea di lato. Alterna i lati. Lavora obliqui e stabilizzatori.',alts:['plank','mountain_climber']},
   mountain_climber:{id:'mountain_climber',emoji:'⛰',name:'Mountain Climber',        gear:'body',group:'core',      shared:false,desc:'Posizione di push up alta. Porta alternativamente le ginocchia al petto in modo rapido.',alts:['plank','burpee_nojump']},
-  burpee_nojump:   {id:'burpee_nojump',  emoji:'🌀',name:'Burpee (senza salto)',     gear:'body',group:'full',      shared:false,desc:'Squat → mani a terra → piedi indietro in plank → push up opzionale → torna in squat → alzati.',alts:['mountain_climber','squat']},
+  burpee_nojump:   {id:'burpee_nojump',  emoji:'🌀',name:'Burpee',     gear:'body',group:'full',      shared:false,desc:'Squat → mani a terra → piedi indietro in plank → push up → torna in squat → alzati.',alts:['mountain_climber','squat']},
   crunch:          {id:'crunch',         emoji:'🎯',name:'Crunch',                   gear:'body',group:'core',      shared:false,desc:'Sdraiati, mani alla nuca, ginocchia piegate. Solleva le spalle contraendo l\'addome. Espirazione nella contrazione.',alts:['leg_raise','bicycle_crunch']},
   leg_raise:       {id:'leg_raise',      emoji:'🦵',name:'Leg Raise',                gear:'body',group:'core',      shared:false,desc:'Sdraiati, mani sotto i glutei. Solleva le gambe tese a 90°, poi abbassale lentamente senza toccare terra.',alts:['crunch','bicycle_crunch']},
   bicycle_crunch:  {id:'bicycle_crunch', emoji:'🚴',name:'Bicycle Crunch',           gear:'body',group:'core',      shared:false,desc:'Crunch con rotazione: porta un gomito al ginocchio opposto alternando in modo fluido.',alts:['crunch','leg_raise']},
-  dead_bug:        {id:'dead_bug',       emoji:'🐛',name:'Dead Bug (lombare)',       gear:'body',group:'core',      shared:false,desc:'Sdraiato, braccia al soffitto, ginocchia a 90°. Abbassa braccio dx e gamba sx simultaneamente tenendo il lower back incollato al suolo.',alts:['plank','bird_dog']},
-  bird_dog:        {id:'bird_dog',       emoji:'🐕',name:'Bird Dog (lombare)',       gear:'body',group:'core',      shared:false,desc:'In quadrupedia, estendi braccio dx e gamba sx simultaneamente, tieni 2 sec, torna. Stabilizza lombare e migliora equilibrio.',alts:['dead_bug','plank']},
-  superman:        {id:'superman',       emoji:'🦸',name:'Superman (erettori)',      gear:'body',group:'core',      shared:false,desc:'Prono a terra, braccia avanti. Solleva contemporaneamente braccia e gambe. Tieni 2 sec. Rinforza erettori spinali.',alts:['bird_dog','dead_bug']},
+  dead_bug:        {id:'dead_bug',       emoji:'🐛',name:'Dead Bug',       gear:'body',group:'core',      shared:false,desc:'Sdraiato, braccia al soffitto, ginocchia a 90°. Abbassa braccio dx e gamba sx simultaneamente tenendo il lower back incollato al suolo.',alts:['plank','bird_dog']},
+  bird_dog:        {id:'bird_dog',       emoji:'🐕',name:'Bird Dog',       gear:'body',group:'core',      shared:false,desc:'In quadrupedia, estendi braccio dx e gamba sx simultaneamente, tieni 2 sec, torna. Stabilizza lombare e migliora equilibrio.',alts:['dead_bug','plank']},
+  superman:        {id:'superman',       emoji:'🦸',name:'Superman',      gear:'body',group:'core',      shared:false,desc:'Prono a terra, braccia avanti. Solleva contemporaneamente braccia e gambe. Tieni 2 sec. Rinforza erettori spinali.',alts:['bird_dog','dead_bug']},
   hip_hinge:       {id:'hip_hinge',      emoji:'🔄',name:'Hip Hinge / Good Morning',gear:'body',group:'posterior', shared:false,desc:'Piedi larghezza fianchi, piega i fianchi mantenendo la schiena piatta. Senti lo stretch nei femorali. Torna su estendendo.',alts:['glute_bridge','superman']},
   calf_raise:      {id:'calf_raise',     emoji:'👟',name:'Calf Raise',              gear:'body',group:'lower',     shared:false,desc:'In piedi, sali sulla punta dei piedi. Puoi tenerti a una parete. Scendi lentamente. Lavora i polpacci.',alts:['squat','step_up']},
   wall_sit:        {id:'wall_sit',       emoji:'🧱',name:'Wall Sit',                gear:'body',group:'lower',     shared:false,desc:'Schiena contro il muro, scendi a 90° come seduto su una sedia invisibile. Isometria per quadricipiti e glutei.',alts:['squat','lunge']},
 
   /* ── BANDE ── */
   band_squat:         {id:'band_squat',        emoji:'🟢',name:'Squat con banda',           gear:'band',group:'lower',     shared:true,partner:'plank',          desc:'Banda sotto i piedi, maniglie alle spalle. Esegui uno squat. La resistenza aumenta l\'attivazione muscolare.',alts:['squat','band_deadlift','lunge']},
-  band_deadlift:      {id:'band_deadlift',     emoji:'🟣',name:'Romanian DL con banda',     gear:'band',group:'posterior', shared:true,partner:'push_up',         desc:'Banda sotto i piedi, maniglie davanti. Piega i fianchi mantenendo schiena piatta fino allo stretch dei femorali.',alts:['hip_hinge','band_squat','glute_bridge']},
-  band_row:           {id:'band_row',          emoji:'🔵',name:'Rematore con banda',        gear:'band',group:'pull',      shared:true,partner:'push_up',         desc:'Banda ancorata a porta o barra. Tira le maniglie verso i fianchi tenendo i gomiti vicini al busto.',alts:['band_pull_apart','pull_up_assist']},
-  band_pull_apart:    {id:'band_pull_apart',   emoji:'↔️',name:'Band Pull Apart',           gear:'band',group:'pull',      shared:true,partner:'pike_push_up',    desc:'Tieni la banda davanti con entrambe le mani, apri le braccia orizzontalmente portando la banda al petto.',alts:['band_row','band_face_pull']},
-  band_face_pull:     {id:'band_face_pull',    emoji:'😤',name:'Face Pull con banda',       gear:'band',group:'shoulders', shared:true,partner:'dip_chair',       desc:'Banda ancorata in alto. Tira verso il viso con gomiti alti e larghi. Rinforza la cuffia dei rotatori.',alts:['band_pull_apart','band_lateral_raise']},
+  band_deadlift:      {id:'band_deadlift',     emoji:'🟣',name:'Romanian deadlift banda',     gear:'band',group:'posterior', shared:true,partner:'push_up',         desc:'Banda sotto i piedi, maniglie davanti. Piega i fianchi mantenendo schiena piatta fino allo stretch dei femorali.',alts:['hip_hinge','band_squat','glute_bridge']},
+  band_row:           {id:'band_row',          emoji:'🔵',name:'Rematore con banda',        gear:'band',group:'pull',      shared:true,partner:'pike_push_up',         desc:'Banda ancorata a porta o barra. Tira le maniglie verso i fianchi tenendo i gomiti vicini al busto.',alts:['band_pull_apart','pull_up_assist']},
+  band_pull_apart:    {id:'band_pull_apart',   emoji:'↔️',name:'Band Pull Apart',           gear:'band',group:'pull',      shared:true,partner:'crunch',    desc:'Tieni la banda davanti con entrambe le mani, apri le braccia orizzontalmente portando la banda al petto.',alts:['band_row','band_face_pull']},
+  band_face_pull:     {id:'band_face_pull',    emoji:'😤',name:'Face Pull con banda',       gear:'band',group:'shoulders', shared:true,partner:'mountain_climber',       desc:'Banda ancorata in alto. Tira verso il viso con gomiti alti e larghi. Rinforza la cuffia dei rotatori.',alts:['band_pull_apart','band_lateral_raise']},
   band_lateral_raise: {id:'band_lateral_raise',emoji:'🦅',name:'Lateral Raise banda',     gear:'band',group:'shoulders', shared:true,partner:'plank_lateral',   desc:'Banda sotto i piedi. Solleva le braccia lateralmente fino all\'altezza delle spalle con gomiti leggermente piegati.',alts:['pike_push_up','band_face_pull','band_shoulder_press']},
-  band_shoulder_press:{id:'band_shoulder_press',emoji:'🏋️',name:'Shoulder Press banda',   gear:'band',group:'shoulders', shared:true,partner:'mountain_climber',desc:'Banda sotto i piedi, maniglie all\'altezza delle orecchie. Spingi verso l\'alto estendendo le braccia.',alts:['pike_push_up','band_lateral_raise']},
+  band_shoulder_press:{id:'band_shoulder_press',emoji:'🏋️',name:'Shoulder Press banda',   gear:'band',group:'shoulders', shared:true,partner:'wall_sit',desc:'Banda sotto i piedi, maniglie all\'altezza delle orecchie. Spingi verso l\'alto estendendo le braccia.',alts:['pike_push_up','band_lateral_raise']},
   band_bicep_curl:    {id:'band_bicep_curl',   emoji:'💪',name:'Bicep Curl con banda',     gear:'band',group:'arms',      shared:true,partner:'dip_chair',       desc:'Banda sotto i piedi, palme in su. Fletti i gomiti portando le maniglie verso le spalle. Gomiti fermi ai fianchi.',alts:['band_hammer_curl','chin_up']},
-  band_hammer_curl:   {id:'band_hammer_curl',  emoji:'🔨',name:'Hammer Curl con banda',    gear:'band',group:'arms',      shared:true,partner:'diamond_push_up', desc:'Come bicep curl ma con mani in posizione neutra (pollici in su). Lavora anche brachioradiale e brachiale.',alts:['band_bicep_curl','chin_up']},
-  band_tricep_ext:    {id:'band_tricep_ext',   emoji:'🔙',name:'Tricep Ext. con banda',    gear:'band',group:'arms',      shared:true,partner:'band_bicep_curl', desc:'Banda ancorata in alto. Gomiti vicini alla testa, estendi le braccia verso il basso. Tricipiti capo lungo.',alts:['dip_chair','diamond_push_up']},
-  band_glute_kick:    {id:'band_glute_kick',   emoji:'🦵',name:'Kickback gluteo banda',    gear:'band',group:'glutes',    shared:true,partner:'donkey_kick',     desc:'Banda ancorata bassa. Allaccia la maniglia alla caviglia. In piedi, porta il piede indietro contraendo il gluteo.',alts:['donkey_kick','fire_hydrant','band_squat']},
+  band_hammer_curl:   {id:'band_hammer_curl',  emoji:'🔨',name:'Hammer Curl con banda',    gear:'band',group:'arms',      shared:true,partner:'push_up', desc:'Come bicep curl ma con mani in posizione neutra (pollici in su). Lavora anche brachioradiale e brachiale.',alts:['band_bicep_curl','chin_up']},
+  band_tricep_ext:    {id:'band_tricep_ext',   emoji:'🔪',name:'Tricep Ext. con banda',    gear:'band',group:'arms',      shared:true,partner:'diamond_push_up', desc:'Banda ancorata in alto. Gomiti vicini alla testa, estendi le braccia verso il basso. Tricipiti capo lungo.',alts:['dip_chair','diamond_push_up']},
+  band_glute_kick:    {id:'band_glute_kick',   emoji:'🦵',name:'Kickback gluteo banda',    gear:'band',group:'glutes',    shared:true,partner:'mountain_climber',     desc:'Banda ancorata bassa. Allaccia la maniglia alla caviglia. In piedi, porta il piede indietro contraendo il gluteo.',alts:['donkey_kick','fire_hydrant','band_squat']},
   band_hip_abduct:    {id:'band_hip_abduct',   emoji:'🦴',name:'Hip Abduction banda',      gear:'band',group:'glutes',    shared:true,partner:'fire_hydrant',    desc:'Banda intorno alle cosce sopra le ginocchia. Apri le gambe contro la resistenza. Attiva il gluteo medio.',alts:['fire_hydrant','band_glute_kick']},
-  band_chest_press:   {id:'band_chest_press',  emoji:'💛',name:'Chest Press con banda',    gear:'band',group:'push',      shared:true,partner:'band_row',        desc:'Banda ancorata dietro all\'altezza del petto. In piedi, spingi in avanti come una panca piana.',alts:['push_up','band_fly']},
-  band_fly:           {id:'band_fly',          emoji:'🕊',name:'Fly con banda',            gear:'band',group:'push',      shared:true,partner:'band_pull_apart', desc:'Banda ancorata dietro. Tieni le braccia aperte e portale davanti come abbracciando un albero. Petto isolato.',alts:['push_up_wide','band_chest_press']},
-  band_woodchop:      {id:'band_woodchop',     emoji:'🪓',name:'Woodchop obliqui',         gear:'band',group:'core',      shared:true,partner:'plank_lateral',   desc:'Banda ancorata in alto a lato. Ruota il tronco dal basso verso l\'alto e viceversa. Alterna i lati.',alts:['bicycle_crunch','plank_lateral']},
+  band_chest_press:   {id:'band_chest_press',  emoji:'💛',name:'Chest Press con banda',    gear:'band',group:'push',      shared:true,partner:'push_up',        desc:'Banda ancorata dietro all\'altezza del petto. In piedi, spingi in avanti come una panca piana.',alts:['push_up','band_fly']},
+  band_fly:           {id:'band_fly',          emoji:'🪽',name:'Fly con banda',            gear:'band',group:'push',      shared:true,partner:'push_up_wide', desc:'Banda ancorata dietro. Tieni le braccia aperte e portale davanti come abbracciando un albero. Petto isolato.',alts:['push_up_wide','band_chest_press']},
+  band_woodchop:      {id:'band_woodchop',     emoji:'🪓',name:'Woodchop obliqui',         gear:'band',group:'core',      shared:true,partner:'plank',   desc:'Banda ancorata in alto a lato. Ruota il tronco dal basso verso l\'alto e viceversa. Alterna i lati.',alts:['bicycle_crunch','plank_lateral']},
 
   /* ── BARRA ── */
   pull_up:        {id:'pull_up',        emoji:'🔴',name:'Trazioni Presa Larga',     gear:'bar',group:'pull',shared:true,partner:'push_up',        desc:'Presa prona più larga delle spalle. Tira fino a portare il mento sopra la barra, scendi lentamente.',alts:['chin_up','neutral_pull_up','band_row']},
-  chin_up:        {id:'chin_up',        emoji:'🟠',name:'Trazioni Presa Stretta',   gear:'bar',group:'pull',shared:true,partner:'diamond_push_up', desc:'Presa supina stretta. Tira portando il mento alla barra. Bilancia maggiormente i bicipiti.',alts:['pull_up','neutral_pull_up','band_bicep_curl']},
+  chin_up:        {id:'chin_up',        emoji:'🟠',name:'Trazioni Presa Stretta',   gear:'bar',group:'pull',shared:true,partner:'bicycle_crunch', desc:'Presa supina stretta. Tira portando il mento alla barra. Bilancia maggiormente i bicipiti.',alts:['pull_up','neutral_pull_up','band_bicep_curl']},
   neutral_pull_up:{id:'neutral_pull_up',emoji:'⚫',name:'Trazioni Neutro',          gear:'bar',group:'pull',shared:true,partner:'push_up_wide',    desc:'Usa i manici perpendicolari. Presa più naturale per i polsi, riduce lo stress articolare.',alts:['pull_up','chin_up','band_row']},
-  pull_up_assist: {id:'pull_up_assist', emoji:'🟡',name:'Trazioni Assistite',       gear:'bar',group:'pull',shared:true,partner:'plank',           desc:'Aggancia una banda alla barra e inginocchiati nel cappio. La banda supporta parte del peso corporeo.',alts:['band_row','chin_up','neutral_pull_up']},
+  pull_up_assist: {id:'pull_up_assist', emoji:'🟡',name:'Trazioni Assistite',       gear:'bar',group:'pull',shared:true,partner:'dead_bug',           desc:'Aggancia una banda alla barra e inginocchiati nel cappio. La banda supporta parte del peso corporeo.',alts:['band_row','chin_up','neutral_pull_up']},
   dead_hang:      {id:'dead_hang',      emoji:'🫳',name:'Dead Hang (grip/spalla)',  gear:'bar',group:'pull',shared:true,partner:'wall_sit',        desc:'Appenditi alla barra con presa larga il più a lungo possibile. Rinforza la presa e decomprime la colonna.',alts:['pull_up_assist','band_row']},
   scapular_pull:  {id:'scapular_pull',  emoji:'🔃',name:'Retrazione Scapolare',     gear:'bar',group:'pull',shared:true,partner:'bird_dog',        desc:'Appeso alla barra, senza piegare i gomiti, abbassa e ritrae le scapole. Attiva gli stabilizzatori della spalla.',alts:['dead_hang','band_pull_apart']},
 };
@@ -487,11 +501,11 @@ const EX = {
 ════════════════════════════════════════════ */
 const MODULES = [
   {id:'fullbody',name:'FULL BODY',icon:'🔥',desc:'Tutto in una sessione',
-   exercises:['scapular_pull','dead_hang','squat','band_hip_abduct','push_up','band_row','glute_bridge','pull_up_assist','dead_bug','band_shoulder_press','bicycle_crunch','band_bicep_curl','bird_dog','band_tricep_ext','mountain_climber']},
+   exercises:['scapular_pull','dead_hang','squat','band_hip_abduct','push_up','band_row','glute_bridge','pull_up_assist','plank','band_shoulder_press','bicycle_crunch','band_bicep_curl','bird_dog','band_tricep_ext','mountain_climber']},
   {id:'upper',   name:'UPPER',    icon:'💪',desc:'Spalle · Petto · Braccia · Core',
-   exercises:['scapular_pull','dead_hang','push_up_wide','band_chest_press','pike_push_up','band_face_pull','chin_up','band_bicep_curl','diamond_push_up','band_tricep_ext','band_lateral_raise','band_pull_apart','plank','dead_bug']},
+   exercises:['band_fly','dead_hang','bird_dog','band_chest_press','pike_push_up','band_face_pull','chin_up','band_bicep_curl','band_hammer_curl','band_tricep_ext','band_lateral_raise','band_lateral_raise','band_pull_apart','dead_bug','plank']},
   {id:'lower',   name:'LOWER',    icon:'🦵',desc:'Glutei · Cosce · Gambe · Lombare',
-   exercises:['squat','band_squat','lunge','band_deadlift','glute_bridge','band_glute_kick','donkey_kick','band_hip_abduct','fire_hydrant','step_up','calf_raise','wall_sit','bird_dog','superman','hip_hinge']},
+   exercises:['squat','band_squat','lunge','band_deadlift','glute_bridge','band_glute_kick','donkey_kick','band_hip_abduct','step_up','calf_raise','bird_dog','superman','hip_hinge','fire_hydrant','wall_sit']},
   {id:'rest',    name:'RIPOSO ATTIVO',   icon:'🧘',desc:'Mobilità · Stretching · Respirazione',
    exercises:['bird_dog','dead_bug','superman','plank','hip_hinge','plank_lateral']},
 ];
@@ -501,16 +515,20 @@ const MODULES = [
 ════════════════════════════════════════════ */
 const LS = 'fitsync_v2';
 function saveSession(){
+  if(state.exercises.length){
+    state.swapsByModule[state.moduleId] =
+      state.exercises.map(e=>({id:e.id, overrideId:e.overrideId||null, overridePartner:e.overridePartner||null}));
+  }
   try {
     localStorage.setItem(LS, JSON.stringify({
-      moduleId:      state.moduleId,
-      workSec:       state.workSec,
-      restSec:       state.restSec,
-      prepSec:       state.prepSec,
-	  rounds:        state.rounds,
-	  roundRestSec:  state.roundRestSec,
-	  disabled:      state.disabled,
-      swaps:         state.exercises.map(e=>({id:e.id, overrideId:e.overrideId||null}))
+      moduleId:     state.moduleId,
+      workSec:      state.workSec,
+      restSec:      state.restSec,
+      prepSec:      state.prepSec,
+      rounds:       state.rounds,
+      roundRestSec: state.roundRestSec,
+      disabled:     state.disabled,
+      swaps:        state.swapsByModule,
     }));
   } catch(e){}
 }
@@ -529,9 +547,9 @@ let state = {
   prepSec:      saved?.prepSec  || DEF.prepSec,
   rounds:       saved?.rounds   || DEF.rounds,
   roundRestSec: saved?.roundRestSec || DEF.roundRestSec,
-  exercises: [],
   disabled: saved?.disabled || {},
-  _savedSwaps:  saved?.swaps || null,
+  swapsByModule: saved?.swaps || {},
+  exercises: [],
   _lastModuleId: null,
 };
 let workout = {
@@ -582,6 +600,40 @@ function setRing(fraction, phase){
 }
 
 /* ════════════════════════════════════════════
+   WIKI BUILD
+════════════════════════════════════════════ */
+function buildWiki(){
+  const groups = {};
+  Object.values(EX).forEach(ex=>{
+    if(!groups[ex.group]) groups[ex.group]=[];
+    groups[ex.group].push(ex);
+  });
+  const cont = document.getElementById('wiki-content');
+  cont.innerHTML='';
+  Object.entries(groups).sort().forEach(([group, exs])=>{
+    const h = document.createElement('div');
+    h.style.cssText='font-family:var(--font-head);font-size:22px;letter-spacing:1px;color:var(--accent);padding:20px 0 8px;border-bottom:1px solid var(--border);margin-bottom:12px;';
+    h.textContent=group.toUpperCase();
+    cont.appendChild(h);
+    exs.forEach(ex=>{
+      const gL=ex.gear==='band'?'🎗 Banda':ex.gear==='bar'?'🔴 Barra':'🏃 Corpo';
+      const d=document.createElement('div');
+      d.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;';
+      d.innerHTML=`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:20px">${ex.emoji}</span>
+          <span style="font-family:var(--font-head);font-size:18px;color:var(--text)">${ex.name}</span>
+          <span style="font-size:10px;color:var(--muted);margin-left:auto">${gL}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">${ex.desc}</div>
+        ${ex.shared&&ex.partner?`<div style="font-size:11px;color:var(--accent2);margin-top:6px">👥 Partner: ${EX[ex.partner]?.emoji} ${EX[ex.partner]?.name}</div>`:''}
+      `;
+      cont.appendChild(d);
+    });
+  });
+}
+
+/* ════════════════════════════════════════════
    HOME / INIT
 ════════════════════════════════════════════ */
 function getModule(){ return MODULES.find(m=>m.id===state.moduleId); }
@@ -589,16 +641,19 @@ function getModule(){ return MODULES.find(m=>m.id===state.moduleId); }
 function resolveExercises(){
   const mod = getModule();
   if(!state.exercises.length || state._lastModuleId !== state.moduleId){
-    const swaps = (state._savedSwaps && state._lastModuleId === null) ? state._savedSwaps : null;
-    state.exercises = mod.exercises.map((id,i)=>{
-      let overrideId = null;
-      if(swaps && swaps[i] && swaps[i].id===id) overrideId = swaps[i].overrideId;
-      return {id, overrideId};
-    });
+    const savedSwaps = state.swapsByModule[state.moduleId] || [];
+    state.exercises = mod.exercises.map((id,i)=>({
+      id,
+      overrideId:      savedSwaps[i]?.id===id ? (savedSwaps[i].overrideId||null)      : null,
+      overridePartner: savedSwaps[i]?.id===id ? (savedSwaps[i].overridePartner||null) : null,
+    }));
     state._lastModuleId = state.moduleId;
-    state._savedSwaps   = null; // consume once
   }
-  return state.exercises.map(e=>EX[e.overrideId||e.id]);
+  return state.exercises.map(e=>{
+    const ex = {...EX[e.overrideId||e.id]};
+    if(e.overridePartner) ex.partner = e.overridePartner;
+    return ex;
+  });
 }
 
 function init(){
@@ -657,6 +712,7 @@ function init(){
   });
 
   renderExList();
+  buildWiki();
 }
 function renderHome(){ init(); }
 
@@ -672,7 +728,7 @@ function renderExList(){
   exs.forEach((ex,i)=>{
     const gL = ex.gear==='band'?'🎗 Banda':(ex.gear==='bar'?'🔴 Barra':'🏃 Corpo');
     const partnerEx = ex.shared && ex.partner ? EX[ex.partner] : null;
-    const partnerNote = partnerEx ? ` · 👥 +${partnerEx.name}` : (ex.shared?' · 👥 alternato':'');
+    const partnerNote = partnerEx ? ` · 👥 +${partnerEx.emoji}${partnerEx.name}` : (ex.shared?' · 👥 alternato':'');
 	const isDouble = ex.shared;
 	const isDisabled = state.disabled[state.moduleId]?.[i] || false
     const hasAlts = ex.alts && ex.alts.length;
@@ -698,6 +754,7 @@ function renderExList(){
         <div class="ex-detail-text">${ex.desc}</div>
         ${partnerEx?`<div class="ex-partner-note">👥 In contemporanea: <strong style="color:var(--text)">${partnerEx.emoji} ${partnerEx.name}</strong></div>`:''}
         ${hasAlts?`<button class="ex-swap-btn" data-i="${i}">↔ Cambia esercizio</button>`:''}
+		${ex.shared && ex.partner ? `<button class="ex-swap-btn" data-i="${i}" data-partner="true">↔ Cambia esercizio partner</button>` : ''}
       </div>`;
 
     div.querySelector('.ex-item-row').onclick=()=>{
@@ -706,7 +763,7 @@ function renderExList(){
       p.classList.toggle('open'); c.classList.toggle('open');
     };
     if(hasAlts){
-      div.querySelector('.ex-swap-btn').onclick=e=>{ e.stopPropagation(); openSwapModal(i,ex); };
+      div.querySelectorAll('.ex-swap-btn').forEach(btn=>{ btn.onclick=e=>{ e.stopPropagation(); openSwapModal(i, ex, btn.dataset.partner==='true'); }; });
     }
     list.appendChild(div);
   });
@@ -725,25 +782,46 @@ function toggleExercise(idx, enabled){
 /* ════════════════════════════════════════════
    SWAP MODAL
 ════════════════════════════════════════════ */
-function openSwapModal(idx,ex){
-  document.getElementById('swap-modal-sub').textContent=`Sostituzione per: ${ex.name}`;
+function openSwapModal(idx, ex, isPartner=false){
+  document.getElementById('swap-modal-sub').textContent=
+    isPartner ? `Partner per: ${ex.name}` : `Sostituzione per: ${ex.name}`;
   const opts=document.getElementById('swap-options');
   opts.innerHTML='';
-  if(state.exercises[idx].overrideId){
-    const orig=EX[state.exercises[idx].id];
-    const d=document.createElement('div'); d.className='alt-option';
-    d.innerHTML=`<div class="ao-name">↩ ${orig.name} (originale)</div><div class="ao-meta">Ripristina l'esercizio originale</div>`;
-    d.onclick=()=>{ state.exercises[idx].overrideId=null; saveSession(); closeSwapModal(); renderExList(); };
-    opts.appendChild(d);
+
+  if(isPartner){
+    // ripristina partner originale
+    if(state.exercises[idx].overridePartner){
+      const origPartner=EX[EX[state.exercises[idx].id].partner];
+      const d=document.createElement('div'); d.className='alt-option';
+      d.innerHTML=`<div class="ao-name">↩ ${origPartner.name} (originale)</div>`;
+      d.onclick=()=>{ state.exercises[idx].overridePartner=null; saveSession(); closeSwapModal(); renderExList(); };
+      opts.appendChild(d);
+    }
+    // mostra solo esercizi body come alternative partner
+    Object.values(EX).filter(e=>e.gear==='body' && e.id!==ex.id).forEach(alt=>{
+      const d=document.createElement('div'); d.className='alt-option';
+      d.innerHTML=`<div class="ao-name">${alt.emoji} ${alt.name}</div><div class="ao-meta">🏃 Corpo · ${alt.group}</div>`;
+      d.onclick=()=>{ state.exercises[idx].overridePartner=alt.id; saveSession(); closeSwapModal(); renderExList(); };
+      opts.appendChild(d);
+    });
+  } else {
+    // ripristina esercizio originale
+    if(state.exercises[idx].overrideId){
+      const orig=EX[state.exercises[idx].id];
+      const d=document.createElement('div'); d.className='alt-option';
+      d.innerHTML=`<div class="ao-name">↩ ${orig.name} (originale)</div>`;
+      d.onclick=()=>{ state.exercises[idx].overrideId=null; saveSession(); closeSwapModal(); renderExList(); };
+      opts.appendChild(d);
+    }
+    ex.alts.forEach(altId=>{
+      const alt=EX[altId]; if(!alt) return;
+      const gL=alt.gear==='band'?'🎗 Banda':alt.gear==='bar'?'🔴 Barra':'🏃 Corpo';
+      const d=document.createElement('div'); d.className='alt-option';
+      d.innerHTML=`<div class="ao-name">${alt.emoji} ${alt.name}</div><div class="ao-meta">${gL} · ${alt.group}</div>`;
+      d.onclick=()=>{ state.exercises[idx].overrideId=altId; saveSession(); closeSwapModal(); renderExList(); };
+      opts.appendChild(d);
+    });
   }
-  ex.alts.forEach(altId=>{
-    const alt=EX[altId]; if(!alt) return;
-    const gL=alt.gear==='band'?'🎗 Banda':(alt.gear==='bar'?'🔴 Barra':'🏃 Corpo');
-    const d=document.createElement('div'); d.className='alt-option';
-    d.innerHTML=`<div class="ao-name">${alt.emoji} ${alt.name}</div><div class="ao-meta">${gL} · ${alt.group}</div>`;
-    d.onclick=()=>{ state.exercises[idx].overrideId=altId; saveSession(); closeSwapModal(); renderExList(); };
-    opts.appendChild(d);
-  });
   document.getElementById('swap-modal').classList.add('open');
 }
 function closeSwapModal(){ document.getElementById('swap-modal').classList.remove('open'); }
@@ -963,9 +1041,13 @@ function updateWorkoutUI(step){
     singEl.style.display='block';
 
     let showEx=ex;
+    let partnerPreview = null;
     if(step.type==='rest'){
       const ns=workout.steps[workout.current+1];
-      if(ns) showEx=exs[ns.exIdx];
+      if(ns && ns.type!=='round-rest'){
+        showEx=exs[ns.exIdx];
+        if(ns.shared && ns.partnerEx) partnerPreview=ns.partnerEx;
+      }
     }
     document.getElementById('ex-card-phase').textContent =
       step.type==='rest'?'PROSSIMO':step.type==='prep'?'IN ARRIVO':'ORA';
@@ -973,6 +1055,13 @@ function updateWorkoutUI(step){
     document.getElementById('ex-card-name').textContent =showEx.name;
     document.getElementById('ex-card-desc').textContent =showEx.desc;
     document.getElementById('ex-card-gear').textContent =gearText(showEx);
+    const partnerLine = document.getElementById('ex-card-partner');
+    if(partnerPreview){
+      partnerLine.style.display='block';
+      partnerLine.textContent=`👥 In contemporanea: ${partnerPreview.emoji} ${partnerPreview.name}`;
+    } else {
+      partnerLine.style.display='none';
+    }
   }
 
   // Next preview
@@ -1079,30 +1168,51 @@ async function finishWorkout(){
 }
 
 /* ════════════════════════════════════════════
+   WAKE LOCK
+════════════════════════════════════════════ */
+const supportsNativeWakeLock = ('wakeLock' in navigator);
+let wakeLock   = null;   // native
+let noSleep    = null;   // iOS fallback
+let noSleepOn  = false;
+
+function initNoSleep() {
+  if (!noSleep) noSleep = new NoSleep();
+}
+
+async function requestWakeLock() {
+  if (supportsNativeWakeLock) {
+    if (wakeLock) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+	  console.log('WAKELOCK ACQUIRED');
+      wakeLock.addEventListener('release', () => { console.log('WAKELOCK RELEASED'); wakeLock = null; });
+    } catch(e) {}
+  } else {
+    initNoSleep();
+    if (!noSleepOn) {
+      try { noSleep.enable(); noSleepOn = true; } catch(e) {}
+    }
+  }
+}
+
+async function releaseWakeLock() {
+  if (supportsNativeWakeLock) {
+    if (!wakeLock) return;
+    try { await wakeLock.release(); console.log('WAKELOCK MANUAL RELEASE'); } catch(e) {}
+    wakeLock = null;
+  } else {
+    if (noSleep && noSleepOn) {
+      try { noSleep.disable(); noSleepOn = false; } catch(e) {}
+    }
+  }
+}
+
+/* ════════════════════════════════════════════
    BOOT
 ════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', init);
-let wakeLock = null;
-async function requestWakeLock(){
-  if (wakeLock) return;
-  try {
-    wakeLock = await navigator.wakeLock.request('screen');
-    console.log('WAKELOCK ACQUIRED');
-    wakeLock.addEventListener('release', () => {
-      console.log('WAKELOCK RELEASED');
-      wakeLock = null;
-    });
-  } catch(e){}
-}
 
-async function releaseWakeLock(){
-  if (!wakeLock) return;
-  try {
-    await wakeLock.release();
-    console.log('WAKELOCK MANUAL RELEASE');
-  } catch(e){}
-  wakeLock = null;
-}
+document.addEventListener('touchstart', () => { initNoSleep(); }, { once: true });
 
 let autoPaused = false;
 document.addEventListener('visibilitychange', async () => {
@@ -1120,7 +1230,7 @@ document.addEventListener('visibilitychange', async () => {
   }
   if (document.visibilityState === 'visible') {
     if (autoPaused) { autoPaused = false; return; }
-    if (workoutActive && !workout.paused && wakeLock === null) await requestWakeLock();
+    if (workoutActive && !workout.paused) await requestWakeLock();
   }
 });
 
