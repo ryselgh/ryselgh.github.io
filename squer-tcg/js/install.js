@@ -5,17 +5,31 @@
    - iOS Safari: nessuna API ufficiale -> il bottone mostra
      le istruzioni "Condividi -> Aggiungi alla schermata Home"
    - Bottone nascosto se l'app è già installata
+   - Su mobile, quando il gioco NON è installato: home
+     semplificata (classe body "pwa-cta") con solo titolo,
+     bottone "Installa" grande al centro e footer
    - Registrazione del service worker
    ========================================================= */
 (() => {
   const btn = document.getElementById('install-btn');
+  if (!btn) return;
+
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
   const isStandalone =
     window.matchMedia('(display-mode: standalone)').matches ||
     navigator.standalone === true;
 
-  // Già installata come app: niente bottone
-  if (isStandalone || !btn) return;
+  let deferredPrompt = null;
+  let installable = false; // true = il bottone è mostrato (app installabile)
+
+  // home semplificata "installa": solo su mobile e solo se non è già installata
+  function updatePwaCta() {
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    document.body.classList.toggle('pwa-cta', !isStandalone && isMobile && installable);
+  }
+
+  // già installata come app: home normale, niente bottone
+  if (isStandalone) return;
 
   /* ---------- hint per iOS ---------- */
   function showIosHint() {
@@ -39,17 +53,18 @@
 
   /* ---------- iOS: solo istruzioni ---------- */
   if (isIOS) {
+    installable = true;
     btn.classList.remove('hidden');
     btn.textContent = '\u{1F4F1} Aggiungi alla Home';
     btn.addEventListener('click', showIosHint);
   } else {
     /* ---------- Chrome / Edge / Android ---------- */
-    let deferredPrompt = null;
-
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
+      installable = true;
       btn.classList.remove('hidden');
+      updatePwaCta();
     });
 
     btn.addEventListener('click', async () => {
@@ -57,14 +72,21 @@
       deferredPrompt.prompt();
       await deferredPrompt.userChoice;
       deferredPrompt = null;
+      installable = false;
       btn.classList.add('hidden');
+      updatePwaCta();
     });
 
     window.addEventListener('appinstalled', () => {
       deferredPrompt = null;
+      installable = false;
       btn.classList.add('hidden');
+      updatePwaCta();
     });
   }
+
+  window.addEventListener('resize', updatePwaCta);
+  updatePwaCta();
 
   /* ---------- registrazione service worker ---------- */
   if ('serviceWorker' in navigator) {

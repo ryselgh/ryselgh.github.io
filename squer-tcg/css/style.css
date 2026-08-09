@@ -123,6 +123,26 @@ body { position: fixed; inset: 0; }
 .install-btn:active { transform: scale(.96); }
 .install-btn.hidden { display: none; }
 
+/* ---- home semplificata "installa l'app" (mobile, non installata) ---- */
+.pwa-cta #home-stats,
+.pwa-cta .collection-progress,
+.pwa-cta .pack-counter,
+.pwa-cta #btn-open-pack,
+.pwa-cta .home-actions,
+.pwa-cta .hint,
+.pwa-cta .empty-banner,
+.pwa-cta .latest-pulls { display: none; }
+
+.pwa-cta #install-btn {
+  margin: auto 0;
+  padding: 20px 48px; font-size: 20px;
+  background: linear-gradient(135deg, var(--gold), #ffb347);
+  color: #141b2b; border: none; border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(255,201,61,.35);
+}
+.pwa-cta #install-btn:hover { filter: brightness(1.08); }
+.pwa-cta .footer-note { margin-top: 0; }
+
 /* ---- hint installazione iOS ---- */
 .ios-hint {
   position: fixed; inset: 0; z-index: 200;
@@ -349,3 +369,4 @@ body { position: fixed; inset: 0; }
   border-radius: 10px; border: 2px solid transparent; overflow: hidden;
 }
 .summary-item img { width: 100%; height: auto; display: block; }
+#summary-continue { align-self: center; padding: 14px 32px; }
