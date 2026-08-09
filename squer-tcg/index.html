@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0d1117">
+  <title>Squer TCG</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23ffc93d'/><text x='50' y='66' font-size='52' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%23141b2b'>S</text></svg>">
+</head>
+<body>
+
+  <!-- ======= TOP MENU (home) ======= -->
+  <div id="top-menu" class="top-menu">
+    <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+    <div class="menu-dropdown hidden" id="menu-dropdown">
+      <button class="menu-item" id="menu-reset">↺ Azzera progressi</button>
+    </div>
+  </div>
+
+  <!-- ======= HOME ======= -->
+  <section id="screen-home" class="screen active">
+    <div class="home-bg"></div>
+    <header class="home-header">
+      <h1 class="logo"><span class="logo-badge">S</span> SQUER <span class="logo-tcg">TCG</span></h1>
+      <p class="tagline">Acchiappali tutti!</p>
+    </header>
+
+    <div class="home-stats" id="home-stats">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-owned">0</div>
+        <div class="stat-label">Carte possedute</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-packs">0</div>
+        <div class="stat-label">Pacchetti aperti</div>
+      </div>
+    </div>
+
+    <div class="collection-progress">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">0 / 0</div>
+    </div>
+
+    <div class="pack-counter" id="pack-counter">
+      <span class="pack-counter-icon">🎁</span>
+      <span id="pack-counter-text">5 pacchetti gratis oggi</span>
+    </div>
+
+    <button class="btn btn-primary btn-big" id="btn-open-pack">
+      <span class="btn-shine"></span>
+      Apri Pacchetto
+    </button>
+    <p class="hint" id="home-hint">Torna domani per altri pacchetti gratuiti</p>
+
+    <div class="home-actions">
+      <button class="btn btn-ghost" id="btn-collection">Album</button>
+    </div>
+
+    <div id="empty-banner" class="empty-banner hidden">
+      <b>Nessuna carta trovata</b><br>
+      Metti le tue immagini in <code>cards/custom/</code> e ricarica la pagina.
+      Se non funziona, avvia <code>tools/server.js</code> (o <code>start.bat</code>)
+      oppure esegui <code>node tools/build-manifest.js</code>.
+    </div>
+
+    <div class="latest-pulls" id="latest-pulls"></div>
+
+    <footer class="footer-note">Squer TCG · Made with 💛 by Erio</footer>
+  </section>
+
+  <!-- ======= PACK OPENING ======= -->
+  <section id="screen-pack" class="screen">
+    <div class="pack-topbar">
+      <button class="btn btn-ghost btn-back" id="btn-pack-back">← Indietro</button>
+      <span class="pack-top-title" id="pack-top-title">Apri il pacchetto</span>
+    </div>
+    <div id="pack-new-banner" class="pack-new-banner hidden">✦ NUOVA!</div>
+    <div id="pack-scene" class="scene-container"></div>
+    <div id="pack-hud" class="pack-hud">
+      <div id="pack-hud-text" class="pack-hud-text">Trascina per aprire!</div>
+      <div class="pack-dots" id="pack-dots"></div>
+    </div>
+  </section>
+
+  <!-- ======= COLLECTION ======= -->
+  <section id="screen-collection" class="screen">
+    <div class="collection-topbar">
+      <header class="screen-header">
+        <button class="btn btn-ghost btn-back" id="btn-collection-back">← Indietro</button>
+        <h2>Album</h2>
+        <div class="header-spacer"></div>
+      </header>
+      <div class="filter-row">
+        <button class="chip active" data-filter="all">Tutte</button>
+        <button class="chip" data-filter="common">Comuni</button>
+        <button class="chip" data-filter="uncommon">Non Comuni</button>
+        <button class="chip" data-filter="rare">Rare</button>
+        <button class="chip" data-filter="superRare">Super Rare</button>
+        <button class="chip" data-filter="legendary">Leggendarie</button>
+      </div>
+      <div class="collection-tools">
+        <input type="search" id="search-input" class="search-input" placeholder="🔍 Cerca per nome..." autocomplete="off">
+        <div class="own-toggle" id="own-toggle">
+          <button class="chip active" data-own="all">Tutte</button>
+          <button class="chip" data-own="owned">Possedute</button>
+        </div>
+      </div>
+    </div>
+    <div id="collection-grid" class="collection-grid"></div>
+  </section>
+
+  <!-- ======= CARD DETAIL ======= -->
+  <section id="screen-detail" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-detail-back">← Indietro</button>
+      <h2 id="detail-title">Carta</h2>
+      <div class="header-spacer detail-nav">
+        <button class="btn btn-ghost btn-nav" id="btn-detail-prev" title="Carta precedente">‹</button>
+        <button class="btn btn-ghost btn-nav" id="btn-detail-next" title="Carta successiva">›</button>
+      </div>
+    </header>
+    <div id="detail-scene" class="scene-container"></div>
+    <div class="detail-info" id="detail-info"></div>
+  </section>
+
+  <!-- ======= PACK SUMMARY MODAL ======= -->
+  <div id="pack-summary-modal" class="modal hidden">
+    <div class="modal-card modal-wide">
+      <div class="modal-badge">✨</div>
+      <h3 id="summary-title">Nuove carte!</h3>
+      <div class="summary-list" id="summary-list"></div>
+      <button class="btn btn-primary" id="summary-continue">Continua</button>
+    </div>
+  </div>
+
+  <!-- ======= TOAST ======= -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ======= LOADING ======= -->
+  <div id="loader" class="loader">
+    <div class="loader-inner">
+      <div class="loader-logo">S</div>
+      <div class="loader-title">SQUER TCG</div>
+      <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
+      <div class="loader-text" id="loader-text">Caricamento carte...</div>
+    </div>
+  </div>
+
+  <script src="vendor/three.min.js"></script>
+  <script>
+    // CDN fallback if local copy missing
+    if (typeof THREE === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
+  <script src="js/rng.js"></script>
+  <script src="js/rarity.js"></script>
+  <script src="js/cardgen.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/packs.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
