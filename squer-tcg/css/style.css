@@ -111,6 +111,34 @@ body { position: fixed; inset: 0; }
 .btn-danger { color: #ffb3ba; border-color: rgba(255,95,109,.4); }
 .btn-back { padding: 8px 14px; font-size: 13px; }
 
+/* ---- bottone installa PWA ---- */
+.install-btn {
+  margin-top: 12px; padding: 12px 22px; font-size: 14px;
+  background: rgba(255,201,61,.1); border: 1px solid rgba(255,201,61,.45);
+  color: var(--gold); border-radius: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: transform .12s ease, filter .2s ease;
+}
+.install-btn:hover { filter: brightness(1.15); }
+.install-btn:active { transform: scale(.96); }
+.install-btn.hidden { display: none; }
+
+/* ---- hint installazione iOS ---- */
+.ios-hint {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(13,17,23,.72); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.ios-hint-card {
+  background: var(--panel); border: 1px solid #2a3450; border-radius: 18px;
+  box-shadow: var(--shadow); padding: 22px; max-width: 340px; width: 100%;
+  text-align: left;
+}
+.ios-hint-card b { color: var(--gold); font-size: 17px; }
+.ios-hint-card p { color: var(--text); font-size: 14px; line-height: 1.5; margin: 12px 0; }
+.ios-hint-card .btn { margin-top: 6px; width: 100%; }
+.ios-share-icon { font-size: 18px; color: var(--accent); }
+
 .hint { color: var(--muted); font-size: 12px; margin-top: 10px; min-height: 16px; }
 .home-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; justify-content: center; }
 .footer-note { margin-top: auto; padding-top: 26px; color: #5a6478; font-size: 12px; }
