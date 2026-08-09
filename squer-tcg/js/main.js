@@ -224,8 +224,7 @@ const App = {
       return;
     }
     const btn = document.createElement('button');
-    btn.className = 'btn btn-primary btn-big';
-    btn.style.marginTop = '10px';
+    btn.className = 'btn btn-primary btn-next-pack';
     btn.textContent = 'Apri un altro pacchetto';
     btn.onclick = () => {
       btn.remove();
