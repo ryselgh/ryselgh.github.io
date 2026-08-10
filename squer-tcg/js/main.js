@@ -11,6 +11,13 @@ const RARITY_TAG_COLOR = {
   superRare: '#ff5fd0', legendary: '#ffc93d',
 };
 
+const TYPE_NAMES_IT = {
+  fuoco: 'Fuoco', erba: 'Erba', acqua: 'Acqua', folgore: 'Folgore',
+  psico: 'Psico', lottatore: 'Lottatore', buio: 'Buio', fata: 'Fata',
+  drago: 'Drago', metallo: 'Metallo', spettrale: 'Spettrale', normale: 'Normale',
+};
+function typeName(t) { return TYPE_NAMES_IT[t] || t; }
+
 const App = {
   cards: [],
   scene: null,
@@ -26,12 +33,31 @@ const App = {
   async init() {
     this.bindEvents();
     const entries = await loadManifest();
-    this.cards = await createCardSet(entries);
-    this.updateLoader(0.9, 'Carte pronte!');
+    this.cards = await createCardSet(entries, (done, total, phase) => {
+      if (phase === 'draw') {
+        // fase 2: disegno dei canvas (dopo il caricamento immagini)
+        this.updateLoader(70 + Math.round((done / total) * 20), `Disegno carte... ${done} / ${total}`);
+      } else {
+        // fase 1: scaricamento immagini (0 -> 70% della barra)
+        this.updateLoader(Math.round((done / total) * 70), `Caricamento carte... ${done} / ${total}`);
+      }
+    });
+    // breve pausa: lascia vedere "Disegno carte... 180 / 180" al 90%
+    await new Promise(r => setTimeout(r, 250));
+    this.updateLoader(100, 'Carte pronte!');
     setTimeout(() => {
       $('#loader').classList.add('hidden');
-      this.showScreen('home');
-      this.refreshHome();
+      // badge valuta e menu: app pronta (il badge NON deve galleggiare
+      // sopra il loader durante il caricamento iniziale)
+      document.body.classList.add('app-ready');
+      // primo avvio: chiedi il nickname prima di tutto
+      if (!loadState().nickname) {
+        this.showScreen('nickname');
+        $('#nickname-input').focus();
+      } else {
+        this.showScreen('home');
+        this.refreshHome();
+      }
       if (!this.cards.length) $('#empty-banner').classList.remove('hidden');
       this.watchManifestChanges();
     }, 300);
@@ -57,16 +83,8 @@ const App = {
     }, 5000);
   },
 
-  bindProgress() {
-    let p = 0;
-    const iv = setInterval(() => {
-      p = Math.min(p + Math.random() * 18, 85);
-      $('#loader-fill').style.width = p + '%';
-    }, 120);
-    this._loaderIv = iv;
-  },
   updateLoader(p, text) {
-    clearInterval(this._loaderIv);
+    if (this._loaderIv) clearInterval(this._loaderIv);
     $('#loader-fill').style.width = p + '%';
     if (text) $('#loader-text').textContent = text;
   },
@@ -80,25 +98,40 @@ const App = {
     if (topMenu) topMenu.classList.toggle('hidden', name !== 'home');
     if (name === 'home') this.refreshHome();
     if (name === 'collection') this.renderCollection();
+    // il badge valuta è globale: si aggiorna ad ogni cambio schermata
+    this.updateSqueriniBadge();
+  },
+
+  updateSqueriniBadge() {
+    $('#squerini-count').textContent = loadState().squerini;
   },
 
   // ---------- home ----------
   refreshHome() {
     const stats = collectionStats(this.cards);
+    const s = loadState();
     $('#stat-owned').textContent = stats.owned;
     $('#stat-packs').textContent = stats.packsOpened;
+    $('#squerini-count').textContent = s.squerini;
+    $('#home-nickname').textContent = s.nickname || 'Squer Trainer';
     const pct = stats.total ? Math.round((stats.owned / stats.total) * 100) : 0;
     $('#progress-fill').style.width = pct + '%';
     $('#progress-text').textContent = `${stats.owned} / ${stats.total}`;
 
-    const remaining = packsRemaining();
-    $('#pack-counter').style.display = remaining > 0 ? '' : 'none';
+    // badge pacchetti UNICO: o il benvenuto o i gratis di oggi, mai entrambi.
+    // Il contatore è la pillola in alto: quando non ci sono pacchetti mostra
+    // il messaggio "torna domani" al posto della riga tra i bottoni (ora rimossa).
+    const { welcome, daily } = packsBreakdown();
+    const remaining = welcome + daily;
+    $('#pack-counter').style.display = '';
+    $('#pack-counter').classList.toggle('empty', remaining <= 0);
     $('#pack-counter-text').textContent = remaining > 0
-      ? `${remaining} pacchett${remaining === 1 ? 'o' : 'i'} gratis oggi`
-      : '';
+      ? (welcome > 0
+        ? `Hai ${welcome} pacchett${welcome === 1 ? 'o' : 'i'} di benvenuto`
+        : `${daily} pacchett${daily === 1 ? 'o' : 'i'} gratis oggi`)
+      : 'Torna domani per altri pacchetti gratuiti';
     $('#btn-open-pack').disabled = remaining <= 0;
     $('#btn-open-pack').style.opacity = remaining <= 0 ? 0.5 : 1;
-    $('#home-hint').textContent = remaining <= 0 ? 'Torna domani per altri pacchetti gratuiti' : '';
 
     this.renderLatestPulls();
   },
@@ -149,7 +182,8 @@ const App = {
     hud.querySelectorAll('button').forEach(b => b.remove());
     $('#pack-dots').innerHTML = Array.from({ length: PACK_SIZE }, () => '<div class="dot"></div>').join('');
     $('#pack-hud-text').textContent = 'Trascina per aprire ⚡';
-    $('#pack-top-title').textContent = 'Apri il pacchetto';
+    $('#pack-top-title').textContent = loadState().welcomePacks > 0
+      ? 'Pacchetto di benvenuto 🎁' : 'Apri il pacchetto';
 
     this.disposeScene();
     this.scene = new SQUER.SquerScene($('#pack-scene'));
@@ -356,6 +390,10 @@ const App = {
         <div class="detail-stat"><b>${card.hp}</b><span>PV</span></div>
         <div class="detail-stat"><b>${card.pulled}</b><span>Possedute</span></div>
         <div class="detail-stat"><b>${card.rarity.name}</b><span>Rarità</span></div>
+      </div>
+      <div class="detail-ability">
+        <span class="ability-symbol">${card.abilitySymbol}</span>
+        <span class="ability-body"><b>${card.abilityName}</b> — ${card.abilityText}</span>
       </div>`;
     $('#btn-detail-prev').disabled = this.detailIndex <= 0;
     $('#btn-detail-next').disabled = this.detailIndex >= this.cards.length - 1;
@@ -371,7 +409,395 @@ const App = {
     this.renderDetail();
   },
 
+  // ---------- nickname (primo avvio) ----------
+  saveNickname() {
+    const v = $('#nickname-input').value.trim();
+    const err = $('#nickname-error');
+    if (v.length < 3 || v.length > 16) {
+      err.textContent = 'Il nickname deve avere 3-16 caratteri';
+      err.classList.remove('hidden');
+      return;
+    }
+    err.classList.add('hidden');
+    const s = loadState();
+    s.nickname = v;
+    saveState(s);
+    this.showScreen('home');
+    this.refreshHome();
+    this.toast(`Benvenuto, ${v}! 🎉`, true);
+  },
+
+  // ---------- mazzo ----------
+  showDeck() {
+    this.showScreen('deck');
+    this.renderDeck();
+  },
+
+  renderDeck() {
+    const s = loadState();
+    const deckCards = s.deck.map(uid => this.cards.find(c => c.uid === uid)).filter(Boolean);
+    $('#deck-count').textContent = `${deckCards.length}/8`;
+    const grid = $('#deck-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < 8; i++) {
+      const c = deckCards[i];
+      const slot = document.createElement('div');
+      slot.className = 'deck-slot';
+      if (c) {
+        slot.innerHTML = `<img src="${this.thumbDataUrl(c)}" alt="${c.name}">
+          <span class="slot-type">${c.typeSymbol} ${c.hp} PV</span>
+          <span class="slot-x">✕</span>`;
+        slot.querySelector('.slot-x').onclick = (e) => {
+          e.stopPropagation();
+          this.deckRemove(c.uid);
+        };
+      } else {
+        slot.textContent = '+';
+        slot.title = 'Aggiungi una carta';
+        slot.onclick = () => {
+          if (locked) { this.toast(`Apri pacchetti: servono ${MIN_OWNED_TO_UNLOCK} carte per sbloccare il mazzo`); return; }
+          this.openDeckPicker();
+        };
+      }
+      grid.appendChild(slot);
+    }
+    const owned = collectionStats(this.cards).owned;
+    const locked = owned < MIN_OWNED_TO_UNLOCK;
+    $('#deck-lock-msg').textContent = locked
+      ? `🔒 Apri pacchetti: servono ${MIN_OWNED_TO_UNLOCK} carte per sbloccare Squer Clash (ne hai ${owned})`
+      : '';
+    $('#btn-deck-pick').disabled = locked;
+    $('#btn-deck-pick').style.opacity = locked ? 0.5 : 1;
+  },
+
+  deckRemove(uid) {
+    const s = loadState();
+    s.deck = s.deck.filter(u => u !== uid);
+    saveState(s);
+    SQUER.sound.remove();
+    this.renderDeck();
+  },
+
+  openDeckPicker() {
+    const s = loadState();
+    const owned = this.cards.filter(c => isOwned(c.uid));
+    const grid = $('#deck-picker-grid');
+    grid.innerHTML = '';
+    const full = s.deck.length >= DECK_SIZE;
+    owned.forEach(c => {
+      const div = document.createElement('div');
+      const inDeck = s.deck.indexOf(c.uid) >= 0;
+      div.className = 'deck-pick' + (inDeck ? ' in-deck' : '') + (full && !inDeck ? ' full' : '');
+      div.innerHTML = `<img src="${this.thumbDataUrl(c)}" alt="${c.name}">`;
+      div.onclick = () => this.deckToggle(c, div);
+      grid.appendChild(div);
+    });
+    $('#deck-picker-modal').classList.remove('hidden');
+    this.updateDeckPickerCount();
+  },
+
+  deckToggle(c, el) {
+    const s = loadState();
+    if (s.deck.indexOf(c.uid) >= 0) {
+      s.deck = s.deck.filter(u => u !== c.uid);
+      el.classList.remove('in-deck');
+      SQUER.sound.remove();
+    } else {
+      if (s.deck.length >= DECK_SIZE) { this.toast('Mazzo pieno (8 carte)'); return; }
+      s.deck.push(c.uid);
+      el.classList.add('in-deck');
+      SQUER.sound.place();
+    }
+    saveState(s);
+    this.updateDeckPickerCount();
+    const full = s.deck.length >= DECK_SIZE;
+    $$('#deck-picker-grid .deck-pick').forEach(d =>
+      d.classList.toggle('full', full && !d.classList.contains('in-deck')));
+  },
+
+  updateDeckPickerCount() {
+    $('#deck-picker-count').textContent = `${loadState().deck.length}/8`;
+  },
+
+  // ---------- partita (Squer Clash) ----------
+  startMatch() {
+    const s = loadState();
+    const owned = collectionStats(this.cards).owned;
+    if (owned < MIN_OWNED_TO_UNLOCK) {
+      this.toast(`Apri pacchetti: servono ${MIN_OWNED_TO_UNLOCK} carte per giocare`);
+      return;
+    }
+    const deckCards = s.deck.map(uid => this.cards.find(c => c.uid === uid)).filter(Boolean);
+    if (deckCards.length < MIN_DECK_TO_PLAY) {
+      this.toast('Costruisci il tuo mazzo (almeno 3 carte) per giocare');
+      this.showDeck();
+      return;
+    }
+
+    SQUER.sound.unlock();
+    this.disposeScene();
+    this.showScreen('battle');
+    const rng = makeRNG('match_' + Date.now() + '_' + Math.random());
+    const hand = rng.shuffle(deckCards).slice(0, Math.min(HAND_SIZE, deckCards.length));
+    const ownedUids = this.cards.filter(c => isOwned(c.uid)).map(c => c.uid);
+    const botDeck = SQUER.GAME.makeBotDeck(this.cards, ownedUids, rng);
+    const botHand = rng.shuffle(botDeck).slice(0, HAND_SIZE);
+    const botTeam = SQUER.GAME.pickTeam(botHand, rng);
+
+    this.match = { hand, team: [], zones: {}, botTeam, botZones: null, results: {}, rng };
+    this.battleScore = { p: 0, b: 0 };
+    this.phase = 'team';
+
+    this.scene = new SQUER.BattleScene($('#battle-scene'), {
+      botTeam,
+      onHandTap: (i) => this.onBattleHandTap(i),
+      onZoneTap: (z) => this.onBattleZoneTap(z),
+      onUndeployTap: (z) => this.onBattleUndeployTap(z),
+      onHandHover: (i) => this.onBattleHandHover(i),
+      onBotHover: (c) => this.showBattleCardInfo(c),
+    });
+    // niente carte bot visibili durante la scelta: solo la mano COPERTA
+    this.scene.showHand(hand);
+    this.scene.showBotHand(botHand);
+    // SquerBot "sceglie" le sue 3 carte con la mano coperta
+    const pickIdx = botTeam.map(c => botHand.indexOf(c));
+    this.scene.botPick(pickIdx);
+    $('#battle-score').classList.add('hidden');
+    $('#battle-msg').textContent = 'Scegli 3 carte per la tua squadra (max 2 per tipo)';
+    $('#battle-action').textContent = 'Conferma squadra';
+    $('#battle-action').disabled = true;
+  },
+
+  onBattleHandTap(i) {
+    const card = this.match.hand[i];
+    if (!card) return;
+    SQUER.sound.click();
+    if (this.phase === 'team') {
+      const idx = this.match.team.indexOf(card);
+      if (idx >= 0) {
+        this.match.team.splice(idx, 1);
+      } else {
+        if (this.match.team.length >= TEAM_SIZE) { this.toast('Squadra piena: 3 carte'); return; }
+        const same = this.match.team.filter(c => c.type === card.type).length;
+        if (same >= MAX_SAME_TYPE) { this.toast('Max 2 carte dello stesso tipo'); return; }
+        this.match.team.push(card);
+      }
+      const sel = this.match.team.map(c => this.match.hand.indexOf(c)).filter(i2 => i2 >= 0);
+      this.scene.setTeamSelection(sel);
+      $('#battle-msg').textContent = sel.length === 3
+        ? 'Squadra pronta! SquerBot ha scelto in segreto: le sue carte restano nascoste.'
+        : `Scegli 3 carte per la tua squadra (${sel.length}/3)`;
+      $('#battle-action').disabled = sel.length < 3;
+      // mostra i dati della carta toccata
+      this.showBattleCardInfo(card);
+    } else if (this.phase === 'deploy') {
+      this.scene.setSelected(i);
+      this.showBattleCardInfo(card);
+    }
+  },
+
+  /** Pannello sotto la scena: dati di gioco della carta in mano
+      (nome, tipo con vince/perde, PV, effetto). */
+  showBattleCardInfo(card) {
+    const box = $('#battle-card-info');
+    if (!card) {
+      box.classList.add('hidden');
+      return;
+    }
+    const beats = (SQUER.GAME.TYPE_BEATS[card.type] || []).map(t => typeName(t)).join(', ');
+    const losesTo = Object.keys(SQUER.GAME.TYPE_BEATS)
+      .filter(t => SQUER.GAME.TYPE_BEATS[t].indexOf(card.type) >= 0)
+      .map(t => typeName(t)).join(', ');
+    const ability = card.abilityName
+      ? `<div class="ability">${card.abilitySymbol} <b>${card.abilityName}</b> — ${card.abilityText}</div>`
+      : '';
+    box.innerHTML = `
+      <div><b class="name">${card.typeSymbol} ${card.name}</b></div>
+      <div class="stat-row">
+        <span>❤️ <b>${card.hp}</b> PV</span>
+        <span>${card.typeSymbol} ${typeName(card.type)}</span>
+        <span>${card.rarity.name}</span>
+      </div>
+      ${ability}
+      <div class="weakness">Vince su: ${beats || '—'} · Perde contro: ${losesTo || '—'}</div>`;
+    box.classList.remove('hidden');
+  },
+
+  onBattleHandHover(i) {
+    // hover/press su una carta in mano: mostra i suoi dati
+    this.showBattleCardInfo(i >= 0 ? this.match.hand[i] : null);
+  },
+
+  confirmTeam() {
+    if (this.phase !== 'team' || this.match.team.length < 3) return;
+    SQUER.sound.whoosh();
+    this.phase = 'showdown';
+    // ferma la "scelta" simulata del bot: le sue carte restano coperte
+    this.scene.botPickCancel();
+    // il bot schiera le sue carte sulle zone IN SEGRETO (mappa zona->carta)
+    this.match.botZones = SQUER.GAME.botDeploy(this.match.botTeam, this.match.rng);
+    // la mano resta solo con le 3 carte scelte, ordinate come nell'album
+    const chosen = this.cards.filter(c => this.match.team.indexOf(c) >= 0);
+    this.match.hand = chosen;
+    this.scene.showHand(chosen);
+    this.scene.beginShowdown();
+    $('#battle-msg').textContent = 'Le squadre si rivelano! Memorizza le carte di SquerBot...';
+    $('#battle-action').textContent = 'In arrivo lo schieramento…';
+    $('#battle-action').disabled = true;
+    $('#battle-card-info').classList.add('hidden');
+    this._startShowdownCountdown();
+  },
+
+  /** Countdown di memorizzazione (configurabile, default 10s):
+      vive nel messaggio di stato sotto la scena (non copre mai le
+      carte del bot) e NON è skippabile: scorre fino a zero e poi
+      parte lo schieramento. */
+  _startShowdownCountdown() {
+    const total = (SQUER.CONFIG && SQUER.CONFIG.SHOWDOWN_COUNTDOWN) || 10;
+    let left = total;
+    this._cdToken = { stopped: false };
+    const msg = () => {
+      $('#battle-msg').innerHTML =
+        `Memorizza le carte di SquerBot: <span class="battle-msg-countdown">${left}s</span>`;
+      // i secondi vivono anche nel testo del bottone sotto la scena:
+      // ben visibili e senza coprire nulla
+      $('#battle-action').textContent = `Schieramento tra ${left}s…`;
+      $('#battle-action').disabled = true;
+    };
+    msg();
+    const tick = () => {
+      if (this._cdToken.stopped || this.phase !== 'showdown') return;
+      left--;
+      if (left <= 0) { this._finishShowdown(); return; }
+      msg();
+      this._cdTimer = setTimeout(tick, 1000);
+    };
+    this._cdTimer = setTimeout(tick, 1000);
+  },
+
+  /** Fine countdown: carte del bot coperte e mischiate, si schiera. */
+  _finishShowdown() {
+    if (this.phase !== 'showdown') return;
+    this.phase = 'deploy';
+    clearTimeout(this._cdTimer);
+    this._cdTimer = null;
+    if (this._cdToken) this._cdToken.stopped = true;
+    this.scene.coverAndShuffle(() => {
+      if (this.phase !== 'deploy') return;
+      this.scene.beginDeploy();
+      this.scene.startDeploy(this.match.botZones);
+      $('#battle-msg').textContent = 'Carte coperte e mischiate! Piazza le tue 3 carte: toccala e scegli la zona, oppure trascinala nello slot';
+      $('#battle-action').textContent = '⚔️ Inizia lo scontro!';
+      $('#battle-action').disabled = true;
+    });
+  },
+
+  onBattleZoneTap(z) {
+    if (this.phase !== 'deploy') return;
+    const sel = this.scene.selectedIndex;
+    if (sel < 0) { this.toast('Prima tocca una carta in mano'); return; }
+    if (this.match.zones[z]) { this.toast('Zona già occupata'); return; }
+    const card = this.match.hand[sel];
+    this.scene.deployPlayer(z, card, sel);
+    this.match.zones[z] = card;
+    const left = TEAM_SIZE - Object.keys(this.match.zones).length;
+    if (left === 0) {
+      $('#battle-msg').textContent = 'Schieramento completo!';
+      $('#battle-action').disabled = false;
+    } else {
+      $('#battle-msg').textContent = `Ancora ${left} carta${left === 1 ? '' : 'e'} da piazzare`;
+    }
+  },
+
+  onBattleUndeployTap(z) {
+    if (this.phase !== 'deploy') return;
+    if (!this.match.zones[z]) return;
+    delete this.match.zones[z];
+    this.scene.undeployPlayer(z);
+    $('#battle-msg').textContent = 'Carta rimossa: riposizionala oppure scegline un\'altra';
+    $('#battle-action').disabled = true;
+  },
+
+  startBattle() {
+    if (this.phase !== 'deploy' || Object.keys(this.match.zones).length < 3) return;
+    this.phase = 'reveal';
+    this.scene.beginReveal();
+    $('#battle-action').disabled = true;
+    $('#battle-score').classList.remove('hidden');
+    this.revealedZones = 0;
+    this.revealNextZone();
+  },
+
+  revealNextZone() {
+    const z = ZONE_KEYS[this.revealedZones];
+    if (!z) { this.finishMatch(); return; }
+    const result = SQUER.GAME.resolveDuel(this.match.zones[z], this.match.botZones[z]);
+    this.match.results[z] = result;
+    const zname = z === 'left' ? 'Sinistra' : z === 'center' ? 'Centro' : 'Destra';
+    $('#battle-msg').textContent = `Zona ${zname}: la carta di SquerBot si rivela...`;
+    this.scene.revealZone(z, result, () => {
+      this.battleScore.p += result.aScore;
+      this.battleScore.b += result.bScore;
+      $('#battle-score-p').textContent = this.battleScore.p;
+      $('#battle-score-b').textContent = this.battleScore.b;
+      this.revealedZones++;
+      setTimeout(() => this.revealNextZone(), 750);
+    });
+  },
+
+  finishMatch() {
+    const m = SQUER.GAME.resolveMatch(this.match.zones, this.match.botZones);
+    const reward = SQUER.GAME.matchReward(m.outcome);
+    const s = loadState();
+    s.squerini += reward;
+    s.matches.push({
+      date: Date.now(), vs: 'bot', outcome: m.outcome,
+      pTotal: m.pTotal, bTotal: m.bTotal, reward,
+      playerTeam: this.match.team.map(c => c.uid),
+      botTeam: this.match.botTeam.map(c => c.uid),
+      zones: this.match.zones,
+    });
+    saveState(s);
+    this.phase = 'done';
+    this.updateSqueriniBadge();
+    $('#battle-msg').textContent = m.outcome === 'win' ? 'Vittoria! 🎉' : (m.outcome === 'draw' ? 'Pareggio!' : 'Sconfitta...');
+    if (m.outcome === 'win') SQUER.sound.matchWin();
+    else if (m.outcome === 'draw') SQUER.sound.matchDraw();
+    else SQUER.sound.matchLose();
+    this.showResultModal(m, reward);
+  },
+
+  showResultModal(m, reward) {
+    const zoneName = { left: 'Sinistra', center: 'Centro', right: 'Destra' };
+    $('#result-icon').textContent = m.outcome === 'win' ? '🏆' : (m.outcome === 'draw' ? '🤝' : '💀');
+    $('#result-title').textContent = m.outcome === 'win' ? 'Vittoria!' : (m.outcome === 'draw' ? 'Pareggio' : 'Sconfitta');
+    $('#result-score').textContent = `${m.pTotal} — ${m.bTotal}`;
+    $('#result-reward').textContent = reward > 0 ? `+${reward} 🪙 Squerini` : 'Nessun guadagno';
+    $('#result-zones').innerHTML = ZONE_KEYS.map(z => {
+      const r = m.results[z];
+      const res = r.winner === 'a' ? 'win' : (r.winner === 'b' ? 'lose' : 'draw');
+      const label = res === 'win' ? `Tu +${r.aScore}` : (res === 'lose' ? `Bot +${r.bScore}` : 'Pari');
+      return `<div class="result-zone ${res}">${zoneName[z]}<b>${label}</b></div>`;
+    }).join('');
+    $('#result-modal').classList.remove('hidden');
+  },
+
+  rematch() {
+    $('#result-modal').classList.add('hidden');
+    this.disposeScene();
+    this.startMatch();
+  },
+
+  quitBattle() {
+    this.disposeScene();
+    $('#result-modal').classList.add('hidden');
+    this.showScreen('home');
+    this.refreshHome();
+  },
+
   disposeScene() {
+    if (this._cdTimer) { clearTimeout(this._cdTimer); this._cdTimer = null; }
+    if (this._cdToken) { this._cdToken.stopped = true; this._cdToken = null; }
     if (this.scene) { this.scene.dispose(); this.scene = null; }
   },
 
@@ -392,6 +818,27 @@ const App = {
     $('#btn-collection-back').addEventListener('click', () => this.showScreen('home'));
     $('#btn-detail-back').addEventListener('click', () => { this.disposeScene(); this.showScreen('collection'); });
 
+    // ---- Squer Clash ----
+    $('#btn-play').addEventListener('click', () => this.startMatch());
+    $('#btn-deck').addEventListener('click', () => this.showDeck());
+    $('#btn-deck-back').addEventListener('click', () => this.showScreen('home'));
+    $('#btn-deck-pick').addEventListener('click', () => this.openDeckPicker());
+    $('#deck-picker-done').addEventListener('click', () => {
+      $('#deck-picker-modal').classList.add('hidden');
+      this.renderDeck();
+    });
+    $('#btn-nickname-ok').addEventListener('click', () => this.saveNickname());
+    $('#nickname-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') this.saveNickname(); });
+    $('#btn-battle-quit').addEventListener('click', () => this.quitBattle());
+    // niente skip del countdown: scade e parte lo schieramento da solo
+    $('#battle-action').addEventListener('click', () => {
+      if (this.phase === 'team') this.confirmTeam();
+      else if (this.phase === 'deploy') this.startBattle();
+    });
+    $('#result-rematch').addEventListener('click', () => this.rematch());
+    $('#result-home').addEventListener('click', () => this.quitBattle());
+    $('#result-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.quitBattle(); });
+
     // top menu (hamburger)
     $('#menu-btn').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -402,10 +849,17 @@ const App = {
     });
     $('#menu-reset').addEventListener('click', () => {
       $('#menu-dropdown').classList.add('hidden');
-      if (confirm('Azzera tutti i progressi? Le carte verranno rigenerate.')) {
+      if (confirm('Azzera i progressi? Collezione e partite verranno azzerate.\nNickname, squerini e mazzo restano.')) {
         resetProgress();
         this.refreshHome();
         this.toast('Progressi azzerati');
+      }
+    });
+    $('#menu-wipe').addEventListener('click', () => {
+      $('#menu-dropdown').classList.add('hidden');
+      if (confirm('Cancellare TUTTI i dati? L\'app tornerà come appena installata.')) {
+        wipeAllData();
+        location.reload();
       }
     });
 

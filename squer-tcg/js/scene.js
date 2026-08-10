@@ -40,6 +40,7 @@ function roundedRectShape(w, h, r) {
   s.quadraticCurveTo(x, y, x + r, y);
   return s;
 }
+SQUER.roundedRectShape = roundedRectShape;
 
 class SquerScene {
   constructor(container) {
@@ -178,66 +179,10 @@ class SquerScene {
   }
 
   // ---- card creation -------------------------------------
+  /** Build a card mesh (front/back/edges). Riusabile da altre scene
+      (es. BattleScene) via SQUER.buildCardMesh. */
   makeCardMesh(card, scale = 1) {
-    const w = 1.6 * scale, h = 2.25 * scale, d = 0.05 * scale;
-    // ★ angoli stondati: stesso raggio del bordino bianco disegnato sul
-    // canvas (14px su 512), così la geometria 3D coincide col bordo e
-    // gli angoli non risultano piu' a punta
-    const radius = 14 / 512 * w;
-    const shape = roundedRectShape(w, h, radius);
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
-    geo.translate(0, 0, -d / 2); // centra su z (front a +d/2, back a -d/2)
-
-    // UV delle facce front/back: ExtrudeGeometry le genera in unita' mondo
-    // (shape centrata), le normalizziamo a 0..1 per mappare la texture
-    const pos = geo.attributes.position;
-    const uv = geo.attributes.uv;
-    for (let i = 0; i < pos.count; i += 3) {
-      const ax = pos.getX(i), ay = pos.getY(i);
-      const bx = pos.getX(i + 1), by = pos.getY(i + 1);
-      const cx = pos.getX(i + 2), cy = pos.getY(i + 2);
-      const nz = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-      if (Math.abs(nz) > 1e-6) { // faccia front/back (i lati hanno nz = 0)
-        for (let j = 0; j < 3; j++) {
-          const x = pos.getX(i + j), y = pos.getY(i + j);
-          uv.setXY(i + j, (x + w / 2) / w, (y + h / 2) / h);
-        }
-      }
-    }
-
-    // raggruppa i triangoli per materiale: front (nz>0), back (nz<0), lati
-    const groups = [];
-    let cur = null;
-    const flush = () => { if (cur && cur.count > 0) groups.push(cur); };
-    for (let i = 0; i < pos.count; i += 3) {
-      const ax = pos.getX(i), ay = pos.getY(i);
-      const bx = pos.getX(i + 1), by = pos.getY(i + 1);
-      const cx = pos.getX(i + 2), cy = pos.getY(i + 2);
-      const nz = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-      const idx = Math.abs(nz) > 1e-6 ? (nz > 0 ? 0 : 1) : 2;
-      if (!cur || cur.materialIndex !== idx) { flush(); cur = { start: i, count: 0, materialIndex: idx }; }
-      cur.count += 3;
-    }
-    flush();
-    geo.clearGroups();
-    for (const g of groups) geo.addGroup(g.start, g.count, g.materialIndex);
-
-    const frontTex = new THREE.CanvasTexture(card.canvas);
-    frontTex.anisotropy = 4;
-    const frontMat = new THREE.MeshStandardMaterial({
-      map: frontTex, roughness: 0.35, metalness: 0.15,
-    });
-
-    // back texture (procedural)
-    const backTex = new THREE.CanvasTexture(SQUER.artBack());
-    const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
-
-    const edgeMat = new THREE.MeshStandardMaterial({ color: 0x11141c, roughness: 0.8 });
-
-    const mats = [frontMat, backMat, edgeMat];
-    const mesh = new THREE.Mesh(geo, mats);
-    mesh.userData = { frontMat, backMat, card, dims: { w, h, d } };
-    return mesh;
+    return buildCardMesh(card, scale);
   }
 
   /** Show a single card (detail view) with flip-in */
@@ -744,4 +689,69 @@ function easeInCubic(k) { return k * k * k; }
 function easeOutBack(k) { const c = 1.70158; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); }
 function easeOutCubic2(k) { return easeOutCubic(k); }
 
+/** Mesh carta 3D standalone (front/back/edge), riusabile da altre scene
+    (es. BattleScene). Stesso codice di SquerScene.makeCardMesh. */
+function buildCardMesh(card, scale = 1) {
+  const w = 1.6 * scale, h = 2.25 * scale, d = 0.05 * scale;
+  // ★ angoli stondati: stesso raggio del bordino bianco disegnato sul
+  // canvas (14px su 512), così la geometria 3D coincide col bordo e
+  // gli angoli non risultano piu' a punta
+  const radius = 14 / 512 * w;
+  const shape = roundedRectShape(w, h, radius);
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
+  geo.translate(0, 0, -d / 2); // centra su z (front a +d/2, back a -d/2)
+
+  // UV delle facce front/back: ExtrudeGeometry le genera in unita' mondo
+  // (shape centrata), le normalizziamo a 0..1 per mappare la texture
+  const pos = geo.attributes.position;
+  const uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i += 3) {
+    const ax = pos.getX(i), ay = pos.getY(i);
+    const bx = pos.getX(i + 1), by = pos.getY(i + 1);
+    const cx = pos.getX(i + 2), cy = pos.getY(i + 2);
+    const nz = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    if (Math.abs(nz) > 1e-6) { // faccia front/back (i lati hanno nz = 0)
+      for (let j = 0; j < 3; j++) {
+        const x = pos.getX(i + j), y = pos.getY(i + j);
+        uv.setXY(i + j, (x + w / 2) / w, (y + h / 2) / h);
+      }
+    }
+  }
+
+  // raggruppa i triangoli per materiale: front (nz>0), back (nz<0), lati
+  const groups = [];
+  let cur = null;
+  const flush = () => { if (cur && cur.count > 0) groups.push(cur); };
+  for (let i = 0; i < pos.count; i += 3) {
+    const ax = pos.getX(i), ay = pos.getY(i);
+    const bx = pos.getX(i + 1), by = pos.getY(i + 1);
+    const cx = pos.getX(i + 2), cy = pos.getY(i + 2);
+    const nz = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    const idx = Math.abs(nz) > 1e-6 ? (nz > 0 ? 0 : 1) : 2;
+    if (!cur || cur.materialIndex !== idx) { flush(); cur = { start: i, count: 0, materialIndex: idx }; }
+    cur.count += 3;
+  }
+  flush();
+  geo.clearGroups();
+  for (const g of groups) geo.addGroup(g.start, g.count, g.materialIndex);
+
+  const frontTex = new THREE.CanvasTexture(card.canvas);
+  frontTex.anisotropy = 4;
+  const frontMat = new THREE.MeshStandardMaterial({
+    map: frontTex, roughness: 0.35, metalness: 0.15,
+  });
+
+  // back texture (procedural)
+  const backTex = new THREE.CanvasTexture(SQUER.artBack());
+  const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
+
+  const edgeMat = new THREE.MeshStandardMaterial({ color: 0x11141c, roughness: 0.8 });
+
+  const mats = [frontMat, backMat, edgeMat];
+  const mesh = new THREE.Mesh(geo, mats);
+  mesh.userData = { frontMat, backMat, card, dims: { w, h, d } };
+  return mesh;
+}
+
 SQUER.SquerScene = SquerScene;
+SQUER.buildCardMesh = buildCardMesh;

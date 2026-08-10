@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    Squer TCG - styles
    ========================================================= */
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -49,7 +49,7 @@ body { position: fixed; inset: 0; }
     radial-gradient(900px 500px at 90% 110%, rgba(255,201,61,.12), transparent 60%),
     linear-gradient(180deg, #10151f, #0b0f16);
 }
-.home-header { padding: 34px 20px 8px; }
+.home-header { padding: 48px 20px 8px; } /* 48px: lascia sotto il badge valuta (alto a sinistra) */
 .logo { font-size: 44px; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .logo-badge {
   width: 52px; height: 52px; border-radius: 50%;
@@ -60,6 +60,13 @@ body { position: fixed; inset: 0; }
 }
 .logo-tcg { color: var(--gold); font-size: 22px; }
 .tagline { color: var(--muted); margin-top: 6px; font-size: 15px; }
+/* nickname del giocatore in home: sempre visibile, mai ambiguo */
+.home-nickname {
+  margin-top: 10px; font-size: 15px; color: var(--text);
+  background: rgba(255,255,255,.04); border: 1px solid #2a3450;
+  border-radius: 99px; padding: 6px 16px; display: inline-block;
+}
+.home-nickname b { color: var(--gold); }
 
 .home-stats { display: flex; gap: 10px; width: 100%; max-width: 460px; padding: 22px 16px 0; }
 .stat-card {
@@ -84,6 +91,14 @@ body { position: fixed; inset: 0; }
   color: var(--gold); font-weight: 600; font-size: 14px;
   display: inline-flex; align-items: center; gap: 8px;
 }
+/* Pacchetti finiti: la pillola diventa un messaggio neutro, non dorato,
+   senza emoji e non in grassetto, così l'utente capisce che non è un
+   conteggio di pacchetti */
+.pack-counter.empty {
+  background: transparent; border-color: transparent;
+  color: var(--muted); font-weight: 400;
+}
+.pack-counter.empty .pack-counter-icon { display: none; }
 
 .btn {
   border: none; cursor: pointer; font-family: inherit; font-weight: 700;
@@ -95,9 +110,30 @@ body { position: fixed; inset: 0; }
   background: linear-gradient(135deg, var(--gold), #ffb347);
   color: #141b2b; padding: 16px 34px; font-size: 18px;
   box-shadow: 0 8px 24px rgba(255,201,61,.35);
-  position: relative; overflow: hidden;
+  position: relative;
+  /* NIENTE overflow:hidden qui: su Chrome collassa l'altezza del <button>
+     a sola padding e il testo viene tagliato. Lo shine di Apri Pacchetto
+     viene ritagliato con clip-path su #btn-open-pack. */
 }
 .btn-big { margin-top: 20px; }
+/* "Apri Pacchetto" home: mai su due righe. Con viewport stretti (o font
+   scaling del sistema) il testo andava a capo e il bottone si deformava.
+   Ora font e padding si riducono insieme alla larghezza dello schermo.
+   Larghezza ~metà del container (50%, max 220px): Apri Pacchetto, Gioca e
+   la riga Album/Mazzo condividono lo stesso box.
+   overflow:clip ritaglia lo shine dentro gli angoli arrotondati: a
+   differenza di overflow:hidden NON collassa l'altezza del <button> in
+   Chrome e non crea scroll interno (senza di esso lo shine animato
+   superava il bordo destro e compariva una scrollbar orizzontale
+   periodica su #screen-home). */
+#btn-open-pack {
+  white-space: nowrap;
+  font-size: clamp(14px, 4.5vw, 18px);
+  padding: 15px clamp(16px, 6vw, 34px);
+  width: 50%; max-width: 220px;
+  margin-top: 12px; /* uniforma lo spazio verticale (override di .btn-big 20px) */
+  overflow: clip;
+}
 .btn-shine {
   position: absolute; top: 0; left: -80%; width: 50%; height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
@@ -196,7 +232,12 @@ body { position: fixed; inset: 0; }
   position: fixed; left: 50%; top: 50%;
   transform: translate(-50%, -50%);
   margin-top: 0; z-index: 6; white-space: nowrap;
+  touch-action: none; /* niente scroll/pan che parte dal bottone */
 }
+/* IMPORTANTE: senza il translate qui, la regola globale .btn:active
+   (scale .96) sovrascriverebbe il centraggio e il bottone "salterebbe"
+   dal centro mentre è premuto. */
+.btn-next-pack:active { transform: translate(-50%, -50%) scale(.96); }
 
 /* ---------- collection ---------- */
 #screen-collection { background: linear-gradient(180deg, #10151f, #0b0f16); }
@@ -249,6 +290,15 @@ body { position: fixed; inset: 0; }
 .detail-info .detail-stat { background: var(--panel); border: 1px solid #2a3450; border-radius: 12px; padding: 8px 16px; }
 .detail-info .detail-stat b { display: block; font-size: 16px; color: var(--gold); }
 .detail-info .detail-stat span { font-size: 11px; color: var(--muted); }
+.detail-info .detail-ability {
+  display: flex; gap: 8px; align-items: flex-start; justify-content: center;
+  margin-top: 12px; padding: 10px 14px; max-width: 320px; margin-left: auto; margin-right: auto;
+  background: rgba(255,201,61,.08); border: 1px solid rgba(255,201,61,.35); border-radius: 12px;
+  text-align: left; line-height: 1.5;
+}
+.detail-info .detail-ability .ability-symbol { font-size: 20px; }
+.detail-info .detail-ability .ability-body { font-size: 13px; color: var(--muted); }
+.detail-info .detail-ability .ability-body b { color: var(--gold); font-weight: 800; }
 
 /* ---------- modal ---------- */
 .modal {
@@ -320,10 +370,13 @@ body { position: fixed; inset: 0; }
 .menu-dropdown.hidden { display: none; }
 .menu-item {
   width: 100%; text-align: left; background: transparent; border: none;
-  color: #ffb3ba; font-size: 14px; font-weight: 600; padding: 10px 14px;
+  color: var(--text); font-size: 14px; font-weight: 600; padding: 10px 14px;
   border-radius: 10px; cursor: pointer; font-family: inherit;
 }
-.menu-item:hover { background: rgba(255,95,109,.12); }
+.menu-item:hover { background: rgba(255,255,255,.06); }
+.menu-danger { color: #ffb3ba; }
+.menu-danger:hover { background: rgba(255,95,109,.12); }
+.menu-item + .menu-danger { border-top: 1px solid #2a3450; margin-top: 4px; padding-top: 12px; }
 
 /* ---------- collection: topbar sticky + tools ---------- */
 .collection-topbar {
@@ -377,3 +430,189 @@ body { position: fixed; inset: 0; }
 }
 .summary-item img { width: 100%; height: auto; display: block; }
 #summary-continue { align-self: center; padding: 14px 32px; }
+
+/* ---------- Squer Clash: home ---------- */
+/* Badge valuta GLOBALE: fisso in alto a sinistra, visibile su tutte le
+   schermate. Gli header con un pulsante "← Indietro" guadagnano un margine
+   sinistro (.btn-back) così il badge non copre mai nulla.
+   Nascosto durante il caricamento iniziale: appare solo quando l'app è
+   pronta (body.app-ready), altrimenti galleggerebbe sopra il loader. */
+.squerini-badge {
+  display: none;   /* mostrato da body.app-ready (sotto) */
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 10px;
+  z-index: 220;
+  background: rgba(13,17,23,.88); border: 1px solid rgba(255,201,61,.45);
+  color: var(--gold); border-radius: 99px; padding: 6px 12px;
+  font-size: 14px; font-weight: 700; align-items: center; gap: 4px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.45);
+  backdrop-filter: blur(4px);
+}
+body.app-ready .squerini-badge { display: inline-flex; }
+.squerini-badge b { font-size: 15px; }
+/* X di uscita della battaglia: in alto a DESTRA (fissa), mai sotto il badge */
+#btn-battle-quit {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  right: 10px;
+  z-index: 210;
+  margin-left: 0;
+}
+#screen-battle .header-spacer { display: none; }
+/* gli header con back a sinistra lasciano spazio al badge valuta */
+.screen-header .btn-back, .pack-topbar .btn-back { margin-left: 58px; }
+.home-actions {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; margin-top: 12px; width: 50%; max-width: 220px;
+}
+.home-actions .btn { width: 100%; }
+/* Gioca = stessa dimensione esatta di Apri Pacchetto (font + padding identici) */
+.home-actions .btn-play {
+  white-space: nowrap;
+  font-size: clamp(14px, 4.5vw, 18px);
+  padding: 15px clamp(16px, 6vw, 34px);
+}
+.home-actions-row { display: flex; gap: 10px; width: 100%; }
+/* min-width:0 + padding ridotto: Album/Mazzo scendono sotto il contenuto
+   e scalano anche su viewport molto stretti (senza min-width:0 il flex
+   non va sotto la min-content e la riga sforava) */
+.home-actions-row .btn { flex: 1; min-width: 0; padding: 12px 8px; white-space: nowrap; }
+#btn-play {
+  background: linear-gradient(135deg, #6ee7b7, #34d399);
+  color: #082f1f; box-shadow: 0 8px 24px rgba(52,211,153,.35);
+}
+
+/* ---------- nickname (primo avvio) ---------- */
+#screen-nickname { align-items: center; justify-content: center; background: var(--bg); }
+.nickname-box {
+  width: 100%; max-width: 380px; text-align: center; padding: 0 24px;
+}
+.nickname-box .loader-logo {
+  width: 84px; height: 84px; margin: 0 auto 22px;
+  background: radial-gradient(circle at 30% 30%, #ffe08a, var(--gold) 60%, #c99a12);
+  color: #141b2b; font-size: 46px; font-weight: 800; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 40px rgba(255,201,61,.5);
+}
+.nickname-box h2 { font-size: 24px; margin-bottom: 8px; }
+.nickname-box h2 b { color: var(--gold); }
+.nickname-sub { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 22px; }
+.nickname-input {
+  width: 100%; background: var(--panel); border: 2px solid #2a3450; color: var(--text);
+  border-radius: 14px; padding: 14px 18px; font-size: 18px; text-align: center;
+  font-family: inherit; -webkit-user-select: text; user-select: text;
+}
+.nickname-input:focus { outline: none; border-color: var(--gold); }
+.nickname-error { color: var(--danger); font-size: 13px; margin-top: 10px; }
+.nickname-error.hidden { display: none; }
+#screen-nickname .btn-big { width: 100%; margin-top: 18px; }
+
+/* ---------- mazzo (deck) ---------- */
+.deck-count { font-size: 14px; color: var(--muted); font-weight: 600; }
+.deck-hint { color: var(--muted); font-size: 12px; padding: 0 16px 8px; text-align: center; }
+#screen-deck { align-items: center; }
+.deck-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  width: 100%; max-width: 420px; padding: 14px 16px;
+}
+.deck-slot {
+  aspect-ratio: 8 / 11.5; border-radius: 12px;
+  background: var(--panel); border: 2px dashed #2a3450;
+  display: flex; align-items: center; justify-content: center;
+  color: #3c4660; font-size: 20px; font-weight: 800;
+  position: relative; overflow: hidden; cursor: pointer;
+}
+.deck-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.deck-slot .slot-x {
+  position: absolute; top: 4px; right: 4px; z-index: 2;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,95,109,.92); color: #fff;
+  font-size: 13px; font-weight: 800; line-height: 22px; text-align: center;
+}
+.deck-slot .slot-type {
+  position: absolute; bottom: 4px; left: 4px; z-index: 2;
+  background: rgba(6,10,18,.75); border-radius: 8px; padding: 1px 6px;
+  font-size: 11px; color: #fff;
+}
+.deck-lock { color: var(--muted); font-size: 12px; padding: 10px 24px; text-align: center; }
+
+/* ---------- battaglia ---------- */
+#screen-battle { background: radial-gradient(1000px 700px at 50% 20%, #141b2b, #0b0f16); }
+/* Altezza STABILE (flex: 0 0 auto): quando appare il pannello dati carta
+   sotto la scena, il canvas non si restringe mai e la mano del giocatore
+   (in basso) resta sempre in vista. */
+.battle-scene { flex: 0 0 auto; height: clamp(320px, 56vh, 520px); min-height: 320px; position: relative; }
+/* countdown showdown: vive nel messaggio di stato (#battle-msg) sotto la
+   scena, così NON copre mai le carte da memorizzare (del bot, in alto).
+   Non è cliccabile: il countdown scorre e non si può saltare. */
+.battle-msg-countdown { color: var(--gold); font-weight: 800; font-variant-numeric: tabular-nums; }
+.battle-score {
+  display: flex; justify-content: center; gap: 18px; align-items: center;
+  padding: 4px 16px 0; font-size: 14px; color: var(--muted);
+}
+.battle-score b { color: var(--gold); font-size: 17px; }
+.battle-msg {
+  text-align: center; color: var(--text); font-size: 14px; font-weight: 600;
+  padding: 10px 20px 4px; min-height: 22px;
+}
+#battle-action { margin: 10px 24px 20px; padding: 14px 28px; }
+#battle-action:disabled { opacity: .4; }
+
+/* pannello dati carta: mostra nome/tipo/PV/effetto della carta in mano
+   selezionata o sotto il dito, così si leggono i dati anche se la carta
+   è piccola nel ventaglio */
+.battle-card-info {
+  margin: 2px 24px 0; padding: 10px 14px;
+  background: var(--panel); border: 1px solid #2a3450; border-radius: 12px;
+  text-align: center; font-size: 13px; line-height: 1.5;
+  box-shadow: var(--shadow);
+}
+.battle-card-info b.name { color: var(--gold); font-size: 15px; }
+.battle-card-info .stat-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+.battle-card-info .stat-row span { background: rgba(255,255,255,.05); padding: 2px 10px; border-radius: 99px; }
+.battle-card-info .ability { color: var(--gold); margin-top: 6px; font-size: 12px; }
+.battle-card-info .weakness { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.battle-card-info.hidden { display: none; }
+
+/* ---------- risultato ---------- */
+#result-modal .modal-card { text-align: center; max-width: 340px; width: 100%; }
+.result-score { font-size: 30px; font-weight: 800; color: var(--gold); margin: 8px 0 4px; }
+.result-zones { display: flex; gap: 10px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+.result-zone {
+  background: var(--panel); border: 1px solid #2a3450; border-radius: 10px;
+  padding: 8px 12px; font-size: 12px; color: var(--muted);
+}
+.result-zone b { display: block; font-size: 15px; color: var(--text); }
+.result-zone.win b { color: #3ddc84; }
+.result-zone.lose b { color: #ff4d5e; }
+.result-reward {
+  margin: 10px 0 16px; font-size: 16px; font-weight: 800; color: #34d399;
+  background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.4);
+  border-radius: 99px; padding: 8px 18px; display: inline-block;
+}
+#result-rematch, #result-home { width: 100%; }
+#result-rematch { margin-bottom: 8px; }
+
+/* ---------- deck picker ---------- */
+.deck-picker-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  overflow-y: auto; margin: 10px 0 14px; min-height: 120px; max-height: 52vh;
+  align-content: flex-start;
+}
+.deck-picker-grid .deck-pick {
+  aspect-ratio: 8 / 11.5; border-radius: 10px; overflow: hidden;
+  border: 2px solid transparent; position: relative; cursor: pointer;
+}
+.deck-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.deck-pick.in-deck { border-color: var(--gold); }
+.deck-pick.in-deck::after {
+  content: '✓'; position: absolute; top: 4px; left: 4px; z-index: 2;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--gold); color: #141b2b; font-weight: 800; font-size: 14px;
+  line-height: 22px; text-align: center;
+}
+.deck-pick.full::before {
+  content: 'MAZZO PIENO'; position: absolute; inset: 0; z-index: 3;
+  background: rgba(6,10,18,.72); color: #ffc9cd; font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+}
+#deck-picker-done { width: 100%; }

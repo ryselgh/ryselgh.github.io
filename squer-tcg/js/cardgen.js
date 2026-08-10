@@ -466,6 +466,10 @@ SQUER.art = (() => {
     g.font = '700 20px "Segoe UI", sans-serif';
     g.fillText(card.typeSymbol, 148, by0 + 1);
 
+    // ABILITY: nome effetto + descrizione sono raggruppati SOTTO la
+    // rarità (vedi DESCRIPTION più sotto), a metà strada tra rarità e
+    // numero di collezione. Qui in alto (right of HP) niente box nero.
+
     // RARITY GEM (center-bottom)
     const gemY = by0 + 44;
     const gemColors = {
@@ -510,6 +514,45 @@ SQUER.art = (() => {
     g.fillStyle = rar.color;
     g.fillText(rarLabel, W / 2, gemY + 60);
     g.shadowBlur = 0;
+
+    // ABILITY TITLE + DESCRIPTION — raggruppati sotto la rarità, a metà
+    // strada tra rarità e numero di collezione. Titolo (simbolo + nome)
+    // sopra, descrizione (max 2 righe, con ellissi se troppo lunga) sotto:
+    // nessun box nero, leggibilità garantita dal glow nero come per la
+    // rarità. Il blocco non tocca mai il numero di collezione (H-40).
+    if (card.abilityName) {
+      const descCenterY = (gemY + 60 + (H - 40)) / 2;   // 605: metà tra i due
+      const maxW = W - 90;                               // margine dai bordi
+      const lh = 21;
+      // titolo effetto (grassetto, accent della rarità)
+      g.textBaseline = 'middle';
+      g.font = '700 15px "Segoe UI", sans-serif';
+      g.fillStyle = pal.accent1;
+      g.shadowColor = 'rgba(0,0,0,0.9)';
+      g.shadowBlur = 8;
+      const title = card.abilitySymbol + ' ' + card.abilityName.toUpperCase();
+      g.fillText(title, W / 2, descCenterY - 26);
+      // descrizione sotto il titolo (max 2 righe, ellissi finale)
+      if (card.abilityText) {
+        g.font = '600 15px "Segoe UI", sans-serif';
+        g.fillStyle = 'rgba(255,255,255,0.92)';
+        const words = String(card.abilityText).split(/\s+/).filter(Boolean);
+        const lines = [];
+        let line = '';
+        for (const w of words) {
+          const t = line ? line + ' ' + w : w;
+          if (g.measureText(t).width > maxW && line) {
+            lines.push(line);
+            line = w;
+            if (lines.length >= 2) { line += '…'; break; }  // max 2 righe
+          } else line = t;
+        }
+        if (line && lines.length < 2) lines.push(line);
+        const y0 = descCenterY + 8 - ((lines.length - 1) * lh) / 2;  // centro
+        lines.forEach((ln, i) => g.fillText(ln, W / 2, y0 + i * lh));
+      }
+      g.shadowBlur = 0;
+    }
 
     // card number + set tag (bottom, stesso outer glow)
     const numText = `${card.number} / ${card.setSize}`;

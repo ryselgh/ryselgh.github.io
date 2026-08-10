@@ -7,7 +7,7 @@ var SQUER = window.SQUER || (window.SQUER = {});
 
 const STORE_KEY = 'squer_tcg_state_v1';
 const PACK_SIZE = 10;           // ★ CONFIG: carte per pacchetto
-const DAILY_FREE_LIMIT = 5;     // ★ CONFIG: pacchetti gratuiti al giorno
+const DAILY_FREE_LIMIT = 3;     // ★ CONFIG: pacchetti gratuiti al giorno
 
 // ★ CONFIG PITY — se un pacchetto non contiene nessuna rare+ (order >= 2),
 // una carta casuale viene sostituita con una rare+ (pool di rare/super
@@ -32,13 +32,22 @@ const RARE_PLUS_MAX_PCT = 30;
 
 function defaultState() {
   return {
-    version: 1,
+    version: 2,
     collection: {},        // uid -> { pulled, lastPullAt }
     packsOpened: 0,
     packsToday: 0,
     lastPackDate: todayStr(),
     totalPulls: 0,
     pity: 0,               // packs without a rare+
+    // ---- profilo gioco (Squer Clash) ----
+    nickname: '',          // obbligatorio al primo avvio (3-16 caratteri)
+    squerini: 0,           // valuta: compra pacchetti extra
+    deck: [],              // uid delle carte del mazzo (DECK_SIZE, mai duplicati)
+    matches: [],           // storico partite
+    welcomePacks: WELCOME_PACKS, // pacchetti di benvenuto rimasti (una tantum)
+    welcomeDoneDate: null, // data in cui è stato aperto l'ULTIMO benvenuto:
+                           // i pacchetti giornalieri si sbloccano dal giorno dopo
+    tutorialDone: false,   // tutorial completato / skippato
   };
 }
 
@@ -72,9 +81,25 @@ function getState() {
   return s;
 }
 
+/** Pacchetti giornalieri disponibili OGGI.
+    - Mai cumulabili: ogni giorno si riparte da 0 verso DAILY_FREE_LIMIT.
+    - Si sbloccano SOLO dal giorno successivo all'apertura dell'ultimo
+      pacchetto di benvenuto: al primo avvio conta solo il benvenuto. */
+function dailyRemaining() {
+  const s = loadState();
+  const unlocked = s.welcomePacks === 0 &&
+    (!s.welcomeDoneDate || s.welcomeDoneDate < todayStr());
+  return unlocked ? Math.max(0, DAILY_FREE_LIMIT - s.packsToday) : 0;
+}
+
 function packsRemaining() {
   const s = loadState();
-  return Math.max(0, DAILY_FREE_LIMIT - s.packsToday);
+  return s.welcomePacks + dailyRemaining();
+}
+
+/** Dettaglio pacchetti disponibili: benvenuto (una tantum) + giornalieri. */
+function packsBreakdown() {
+  return { welcome: loadState().welcomePacks, daily: dailyRemaining() };
 }
 
 function canOpenPack() {
@@ -127,10 +152,13 @@ function rollPackRarities(rng) {
   return rarities;
 }
 
-/** Open a pack: returns { cards:[card...], packId, isNew:[bool] } */
+/** Open a pack: returns { cards:[card...], packId, isNew:[bool] }
+    Priorità: prima i pacchetti di benvenuto (non consumano il giornaliero),
+    poi i giornalieri gratis. */
 function openPack(cards) {
   const s = loadState();
-  if (s.packsToday >= DAILY_FREE_LIMIT) {
+  const useWelcome = s.welcomePacks > 0;
+  if (!useWelcome && s.packsToday >= DAILY_FREE_LIMIT) {
     throw new Error('Nessun pacchetto gratuito rimasto oggi');
   }
   const rng = makeRNG('pack_' + Date.now() + '_' + Math.random());
@@ -170,7 +198,13 @@ function openPack(cards) {
   });
 
   s.packsOpened += 1;
-  s.packsToday += 1;
+  if (useWelcome) {
+    s.welcomePacks -= 1;
+    // l'ultimo benvenuto aperto oggi: i giornalieri partono da domani
+    if (s.welcomePacks === 0) s.welcomeDoneDate = todayStr();
+  } else {
+    s.packsToday += 1;
+  }
   s.totalPulls += PACK_SIZE;
   s.lastPackDate = todayStr();
   s.pity = rarities.some(r => r.order >= 2) ? 0 : s.pity + 1;
@@ -199,6 +233,23 @@ function isOwned(uid) {
   return !!(rec && rec.pulled > 0);
 }
 
+/** Azzera i PROGRESSI (collezione, pacchetti, partite) ma PRESERVA il
+    profilo: nickname, squerini, mazzo, pacchetti di benvenuto rimasti e
+    tutorial. La valuta e il mazzo non si perdono mai per un reset. */
 function resetProgress() {
+  const s = loadState();
+  const fresh = defaultState();
+  fresh.nickname = s.nickname;
+  fresh.squerini = s.squerini;
+  fresh.deck = s.deck;
+  fresh.welcomePacks = s.welcomePacks;
+  fresh.welcomeDoneDate = s.welcomeDoneDate;
+  fresh.tutorialDone = s.tutorialDone;
+  saveState(fresh);
+}
+
+/** Cancella TUTTI i dati: come se l'app fosse appena installata.
+    Ripropone nickname e pacchetti di benvenuto. */
+function wipeAllData() {
   try { localStorage.removeItem(STORE_KEY); } catch (e) {}
 }

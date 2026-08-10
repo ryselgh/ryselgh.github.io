@@ -43,6 +43,15 @@ function nameFromFile(file) {
     .slice(0, 24) || 'Carta Misteriosa';
 }
 
+// ★ CONFIG PV per rarità (carte.md §2): fascia del valore deterministco
+const HP_RANGES = {
+  common: [60, 90],
+  uncommon: [85, 115],
+  rare: [110, 140],
+  superRare: [135, 165],
+  legendary: [160, 190],
+};
+
 /** Build a full card object from a manifest entry */
 function buildCard(entry, index, setSize) {
   const rng = makeRNG(entry.file);
@@ -51,10 +60,13 @@ function buildCard(entry, index, setSize) {
     ? RARITIES[entry.rarity]
     : rarityForSeed(rng);
   const type = TYPE_KEYS[Math.floor(rng.next() * TYPE_KEYS.length)];
+  const cardName = entry.name || nameFromFile(entry.file);
+  const hpRange = HP_RANGES[rarity.id] || HP_RANGES.common;
+  const ability = abilityForCard({ file: entry.file, name: cardName });
   return {
     uid: entry.uid || cardUID(entry.file),
     file: entry.file,
-    name: entry.name || nameFromFile(entry.file),
+    name: cardName,
     order: entry.order,         // override ordine interno (cards/order.json)
     image: null,            // loaded HTMLImageElement
     canvas: null,           // generated card art
@@ -66,7 +78,11 @@ function buildCard(entry, index, setSize) {
     type,
     typeSymbol: CARD_TYPES[type].symbol,
     typeName: CARD_TYPES[type].name,
-    hp: rng.int(60, 180),
+    hp: rng.int(hpRange[0], hpRange[1]), // deterministisco, fascia per rarità
+    ability: ability.id,          // id effetto di gioco (Squer Clash)
+    abilitySymbol: ability.symbol,
+    abilityName: ability.name,
+    abilityText: ability.text,
     number: index + 1,
     setSize,
     rng,
@@ -188,8 +204,11 @@ function loadImage(src) {
   });
 }
 
-/** Turn manifest entries into ready cards with generated art */
-async function createCardSet(entries) {
+/** Turn manifest entries into ready cards with generated art.
+    onProgress(done, total, phase) is called while loading the images
+    (phase 'images') and while drawing the card canvases (phase 'draw'),
+    so the loading bar can show real progress for every step. */
+async function createCardSet(entries, onProgress) {
   const setSize = entries.length;
   const cards = [];
   const jobs = entries.map(async (entry, i) => {
@@ -200,6 +219,7 @@ async function createCardSet(entries) {
       card.image = null; // art window stays empty, still playable
     }
     cards.push(card);
+    if (onProgress) onProgress(cards.length, setSize, 'images');
   });
   await Promise.all(jobs);
   // ordine album: rarita' crescente (common 1-70, uncommon 71-120, rare,
@@ -216,6 +236,16 @@ async function createCardSet(entries) {
   // numeri finali PRIMA del draw: il canvas deve mostrare il numero
   // della posizione nell'album, non l'indice del manifest
   cards.forEach((c, i) => { c.number = i + 1; c.setSize = cards.length; });
-  cards.forEach(card => SQUER.art.draw(card)); // generates canvas + effects deterministically
+  // disegno dei canvas A BLOCCHI (chunked): draw() è CPU-intensive e, se
+  // fatto tutto in un colpo, blocca la UI per secondi senza mostrare nulla.
+  // A blocchi con una pausa tra l'uno e l'altro, la barra avanza e l'utente
+  // vede "Disegno carte... X / 180" fino a 180 / 180.
+  const CHUNK = 18;
+  for (let i = 0; i < cards.length; i += CHUNK) {
+    const slice = cards.slice(i, i + CHUNK);
+    for (const card of slice) SQUER.art.draw(card);
+    if (onProgress) onProgress(Math.min(i + CHUNK, cards.length), cards.length, 'draw');
+    if (i + CHUNK < cards.length) await new Promise(r => setTimeout(r, 0));
+  }
   return cards;
 }

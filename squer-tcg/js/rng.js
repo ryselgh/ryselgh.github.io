@@ -53,3 +53,9 @@ function makeRNG(seedStr) {
 function cardUID(fileName) {
   return 'sqr_' + hashString(fileName.toLowerCase()).toString(16);
 }
+
+// testabilità in Node
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { mulberry32, hashString, makeRNG, cardUID };
+}
+

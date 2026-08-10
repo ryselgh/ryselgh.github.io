@@ -14,11 +14,15 @@
 </head>
 <body>
 
+  <!-- ======= BADGE VALUTA (sempre visibile, in alto a sinistra) ======= -->
+  <div class="squerini-badge" id="squerini-badge" title="Squerini">🪙 <b id="squerini-count">0</b></div>
+
   <!-- ======= TOP MENU (home) ======= -->
   <div id="top-menu" class="top-menu">
     <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
     <div class="menu-dropdown hidden" id="menu-dropdown">
       <button class="menu-item" id="menu-reset">↺ Azzera progressi</button>
+      <button class="menu-item menu-danger" id="menu-wipe">🗑 Cancella tutti i dati</button>
     </div>
   </div>
 
@@ -28,6 +32,7 @@
     <header class="home-header">
       <h1 class="logo"><span class="logo-badge">S</span> SQUER <span class="logo-tcg">TCG</span></h1>
       <p class="tagline">Acchiappali tutti!</p>
+      <p class="home-nickname">👋 Ciao, <b id="home-nickname">Squer Trainer</b>!</p>
     </header>
 
     <div class="home-stats" id="home-stats">
@@ -48,17 +53,20 @@
 
     <div class="pack-counter" id="pack-counter">
       <span class="pack-counter-icon">🎁</span>
-      <span id="pack-counter-text">5 pacchetti gratis oggi</span>
+      <span id="pack-counter-text">Nessun pacchetto disponibile</span>
     </div>
 
     <button class="btn btn-primary btn-big" id="btn-open-pack">
       <span class="btn-shine"></span>
       Apri Pacchetto
     </button>
-    <p class="hint" id="home-hint">Torna domani per altri pacchetti gratuiti</p>
 
     <div class="home-actions">
-      <button class="btn btn-ghost" id="btn-collection">Album</button>
+      <button class="btn btn-play" id="btn-play">Gioca</button>
+      <div class="home-actions-row">
+        <button class="btn btn-ghost" id="btn-collection">Album</button>
+        <button class="btn btn-ghost" id="btn-deck">Mazzo</button>
+      </div>
     </div>
 
     <button id="install-btn" class="install-btn hidden">📲 Installa app</button>
@@ -74,6 +82,72 @@
 
     <footer class="footer-note">Squer TCG · Made with 💛 by Erio</footer>
   </section>
+
+  <!-- ======= NICKNAME (primo avvio) ======= -->
+  <section id="screen-nickname" class="screen">
+    <div class="nickname-box">
+      <div class="loader-logo">S</div>
+      <h2>Benvenuto in <b>Squer TCG</b>!</h2>
+      <p class="nickname-sub">Scegli il tuo nickname (3-16 caratteri): lo vedrai nelle partite.</p>
+      <input id="nickname-input" class="nickname-input" maxlength="16" placeholder="Il tuo nickname" autocomplete="off">
+      <p id="nickname-error" class="nickname-error hidden"></p>
+      <button class="btn btn-primary btn-big" id="btn-nickname-ok">Inizia!</button>
+    </div>
+  </section>
+
+  <!-- ======= DECK (mazzo) ======= -->
+  <section id="screen-deck" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-deck-back">← Indietro</button>
+      <h2>Il tuo mazzo <span id="deck-count" class="deck-count">0/8</span></h2>
+      <div class="header-spacer"></div>
+    </header>
+    <p class="deck-hint">Il tuo mazzo da 8 carte: le peschi a ogni partita. Niente duplicati.</p>
+    <div id="deck-grid" class="deck-grid"></div>
+    <button class="btn btn-ghost" id="btn-deck-pick">＋ Scegli dalla collezione</button>
+    <p class="deck-lock" id="deck-lock-msg"></p>
+  </section>
+
+  <!-- ======= BATTLE ======= -->
+  <section id="screen-battle" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-battle-quit" title="Abbandona">✕</button>
+      <h2>⚔️ Squer Clash</h2>
+      <div class="header-spacer"></div>
+    </header>
+    <div id="battle-scene" class="scene-container battle-scene">
+    </div>
+    <div id="battle-score" class="battle-score hidden">
+      <span class="battle-score-me">Tu: <b id="battle-score-p">0</b></span>
+      <span class="battle-score-vs">—</span>
+      <span class="battle-score-bot">SquerBot: <b id="battle-score-b">0</b></span>
+    </div>
+    <div id="battle-msg" class="battle-msg">Scegli 3 carte dalla tua mano...</div>
+    <div id="battle-card-info" class="battle-card-info hidden"></div>
+    <button class="btn btn-primary" id="battle-action">Conferma squadra</button>
+  </section>
+
+  <!-- ======= RESULT MODAL ======= -->
+  <div id="result-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-badge" id="result-icon">🏆</div>
+      <h3 id="result-title">Vittoria!</h3>
+      <div class="result-score" id="result-score">12 — 8</div>
+      <div class="result-zones" id="result-zones"></div>
+      <div class="result-reward" id="result-reward">+8 🪙 Squerini</div>
+      <button class="btn btn-primary" id="result-rematch">⚔️ Rigioca</button>
+      <button class="btn btn-ghost" id="result-home">Home</button>
+    </div>
+  </div>
+
+  <!-- ======= DECK PICKER MODAL ======= -->
+  <div id="deck-picker-modal" class="modal hidden">
+    <div class="modal-card modal-wide">
+      <h3>Scegli le carte del mazzo <span id="deck-picker-count" class="deck-count">0/8</span></h3>
+      <div id="deck-picker-grid" class="deck-picker-grid"></div>
+      <button class="btn btn-primary" id="deck-picker-done">Fatto</button>
+    </div>
+  </div>
 
   <!-- ======= PACK OPENING ======= -->
   <section id="screen-pack" class="screen">
@@ -163,10 +237,14 @@
   <script src="js/rng.js"></script>
   <script src="js/rarity.js"></script>
   <script src="js/cardgen.js"></script>
+  <script src="js/abilities.js"></script>
   <script src="js/cards.js"></script>
+  <script src="js/game-config.js"></script>
   <script src="js/packs.js"></script>
+  <script src="js/game.js"></script>
   <script src="js/sound.js"></script>
   <script src="js/scene.js"></script>
+  <script src="js/scene-battle.js"></script>
   <script src="js/main.js"></script>
 <script src="js/install.js"></script>
 </body>
