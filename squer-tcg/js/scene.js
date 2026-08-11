@@ -442,6 +442,7 @@ class SquerScene {
     }
     this._stack = stack;
     this._stackIndex = 0;
+    this._dismissing = false;
     this._onReveal = onReveal;
     this._onStackDone = onStackDone;
     this._bindStackTap();
@@ -505,8 +506,15 @@ class SquerScene {
 
   /** Swipe the top card to the right, then reveal the next one */
   _dismissTop() {
+    // anti-rimbalzo: se la carta sta già swipeando, ignora i tap rapidi,
+    // altrimenti una seconda tween sullo stesso mesh (il vecchio callback
+    // non è ancora girato, la carta non è ancora rimossa) combatterebbe con
+    // la prima lasciando la carta bloccata a metà, inclinata, davanti alle
+    // altre — e salterebbe lo stackIndex.
+    if (this._dismissing) return;
     const mesh = this._stack[this._stackIndex];
     if (!mesh) return;
+    this._dismissing = true;
     this._setSparklesVisible(mesh, false); // nascondi i suoi sparkle
     const sx = mesh.position.x, sy = mesh.position.y;
     this._tween(0.4, (k) => {
@@ -520,6 +528,7 @@ class SquerScene {
     }, () => {
       this.cardGroup.remove(mesh);
       this._stackIndex++;
+      this._dismissing = false;
       if (this._stackIndex < this._stack.length) this._revealTop();
       else if (this._onStackDone) this._onStackDone();
     });
@@ -665,6 +674,7 @@ class SquerScene {
     this._revealTargets = null;
     this._stack = null;
     this._stackIndex = 0;
+    this._dismissing = false;
     this._onStackDone = null;
     this._detailZoomed = false;
     this.camera.position.z = 9;

@@ -100,10 +100,19 @@ const App = {
     if (name === 'collection') this.renderCollection();
     // il badge valuta è globale: si aggiorna ad ogni cambio schermata
     this.updateSqueriniBadge();
+    // nella schermata "apri pacchetto" il badge valuta coprirebbe il tasto
+    // indietro e il titolo: lo nascondo lì e lo ripristino altrove
+    const badge = $('#squerini-badge');
+    if (badge) badge.style.display = (name === 'pack') ? 'none' : '';
   },
 
   updateSqueriniBadge() {
-    $('#squerini-count').textContent = loadState().squerini;
+    const s = loadState();
+    $('#squerini-count').textContent = s.squerini;
+    // tasto "Acquista" accanto alla valuta: SOLO nella home e se puoi
+    // permetterti almeno 1 pacchetto
+    const inHome = this.currentScreen === 'home';
+    $('#btn-buy-pack').classList.toggle('hidden', !(inHome && s.squerini >= PACK_PRICE));
   },
 
   // ---------- home ----------
@@ -112,28 +121,77 @@ const App = {
     const s = loadState();
     $('#stat-owned').textContent = stats.owned;
     $('#stat-packs').textContent = stats.packsOpened;
-    $('#squerini-count').textContent = s.squerini;
+    // widget "Pacchetti chiusi": TUTTI quelli da aprire (benvenuto +
+    // giornalieri + acquistati)
+    $('#stat-packs-closed').textContent = packsRemaining();
+    // il tasto "Acquista" (e il count) li aggiorna updateSqueriniBadge, che
+    // li mostra SOLO nella home: refreshHome viene chiamato anche da altre
+    // schermate (es. afterPack in schermata pack) e non deve far comparire
+    // il tasto fuori dalla home.
+    this.updateSqueriniBadge();
     $('#home-nickname').textContent = s.nickname || 'Squer Trainer';
     const pct = stats.total ? Math.round((stats.owned / stats.total) * 100) : 0;
     $('#progress-fill').style.width = pct + '%';
     $('#progress-text').textContent = `${stats.owned} / ${stats.total}`;
 
-    // badge pacchetti UNICO: o il benvenuto o i gratis di oggi, mai entrambi.
-    // Il contatore è la pillola in alto: quando non ci sono pacchetti mostra
-    // il messaggio "torna domani" al posto della riga tra i bottoni (ora rimossa).
-    const { welcome, daily } = packsBreakdown();
-    const remaining = welcome + daily;
-    $('#pack-counter').style.display = '';
-    $('#pack-counter').classList.toggle('empty', remaining <= 0);
-    $('#pack-counter-text').textContent = remaining > 0
-      ? (welcome > 0
-        ? `Hai ${welcome} pacchett${welcome === 1 ? 'o' : 'i'} di benvenuto`
-        : `${daily} pacchett${daily === 1 ? 'o' : 'i'} gratis oggi`)
-      : 'Torna domani per altri pacchetti gratuiti';
-    $('#btn-open-pack').disabled = remaining <= 0;
-    $('#btn-open-pack').style.opacity = remaining <= 0 ? 0.5 : 1;
+    // pillola gialla SOLO per benvenuto/giornalieri: gli acquistati non la
+    // fanno comparire (si vedono nel widget "Pacchetti chiusi" e bastano
+    // il tasto "apri" + il widget). Il tasto "apri" però conta anche loro.
+    const { welcome, daily, bought } = packsBreakdown();
+    const total = welcome + daily + bought;
+    const free = welcome + daily;
+    $('#pack-counter').style.display = free > 0 ? '' : 'none';
+    if (free > 0) {
+      $('#pack-counter').classList.remove('empty');
+      const p = (n) => n + ' pacchett' + (n === 1 ? 'o' : 'i');
+      const parts = [];
+      if (welcome > 0) parts.push(p(welcome) + ' di benvenuto');
+      if (daily > 0) parts.push(p(daily) + ' gratis oggi');
+      $('#pack-counter-text').textContent = 'Hai ' + parts.join(' · ');
+    }
+    $('#btn-open-pack').disabled = total <= 0;
+    $('#btn-open-pack').style.opacity = total <= 0 ? 0.5 : 1;
 
     this.renderLatestPulls();
+  },
+
+  // ---------- compra pacchetti (squerini) ----------
+  /** Apre il menu quantità: min 1, max quanti pacchetti ci si può permettere. */
+  openBuyMenu() {
+    const max = Math.floor(loadState().squerini / PACK_PRICE);
+    if (max < 1) { this.toast('Non hai abbastanza squerini'); return; }
+    this._buyMax = max;
+    this._buyQty = 1;
+    $('#buy-modal').classList.remove('hidden');
+    this.renderBuyMenu();
+  },
+
+  setBuyQty(n) {
+    this._buyQty = Math.max(1, Math.min(n, this._buyMax));
+    this.renderBuyMenu();
+  },
+
+  renderBuyMenu() {
+    $('#buy-qty').textContent = this._buyQty;
+    $('#buy-total').textContent = `Totale: ${this._buyQty * PACK_PRICE} 🪙`;
+    $('#buy-minus').disabled = this._buyQty <= 1;
+    $('#buy-plus').disabled = this._buyQty >= this._buyMax;
+  },
+
+  closeBuyMenu() {
+    $('#buy-modal').classList.add('hidden');
+  },
+
+  confirmBuy() {
+    const n = buyPacks(this._buyQty);
+    if (n > 0) {
+      this.closeBuyMenu();
+      this.updateSqueriniBadge();
+      this.refreshHome();
+      this.toast(`Acquistati ${n} pacchett${n === 1 ? 'o' : 'i'}! 🎁`);
+    } else {
+      this.toast('Non puoi acquistare ora');
+    }
   },
 
   // ---------- rendering utils ----------
@@ -813,6 +871,13 @@ const App = {
 
   bindEvents() {
     $('#btn-open-pack').addEventListener('click', () => this.startPack());
+    // ---- compra pacchetti (squerini) ----
+    $('#btn-buy-pack').addEventListener('click', () => this.openBuyMenu());
+    $('#buy-minus').addEventListener('click', () => this.setBuyQty(this._buyQty - 1));
+    $('#buy-plus').addEventListener('click', () => this.setBuyQty(this._buyQty + 1));
+    $('#buy-cancel').addEventListener('click', () => this.closeBuyMenu());
+    $('#buy-confirm').addEventListener('click', () => this.confirmBuy());
+    $('#buy-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeBuyMenu(); });
     $('#btn-collection').addEventListener('click', () => this.showScreen('collection'));
     $('#btn-pack-back').addEventListener('click', () => { this.disposeScene(); this.showScreen('home'); });
     $('#btn-collection-back').addEventListener('click', () => this.showScreen('home'));

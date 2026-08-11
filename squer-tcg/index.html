@@ -15,7 +15,9 @@
 <body>
 
   <!-- ======= BADGE VALUTA (sempre visibile, in alto a sinistra) ======= -->
-  <div class="squerini-badge" id="squerini-badge" title="Squerini">🪙 <b id="squerini-count">0</b></div>
+  <div class="squerini-badge" id="squerini-badge" title="Squerini">🪙 <b id="squerini-count">0</b>
+    <button class="buy-pack-btn hidden" id="btn-buy-pack" title="Acquista pacchetti">＋ Acquista</button>
+  </div>
 
   <!-- ======= TOP MENU (home) ======= -->
   <div id="top-menu" class="top-menu">
@@ -39,6 +41,10 @@
       <div class="stat-card">
         <div class="stat-num" id="stat-owned">0</div>
         <div class="stat-label">Carte possedute</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-packs-closed">0</div>
+        <div class="stat-label">Pacchetti chiusi</div>
       </div>
       <div class="stat-card">
         <div class="stat-num" id="stat-packs">0</div>
@@ -146,6 +152,24 @@
       <h3>Scegli le carte del mazzo <span id="deck-picker-count" class="deck-count">0/8</span></h3>
       <div id="deck-picker-grid" class="deck-picker-grid"></div>
       <button class="btn btn-primary" id="deck-picker-done">Fatto</button>
+    </div>
+  </div>
+
+  <!-- ======= BUY PACK MODAL ======= -->
+  <div id="buy-modal" class="modal hidden">
+    <div class="modal-card buy-modal">
+      <h3>Acquista pacchetti</h3>
+      <p class="buy-price-hint" id="buy-price-hint">100 🪙 l'uno</p>
+      <div class="buy-stepper">
+        <button class="btn buy-step" id="buy-minus" aria-label="Diminuisci">−</button>
+        <span class="buy-qty" id="buy-qty">1</span>
+        <button class="btn buy-step" id="buy-plus" aria-label="Aumenta">＋</button>
+      </div>
+      <p class="buy-total" id="buy-total">Totale: 100 🪙</p>
+      <div class="buy-actions">
+        <button class="btn btn-ghost" id="buy-cancel">Annulla</button>
+        <button class="btn btn-primary" id="buy-confirm">Acquista</button>
+      </div>
     </div>
   </div>
 

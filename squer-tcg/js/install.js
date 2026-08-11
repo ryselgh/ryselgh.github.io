@@ -91,9 +91,54 @@
   /* ---------- registrazione service worker ---------- */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch((err) => {
-        console.warn('Service Worker non registrato:', err);
-      });
+      navigator.serviceWorker.register('sw.js')
+        .then((reg) => {
+          // Prima visita assoluta del dispositivo: lo si marca e non si mostra
+          // alcun avviso (non c'è ancora nulla da aggiornare).
+          const VKEY = 'squer_sw_seen_v1';
+          const firstRun = !localStorage.getItem(VKEY);
+          if (firstRun) localStorage.setItem(VKEY, '1');
+
+          let updateNotified = false;
+          const notify = () => {
+            if (updateNotified) return;
+            updateNotified = true;
+            showUpdateBanner();
+          };
+
+          // Il service worker usa skipWaiting + clients.claim: quando esiste
+          // una nuova versione, al successivo avvio/riapertura dell'app il
+          // browser la installa subito e il "controller" cambia. Questo evento
+          // scatta quindi SOLO in presenza di un vero aggiornamento (al primo
+          // install lo escludiamo col flag sopra).
+          if (!firstRun) {
+            navigator.serviceWorker.addEventListener('controllerchange', notify);
+            reg.addEventListener('updatefound', () => {
+              const w = reg.installing;
+              if (w) w.addEventListener('statechange', () => {
+                if (w.state === 'activated') notify();
+              });
+            });
+          }
+        })
+        .catch((err) => console.warn('Service Worker non registrato:', err));
     });
+  }
+
+  /** Banner breve: nuova versione pronta, tap su "Aggiorna" per applicarla */
+  function showUpdateBanner() {
+    if (document.getElementById('update-banner')) return;
+    const b = document.createElement('div');
+    b.id = 'update-banner';
+    b.className = 'update-banner';
+    b.innerHTML =
+      '<span>\u2728 Nuova versione disponibile</span>' +
+      '<button class="update-btn">Aggiorna</button>';
+    b.querySelector('.update-btn').addEventListener('click', () => {
+      b.remove();
+      location.reload();
+    });
+    document.body.appendChild(b);
+    requestAnimationFrame(() => b.classList.add('show'));
   }
 })();

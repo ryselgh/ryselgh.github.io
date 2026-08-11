@@ -449,6 +449,35 @@ body { position: fixed; inset: 0; }
 }
 body.app-ready .squerini-badge { display: inline-flex; }
 .squerini-badge b { font-size: 15px; }
+/* Bottone "Compra" dentro il badge valuta: compare solo se squerini >= 100 */
+.buy-pack-btn {
+  margin-left: 8px; padding: 3px 10px;
+  background: linear-gradient(180deg, #ffd873, #ffb02e);
+  color: #141b2b; border: none; border-radius: 99px;
+  font-size: 12px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.buy-pack-btn:active { transform: translateY(1px); }
+.buy-pack-btn.hidden { display: none; }
+/* Modale compra pacchetti */
+.buy-modal { text-align: center; }
+.buy-price-hint { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+.buy-stepper {
+  display: flex; align-items: center; justify-content: center; gap: 22px;
+  margin-bottom: 14px;
+}
+.buy-step {
+  width: 46px; height: 46px; border-radius: 50%;
+  font-size: 26px; font-weight: 800; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--panel); border: 1px solid #2a3450; color: var(--gold);
+  cursor: pointer; padding: 0;
+}
+.buy-step:disabled { opacity: .4; cursor: not-allowed; }
+.buy-step:active:not(:disabled) { transform: scale(.94); }
+.buy-qty { font-size: 38px; font-weight: 800; color: #fff; min-width: 44px; }
+.buy-total { color: var(--gold); font-weight: 700; font-size: 15px; margin-bottom: 18px; }
+.buy-actions { display: flex; gap: 10px; justify-content: center; }
 /* X di uscita della battaglia: in alto a DESTRA (fissa), mai sotto il badge */
 #btn-battle-quit {
   position: fixed;
@@ -616,3 +645,23 @@ body.app-ready .squerini-badge { display: inline-flex; }
   display: flex; align-items: center; justify-content: center; text-align: center;
 }
 #deck-picker-done { width: 100%; }
+
+/* ---------- banner aggiornamento PWA ---------- */
+.update-banner {
+  position: fixed; left: 50%; bottom: 16px; z-index: 9999;
+  transform: translateX(-50%) translateY(140%);
+  display: flex; align-items: center; gap: 12px;
+  background: #16233d; color: #fff; padding: 10px 16px;
+  border-radius: 14px; font-size: 14px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+  border: 1px solid rgba(255, 212, 59, .35);
+  transition: transform .35s ease;
+  max-width: calc(100vw - 32px);
+}
+.update-banner.show { transform: translateX(-50%) translateY(0); }
+.update-banner .update-btn {
+  background: var(--gold); color: #141b2b; border: none;
+  padding: 7px 14px; border-radius: 9px; font-weight: 800; cursor: pointer;
+  font-size: 13px; white-space: nowrap;
+}
+.update-banner .update-btn:active { transform: scale(.96); }
