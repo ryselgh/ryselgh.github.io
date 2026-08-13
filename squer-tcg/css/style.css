@@ -30,6 +30,16 @@ html, body {
 
 body { position: fixed; inset: 0; }
 
+/* Classe utility GLOBALE: nasconde davvero l'elemento. Prima esistevano
+   solo regole specifiche (.modal.hidden, ...): i bottoni con .hidden
+   (Attacca/Annulla in battaglia, "Tieni" nel draw modal) restavano
+   VISIBILI e mandavano in overflow orizzontale la riga azioni. */
+.hidden { display: none; }
+/* eccezioni: toast e loader usano .hidden per una transizione di opacità,
+   quindi devono restare in layout (regole più specifiche, vincono) */
+.toast.hidden { display: block; }
+.loader.hidden { display: flex; }
+
 /* ---------- screens ---------- */
 .screen {
   position: absolute; inset: 0;
@@ -49,7 +59,7 @@ body { position: fixed; inset: 0; }
     radial-gradient(900px 500px at 90% 110%, rgba(255,201,61,.12), transparent 60%),
     linear-gradient(180deg, #10151f, #0b0f16);
 }
-.home-header { padding: 48px 20px 8px; } /* 48px: lascia sotto il badge valuta (alto a sinistra) */
+.home-header { padding: 60px 20px 8px; } /* 60px: le pillole (badge valuta/hamburger) stanno sopra senza coprire il logo */
 .logo { font-size: 44px; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .logo-badge {
   width: 52px; height: 52px; border-radius: 50%;
@@ -68,7 +78,7 @@ body { position: fixed; inset: 0; }
 }
 .home-nickname b { color: var(--gold); }
 
-.home-stats { display: flex; gap: 10px; width: 100%; max-width: 460px; padding: 22px 16px 0; }
+.home-stats { display: flex; gap: 10px; width: 100%; max-width: 460px; padding: 18px 16px 0; }
 .stat-card {
   flex: 1; background: var(--panel); border: 1px solid #2a3450; border-radius: var(--radius);
   padding: 14px 6px; box-shadow: var(--shadow);
@@ -76,7 +86,7 @@ body { position: fixed; inset: 0; }
 .stat-num { font-size: 26px; font-weight: 800; color: var(--gold); }
 .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-.collection-progress { width: 100%; max-width: 460px; padding: 18px 16px 0; }
+.collection-progress { width: 100%; max-width: 460px; padding: 16px 16px 0; }
 .progress-bar { height: 12px; background: #232c40; border-radius: 99px; overflow: hidden; }
 .progress-fill {
   height: 100%; width: 0%;
@@ -86,7 +96,7 @@ body { position: fixed; inset: 0; }
 .progress-text { margin-top: 6px; font-size: 12px; color: var(--muted); }
 
 .pack-counter {
-  margin: 18px 16px 0; padding: 10px 18px; border-radius: 99px;
+  margin: 16px 16px 0; padding: 10px 18px; border-radius: 99px;
   background: rgba(255,201,61,.12); border: 1px solid rgba(255,201,61,.35);
   color: var(--gold); font-weight: 600; font-size: 14px;
   display: inline-flex; align-items: center; gap: 8px;
@@ -115,7 +125,7 @@ body { position: fixed; inset: 0; }
      a sola padding e il testo viene tagliato. Lo shine di Apri Pacchetto
      viene ritagliato con clip-path su #btn-open-pack. */
 }
-.btn-big { margin-top: 20px; }
+.btn-big { margin-top: 16px; }
 /* "Apri Pacchetto" home: mai su due righe. Con viewport stretti (o font
    scaling del sistema) il testo andava a capo e il bottone si deformava.
    Ora font e padding si riducono insieme alla larghezza dello schermo.
@@ -131,9 +141,15 @@ body { position: fixed; inset: 0; }
   font-size: clamp(14px, 4.5vw, 18px);
   padding: 15px clamp(16px, 6vw, 34px);
   width: 50%; max-width: 220px;
-  margin-top: 12px; /* uniforma lo spazio verticale (override di .btn-big 20px) */
+  margin-top: 16px; /* ritmo verticale uniforme (16px) */
   overflow: clip;
 }
+/* pacchetti esauriti: niente shine, bottone piu' spento ma colori intatti */
+#btn-open-pack:disabled {
+  filter: brightness(.92) saturate(.85); opacity: .6; cursor: not-allowed;
+  box-shadow: none;
+}
+#btn-open-pack:disabled .btn-shine { animation: none; opacity: 0; }
 .btn-shine {
   position: absolute; top: 0; left: -80%; width: 50%; height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
@@ -197,9 +213,9 @@ body { position: fixed; inset: 0; }
 
 .hint { color: var(--muted); font-size: 12px; margin-top: 10px; min-height: 16px; }
 .home-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; justify-content: center; }
-.footer-note { margin-top: auto; padding-top: 26px; color: #5a6478; font-size: 12px; }
+.footer-note { margin-top: auto; padding-top: 20px; color: #5a6478; font-size: 12px; }
 
-.latest-pulls { display: flex; gap: 8px; margin-top: 22px; flex-wrap: wrap; justify-content: center; }
+.latest-pulls { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; justify-content: center; }
 .latest-pulls .mini-card { width: 54px; height: 76px; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
 .latest-pulls .mini-card img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -245,8 +261,12 @@ body { position: fixed; inset: 0; }
   display: flex; align-items: center; gap: 10px; padding: 14px 14px 6px;
   position: sticky; top: 0; z-index: 5; background: rgba(13,17,23,.9); backdrop-filter: blur(6px);
 }
-.screen-header h2 { font-size: 18px; flex: 1; text-align: center; }
-.header-spacer { width: 70px; }
+/* Titolo allineato a sinistra dopo il bottone Indietro (come già nella
+   topbar pacchetto): la centratura assoluta col badge valuta + spacer
+   lasciava ~44px al titolo e tutto andava a capo. nowrap+ellipsis come
+   rete di sicurezza per i nomi lunghi. */
+.screen-header h2 { font-size: 17px; flex: 1; text-align: left; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.header-spacer { display: none; }
 .filter-row { display: flex; gap: 8px; padding: 10px 14px; overflow-x: auto; scrollbar-width: none; }
 .filter-row::-webkit-scrollbar { display: none; }
 .chip {
@@ -317,6 +337,11 @@ body { position: fixed; inset: 0; }
 .modal-card h3 { margin: 8px 0 14px; font-size: 20px; }
 .modal-card-mini { width: 160px; margin: 0 auto 18px; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
 .modal-card-mini img { width: 100%; display: block; }
+/* result: card piu' piccola, backdrop piu' leggero (niente 'tutto schermo') */
+#result-modal { background: rgba(5, 8, 14, .55); }
+#result-modal .modal-card { max-width: 250px; padding: 16px; }
+#result-modal .modal-badge { font-size: 34px; }
+#result-modal h3 { font-size: 18px; margin: 6px 0 10px; }
 
 /* ---------- toast ---------- */
 .toast {
@@ -377,6 +402,9 @@ body { position: fixed; inset: 0; }
 .menu-danger { color: #ffb3ba; }
 .menu-danger:hover { background: rgba(255,95,109,.12); }
 .menu-item + .menu-danger { border-top: 1px solid #2a3450; margin-top: 4px; padding-top: 12px; }
+#menu-update { color: #7dd87d; }
+#menu-update:hover { background: rgba(125,216,125,.1); }
+#menu-update:disabled { opacity: .6; cursor: wait; }
 
 /* ---------- collection: topbar sticky + tools ---------- */
 .collection-topbar {
@@ -401,7 +429,7 @@ body { position: fixed; inset: 0; }
 }
 
 /* ---------- detail: prev/next nav ---------- */
-.header-spacer.detail-nav { width: auto; display: flex; gap: 6px; justify-content: flex-end; }
+.header-spacer.detail-nav { display: flex; gap: 6px; justify-content: flex-end; margin-left: auto; }
 .btn-nav { padding: 8px 14px; font-size: 20px; line-height: 1; }
 .btn-nav:disabled { opacity: .35; cursor: default; }
 
@@ -439,17 +467,18 @@ body { position: fixed; inset: 0; }
    pronta (body.app-ready), altrimenti galleggerebbe sopra il loader. */
 .squerini-badge {
   display: none;   /* mostrato da body.app-ready (sotto) */
-  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 10px;
-  z-index: 220;
+  position: fixed; top: 6px; left: 10px; z-index: 220;
+  height: 34px; border-radius: 999px;   /* capsula (raggio 17 = hamburger), non ellisse */
   background: rgba(13,17,23,.88); border: 1px solid rgba(255,201,61,.45);
-  color: var(--gold); border-radius: 99px; padding: 6px 12px;
+  color: var(--gold); padding: 0 12px;
   font-size: 14px; font-weight: 700; align-items: center; gap: 4px;
   box-shadow: 0 4px 14px rgba(0,0,0,.45);
   backdrop-filter: blur(4px);
 }
 body.app-ready .squerini-badge { display: inline-flex; }
 .squerini-badge b { font-size: 15px; }
-/* Bottone "Compra" dentro il badge valuta: compare solo se squerini >= 100 */
+/* Bottone "Acquista" dentro il badge valuta (home): allarga il badge a
+   capsula; il logo della home sta comunque piu' in basso (vedi .home-header) */
 .buy-pack-btn {
   margin-left: 8px; padding: 3px 10px;
   background: linear-gradient(180deg, #ffd873, #ffb02e);
@@ -478,20 +507,55 @@ body.app-ready .squerini-badge { display: inline-flex; }
 .buy-qty { font-size: 38px; font-weight: 800; color: #fff; min-width: 44px; }
 .buy-total { color: var(--gold); font-weight: 700; font-size: 15px; margin-bottom: 18px; }
 .buy-actions { display: flex; gap: 10px; justify-content: center; }
-/* X di uscita della battaglia: in alto a DESTRA (fissa), mai sotto il badge */
+/* X di uscita della battaglia e "?" regole: due cerchi uguali, in alto a
+   destra, stessa altezza del badge valuta (che ora sta solo in home) */
 #btn-battle-quit {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 8px);
-  right: 10px;
-  z-index: 210;
-  margin-left: 0;
+  position: fixed; top: 6px; right: 10px; z-index: 210; margin-left: 0;
+  width: 34px; height: 34px; border-radius: 50%; padding: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
 }
-#screen-battle .header-spacer { display: none; }
-/* gli header con back a sinistra lasciano spazio al badge valuta */
-.screen-header .btn-back, .pack-topbar .btn-back { margin-left: 58px; }
+#screen-battle .header-spacer { display: block; }
+.btn-help {
+  position: fixed; top: 6px; right: 50px; z-index: 210;
+  width: 34px; height: 34px; border-radius: 50%; padding: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+}
+/* Battaglia: titolo centrato nella zona libera tra badge valuta (sx) e
+   X di uscita fissa (dx); il bottone "?" (regole) resta visibile nel
+   flusso, a sinistra della X. Prima lo spacer era display:none e le
+   regole erano IRRAGGIUNGIBILI dopo la prima apertura. */
+#screen-battle .screen-header { padding-left: 64px; padding-right: 50px; }
+#screen-battle .screen-header h2 { text-align: center; }
+/* album e dettaglio: tasto indietro nel flusso dell'header (a sinistra),
+   STILE PILLOLA come gli altri tasti; il titolo resta centrato */
+#btn-collection-back, #btn-detail-back {
+  padding: 8px 14px; font-size: 20px; line-height: 1;
+  border-radius: 99px; margin-left: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-nav { padding: 8px 14px; font-size: 20px; line-height: 1; border-radius: 99px; }
+#screen-collection .screen-header { position: relative; }
+#screen-collection .screen-header h2 {
+  position: absolute; left: 0; right: 0; top: 14px; bottom: 6px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto; width: auto; max-width: calc(100% - 120px);
+  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* dettaglio: titolo centrato sull'INTERO header, nella stessa riga di back
+   e frecce (allineato verticalmente tra i padding dell'header) */
+#screen-detail .screen-header { position: relative; }
+#screen-detail .screen-header h2 {
+  position: absolute; left: 0; right: 0; top: 14px; bottom: 6px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto; width: auto; max-width: calc(100% - 190px);
+  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* gli header con back a sinistra lasciano spazio al badge valuta;
+   nowrap + flex-shrink:0: il bottone non va MAI a capo su due righe */
+.screen-header .btn-back, .pack-topbar .btn-back { margin-left: 58px; white-space: nowrap; flex-shrink: 0; }
 .home-actions {
   display: flex; flex-direction: column; align-items: center;
-  gap: 12px; margin-top: 12px; width: 50%; max-width: 220px;
+  gap: 12px; margin-top: 16px; width: 50%; max-width: 220px;
 }
 .home-actions .btn { width: 100%; }
 /* Gioca = stessa dimensione esatta di Apri Pacchetto (font + padding identici) */
@@ -557,10 +621,16 @@ body.app-ready .squerini-badge { display: inline-flex; }
   background: rgba(255,95,109,.92); color: #fff;
   font-size: 13px; font-weight: 800; line-height: 22px; text-align: center;
 }
-.deck-slot .slot-type {
+.deck-slot .slot-el {
+  position: absolute; top: 4px; left: 4px; z-index: 2;
+  background: rgba(6,10,18,.78); border-radius: 8px; padding: 1px 6px;
+  font-size: 12px; color: #fff; white-space: nowrap;
+}
+.deck-slot .slot-el i { font-style: normal; font-size: 10px; color: #a8d4ff; font-weight: 800; }
+.deck-slot .slot-stats {
   position: absolute; bottom: 4px; left: 4px; z-index: 2;
-  background: rgba(6,10,18,.75); border-radius: 8px; padding: 1px 6px;
-  font-size: 11px; color: #fff;
+  background: rgba(6,10,18,.78); border-radius: 8px; padding: 1px 6px;
+  font-size: 11px; color: #fff; white-space: nowrap;
 }
 .deck-lock { color: var(--muted); font-size: 12px; padding: 10px 24px; text-align: center; }
 
@@ -603,7 +673,7 @@ body.app-ready .squerini-badge { display: inline-flex; }
 .battle-card-info.hidden { display: none; }
 
 /* ---------- risultato ---------- */
-#result-modal .modal-card { text-align: center; max-width: 340px; width: 100%; }
+#result-modal .modal-card { text-align: center; max-width: 250px; width: 100%; }
 .result-score { font-size: 30px; font-weight: 800; color: var(--gold); margin: 8px 0 4px; }
 .result-zones { display: flex; gap: 10px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
 .result-zone {
@@ -639,11 +709,9 @@ body.app-ready .squerini-badge { display: inline-flex; }
   background: var(--gold); color: #141b2b; font-weight: 800; font-size: 14px;
   line-height: 22px; text-align: center;
 }
-.deck-pick.full::before {
-  content: 'MAZZO PIENO'; position: absolute; inset: 0; z-index: 3;
-  background: rgba(6,10,18,.72); color: #ffc9cd; font-size: 10px; font-weight: 800;
-  display: flex; align-items: center; justify-content: center; text-align: center;
-}
+/* mazzo pieno: le carte non scelte si affievoliscono (niente "MAZZO PIENO"
+   ripetuto su tutte: brutto e aggressivo); il tap mostra un toast */
+.deck-pick.full:not(.in-deck) { opacity: .45; filter: saturate(.7); }
 #deck-picker-done { width: 100%; }
 
 /* ---------- banner aggiornamento PWA ---------- */
@@ -665,3 +733,268 @@ body.app-ready .squerini-badge { display: inline-flex; }
   font-size: 13px; white-space: nowrap;
 }
 .update-banner .update-btn:active { transform: scale(.96); }
+/* =========================================================
+   Squer Clash v2 — battaglia a turni (UI 2D)
+   ========================================================= */
+.battle-hud { padding: 6px 14px 0; display: flex; flex-direction: column; gap: 4px; }
+.anima-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.anima-row.bot { flex-direction: row-reverse; }
+.anima-name { width: 92px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #cdd6e4; }
+.anima-row.bot .anima-name { text-align: right; }
+.anima-track { flex: 1; height: 12px; border-radius: 8px; background: rgba(255,255,255,.08); overflow: hidden; border: 1px solid rgba(255,255,255,.12); }
+.anima-fill { height: 100%; width: 100%; border-radius: 8px; transition: width .4s ease; }
+.anima-fill.bot { background: linear-gradient(90deg, #ff5f6d, #ff8a5f); }
+.anima-fill.me { background: linear-gradient(90deg, #4aa3ff, #7cc4ff); }
+.anima-fill.flash { animation: animaFlash .55s ease; }
+@keyframes animaFlash { 50% { filter: brightness(2.4) saturate(1.6); } }
+.anima-num { width: 30px; text-align: center; font-size: 15px; }
+.battle-turn { text-align: center; font-size: 12px; color: #ffc93d; font-weight: 700; letter-spacing: .5px; }
+.battle-turn.urgent { color: #ff5f5f; animation: turnBlink 1s steps(2, start) infinite; }
+@keyframes turnBlink { 50% { opacity: .25; } }
+
+.battle-log { margin: 6px 14px 0; min-height: 36px; font-size: 11.5px; color: #aab6c8;
+  background: rgba(6,10,18,.5); border-radius: 10px; padding: 5px 10px; overflow: hidden; }
+.battle-log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.battle-log .log-empty { color: #46506b; font-style: italic; }
+
+.battle-field { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px 0; }
+.zone-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.zone-sep { text-align: center; color: #ffc93d; font-size: 14px; opacity: .8; }
+
+.battle-zone {
+  background: rgba(255,255,255,.05); border: 2px dashed rgba(255,255,255,.15);
+  border-radius: 12px; min-height: 96px; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; padding: 6px; position: relative;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.battle-zone.empty { color: #5b6575; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+.battle-zone.place-target { border-color: #7cc4ff; box-shadow: 0 0 0 2px rgba(124,196,255,.35) inset; cursor: pointer; }
+.battle-zone.place-target:active { transform: scale(.96); }
+.battle-zone.sel { border-color: #ffc93d; box-shadow: 0 0 0 2px rgba(255,201,61,.5) inset; }
+.battle-zone.front { border-color: #ff8a5f; box-shadow: 0 0 0 2px rgba(255,138,95,.5) inset; }
+.bz-top { display: flex; align-items: center; gap: 5px; width: 100%; }
+.bz-el { font-size: 15px; }
+.bz-name { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bz-stats { display: flex; gap: 8px; font-size: 12px; margin-top: 2px; width: 100%; }
+.bz-hp { color: #ffb0b0; } .bz-atk { color: #a8d4ff; margin-left: auto; }
+.bz-hpbar { width: 100%; height: 6px; background: rgba(255,255,255,.1); border-radius: 4px; margin-top: 4px; overflow: hidden; }
+.bz-hpfill { height: 100%; background: #7cc47c; border-radius: 4px; transition: width .4s ease; }
+.bz-hpfill.low { background: #ff8a5f; }
+.bz-ab { font-size: 10px; color: #ffc93d; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+.battle-meta { display: flex; justify-content: center; gap: 18px; font-size: 12px; color: #aab6c8; padding: 3px 0 0; }
+
+.battle-hand { display: flex; gap: 7px; padding: 5px 12px; overflow-x: auto; min-height: 0; }
+.hand-card {
+  flex: 0 0 auto; width: 82px; background: rgba(255,255,255,.05);
+  border: 2px solid rgba(255,255,255,.12); border-radius: 10px; padding: 4px;
+  cursor: pointer; position: relative; transition: transform .15s ease, border-color .15s ease;
+}
+.hand-card img { width: 100%; border-radius: 7px; display: block; aspect-ratio: 8/11.5; object-fit: cover; }
+.hand-card.sel { border-color: #ffc93d; transform: translateY(-6px); box-shadow: 0 6px 14px rgba(255,201,61,.25); }
+.hc-el { position: absolute; top: 3px; left: 3px; font-size: 13px; background: rgba(6,10,18,.7); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+.hc-name { display: block; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.hc-stats { display: block; font-size: 10px; color: #aab6c8; }
+.hand-empty { color: #5b6575; width: 100%; text-align: center; padding-top: 40px; }
+
+/* Fino a 3 bottoni visibili insieme (Pesca + Attacca + Annulla):
+   si dividono la riga in parti uguali e vanno a capo se serve;
+   prima (min-width:130px fissi) sforavano SEMPRE la viewport stretta. */
+.battle-actions { display: flex; gap: 8px; justify-content: center; padding: 6px 12px; flex-wrap: wrap; }
+.battle-actions .btn {
+  flex: 1 1 0; min-width: 0; max-width: 170px;
+  padding: 13px 8px; font-size: 14px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.battle-status { text-align: center; font-size: 12px; color: #cdd6e4; padding: 2px 14px 8px; min-height: 28px; }
+
+/* draw modal */
+.draw-preview { display: flex; justify-content: center; margin: 8px 0; }
+.draw-card-big { width: 130px; text-align: center; }
+.draw-card-big img { width: 100%; border-radius: 10px; }
+.draw-card-big span { display: block; font-size: 12px; margin-top: 4px; }
+.draw-hint { font-size: 12px; color: #aab6c8; text-align: center; }
+.draw-hand { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; max-height: 130px; overflow-y: auto; }
+.draw-card {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15); color: #fff;
+  border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;
+}
+.draw-card:active { transform: scale(.96); }
+.draw-empty { color: #5b6575; font-size: 12px; padding: 6px; }
+
+/* help modal */
+.help-body {
+  font-size: 13px; color: #cdd6e4; line-height: 1.5; text-align: left;
+  max-height: 62vh; overflow-y: auto; padding-right: 6px;
+  overscroll-behavior: contain;
+}
+.help-body::-webkit-scrollbar { width: 6px; }
+.help-body::-webkit-scrollbar-thumb { background: #3a4663; border-radius: 4px; }
+.help-body::-webkit-scrollbar-track { background: transparent; }
+.help-body ul { margin: 4px 0 8px 18px; padding: 0; }
+.help-body li { margin-bottom: 4px; }
+
+/* tabella tipi nell'help */
+.types-table-wrap { margin: 6px 0 4px; overflow: hidden; border-radius: 10px; border: 1px solid #2a3450; }
+.types-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.types-table th, .types-table td { padding: 5px 6px; text-align: left; vertical-align: top; }
+.types-table .tt-head th {
+  background: rgba(255,255,255,.05); color: #9fb0c8; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .4px; position: sticky; top: 0;
+}
+.types-table .tt-head th:first-child { width: 34%; }
+.types-table .tt-head th:nth-child(2), .types-table .tt-head th:nth-child(3) { width: 33%; }
+.types-table tr:nth-child(even) { background: rgba(255,255,255,.025); }
+.types-table .tt-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.types-table .tt-wins { color: #7dd87d; }
+.types-table .tt-loses { color: #ff9a9a; }
+.types-table .tt-cell { display: inline-block; margin-right: 2px; white-space: nowrap; }
+.types-table .tt-head th:first-child { border-radius: 10px 0 0 0; }
+
+/* hint matchup al piazzamento (battaglia) */
+.matchup-hint {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  padding: 0 12px 8px; font-size: 12px;
+}
+.matchup-hint.hidden { display: none; }
+.matchup-hint .mh-sel { font-weight: 800; color: #fff; margin-right: 4px; }
+.matchup-hint .mh-zone {
+  padding: 3px 8px; border-radius: 999px; border: 1px solid #2a3450;
+  background: rgba(255,255,255,.04); white-space: nowrap;
+}
+.matchup-hint .mh-super { color: #7dd87d; border-color: rgba(125,216,125,.45); background: rgba(125,216,125,.1); }
+.matchup-hint .mh-weak { color: #ff9a9a; border-color: rgba(255,154,154,.45); background: rgba(255,154,154,.1); }
+.matchup-hint .mh-neut { color: #cdd6e4; }
+
+/* =========================================================
+   Economia carte (M3): badge copie/livello + azioni
+   ========================================================= */
+.owned-count {
+  position: absolute; bottom: 4px; right: 4px; z-index: 2;
+  background: rgba(6,10,18,.82); color: #ffc93d; font-weight: 800;
+  font-size: 11px; padding: 2px 6px; border-radius: 8px;
+  border: 1px solid rgba(255,201,61,.4);
+}
+.owned-level {
+  position: absolute; top: 4px; right: 4px; z-index: 2;
+  background: rgba(6,10,18,.82); color: #a8d4ff; font-weight: 800;
+  font-size: 10px; padding: 2px 5px; border-radius: 8px;
+  border: 1px solid rgba(168,212,255,.4);
+}
+.detail-copies { font-size: 13px; color: #cdd6e4; margin: 8px 0 4px; text-align: center; }
+.dim { color: #5b6575; }
+.economy-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
+.economy-row .btn { font-size: 12px; padding: 7px 10px; }
+.economy-row .btn:disabled { opacity: .4; }
+
+/* =========================================================
+   Battaglia 3D (BattleScene2)
+   ========================================================= */
+/* Altezza STABILE (flex: 0 0 auto): senza, la scena veniva schiacciata a
+   ~130px dal flex di #screen-battle e le carte diventavano francobolli. */
+.battle-3d { position: relative; margin: 8px 12px 0; height: clamp(320px, 50vh, 440px); flex: 0 0 auto; }
+.battle-scene-3d { position: absolute; inset: 0; border-radius: 14px; overflow: hidden; }
+.battle-scene-3d canvas { display: block; width: 100% !important; height: 100% !important; }
+.zone-overlays { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+/* Overlay carta compatto: nell'angolo in alto a destra della carta a terra
+   mostra SOLO ⚔️ATK + emoji effetto + barra PV stretta. Al hover si espande
+   e mostra nome, PV e abilità complete. */
+.zone-ov {
+  position: absolute; width: 60px; transform: translate(-50%, -50%);
+  background: rgba(6,10,18,.85); border: 1px solid #888; border-radius: 6px;
+  padding: 1px 3px; font-size: 10px; color: #fff; text-align: center;
+  backdrop-filter: blur(2px); line-height: 1.2; pointer-events: auto;
+  transition: width .18s ease, border-color .18s ease; z-index: 2;
+}
+.zone-ov.drag-hide { display: none; }
+.zone-ov .zo-top { display: flex; justify-content: center; gap: 2px; align-items: center; font-weight: 800; white-space: nowrap; overflow: hidden; }
+.zone-ov .zo-el { font-size: 9px; }
+.zone-ov .zo-atk { color: #a8d4ff; font-size: 9px; }
+.zone-ov .zo-hp-mini { color: #ff6b6b; font-size: 9px; font-weight: 800; }
+.zone-ov .zo-ab-icon { font-size: 9px; }
+.zone-ov .zo-hpbar { height: 3px; background: rgba(255,255,255,.18); border-radius: 3px; overflow: hidden; margin-top: 1px; }
+.zone-ov .zo-hpfill { height: 100%; background: #7cc47c; border-radius: 3px; transition: width .35s ease; }
+.zone-ov .zo-hpfill.low { background: #ff8a5f; }
+.zone-ov .zo-extra { display: none; }
+.zone-ov:hover { width: 150px; z-index: 10; }
+.zone-ov:hover .zo-extra { display: block; margin-top: 2px; }
+/* espansione via tap (mobile: niente hover) */
+.zone-ov.expanded { width: 150px; z-index: 10; }
+.zone-ov.expanded .zo-extra { display: block; margin-top: 2px; }
+.zone-ov .zo-name { font-size: 10px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zone-ov .zo-stats { font-weight: 700; }
+.zone-ov .zo-atk-full { color: #a8d4ff; font-weight: 800; }
+.zone-ov .zo-hp { color: #ffb0b0; }
+.zone-ov .zo-ab-text { font-size: 9px; color: #ffc93d; line-height: 1.3; }
+
+/* badge dati carta in mano (hover/selezione): niente barra PV */
+.hand-info {
+  position: absolute; transform: translate(-50%, -170%); pointer-events: none; z-index: 8;
+  background: rgba(6,10,18,.92); border: 1px solid #ffc93d; border-radius: 9px;
+  padding: 5px 9px; font-size: 11px; color: #fff; text-align: center; min-width: 120px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.5);
+}
+.hand-info .hi-name { font-weight: 800; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hand-info .hi-atk { color: #a8d4ff; font-weight: 800; margin-top: 2px; }
+.hand-info .hi-ab { color: #ffc93d; font-size: 10px; margin-top: 3px; line-height: 1.3; }
+
+.dmg-floating {
+  position: absolute; transform: translate(-50%, -50%); pointer-events: none;
+  font-size: 14px; font-weight: 800; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.8);
+  animation: dmgFloat 1.4s ease-out forwards; z-index: 5;
+}
+.dmg-floating.crit { color: #ff5f5f; font-size: 17px; }
+.dmg-floating.weak { color: #ffd43b; }
+.dmg-floating.ramp { color: #7cc4ff; font-size: 12px; }
+@keyframes dmgFloat {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+  15% { opacity: 1; transform: translate(-50%, -60%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -140%) scale(1); }
+}
+
+/* =========================================================
+   Home: fit verticale su viewport bassi (C7)
+   ========================================================= */
+@media (max-height: 680px) {
+  .home-header { padding-top: 56px; }
+  .logo { font-size: 34px; }
+  .logo-badge { width: 42px; height: 42px; font-size: 24px; }
+  .home-nickname { margin-top: 6px; padding: 4px 12px; font-size: 13px; }
+  .home-stats { padding-top: 12px; }
+  .stat-card { padding: 9px 4px; }
+  .stat-num { font-size: 22px; }
+  .collection-progress { padding-top: 10px; }
+  .progress-bar { height: 10px; }
+  .pack-counter { margin-top: 10px; padding: 7px 14px; }
+  .home-actions { margin-top: 10px; padding-top: 0; }
+  #btn-open-pack { margin-top: 10px; }
+  .latest-pulls { display: none; }
+  .footer-note { padding: 8px 0 6px; }
+}
+
+/* =========================================================
+   Lancio di moneta (chi inizia) + bottoni disabilitati
+   ========================================================= */
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+
+.coin-box { text-align: center; padding: 18px 24px; }
+.coin {
+  width: 96px; height: 96px; position: relative; margin: 0 auto 14px;
+  transform-style: preserve-3d;
+}
+.coin-face {
+  position: absolute; inset: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 46px;
+  font-weight: 800; line-height: 1; color: #000;
+  backface-visibility: hidden;
+  background: radial-gradient(circle at 30% 30%, #ffe08a, #d4a91f 60%, #9a7410);
+  border: 4px solid #7d5e0c;
+  box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 0 18px rgba(255,255,255,.25);
+}
+.coin-back { transform: rotateY(180deg); }
+.coin.spin.testa { animation: coinSpinT 1.7s cubic-bezier(.25,.6,.3,1) forwards; }
+.coin.spin.croce { animation: coinSpinC 1.7s cubic-bezier(.25,.6,.3,1) forwards; }
+@keyframes coinSpinT { 0% { transform: rotateY(0); } 100% { transform: rotateY(1440deg); } }
+@keyframes coinSpinC { 0% { transform: rotateY(0); } 100% { transform: rotateY(1620deg); } }
+.coin-result { font-size: 17px; font-weight: 800; color: #ffc93d; min-height: 24px; }
+.coin-sub { font-size: 12px; color: #aab6c8; margin-top: 4px; }

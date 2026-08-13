@@ -32,8 +32,8 @@ const RARE_PLUS_MAX_PCT = 30;
 
 function defaultState() {
   return {
-    version: 2,
-    collection: {},        // uid -> { pulled, lastPullAt }
+    version: 3,
+    collection: {},        // uid -> { count, level }  (copie + livello 1-5)
     packsOpened: 0,
     packsToday: 0,
     lastPackDate: todayStr(),
@@ -42,6 +42,7 @@ function defaultState() {
     // ---- profilo gioco (Squer Clash) ----
     nickname: '',          // obbligatorio al primo avvio (3-16 caratteri)
     squerini: 0,           // valuta: compra pacchetti extra
+    packs: 0,              // pacchetti ACQUISTATI con squerini (non ancora aperti)
     deck: [],              // uid delle carte del mazzo (DECK_SIZE, mai duplicati)
     matches: [],           // storico partite
     welcomePacks: WELCOME_PACKS, // pacchetti di benvenuto rimasti (una tantum)
@@ -56,11 +57,31 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/** Migrazione vecchio stato (v2: collection { pulled }) -> v3 { count, level }.
+    Le copie pescate in passato diventano count (minimo 1), livello 1. */
+function migrateState(s) {
+  if (s.version >= 3) return s;
+  const coll = {};
+  for (const [uid, rec] of Object.entries(s.collection || {})) {
+    if (rec && typeof rec === 'object' && typeof rec.count === 'number') {
+      coll[uid] = { count: rec.count, level: rec.level || 1 };
+    } else if (rec) {
+      coll[uid] = { count: Math.max(1, rec.pulled || 1), level: 1 };
+    }
+  }
+  s.collection = coll;
+  s.version = 3;
+  return s;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
     const s = JSON.parse(raw);
+    const wasOld = s.version < 3;
+    migrateState(s);
+    if (wasOld) saveState(s); // persisti la migrazione v2 -> v3
     // roll over daily counter if date changed
     if (s.lastPackDate !== todayStr()) {
       s.packsToday = 0;
@@ -94,16 +115,34 @@ function dailyRemaining() {
 
 function packsRemaining() {
   const s = loadState();
-  return s.welcomePacks + dailyRemaining();
+  return s.welcomePacks + dailyRemaining() + (s.packs || 0);
 }
 
-/** Dettaglio pacchetti disponibili: benvenuto (una tantum) + giornalieri. */
+/** Dettaglio pacchetti disponibili: benvenuto (una tantum) + giornalieri
+    + acquistati (riserva che non scade). */
 function packsBreakdown() {
-  return { welcome: loadState().welcomePacks, daily: dailyRemaining() };
+  const s = loadState();
+  return { welcome: s.welcomePacks, daily: dailyRemaining(), bought: s.packs || 0 };
 }
 
 function canOpenPack() {
   return packsRemaining() > 0;
+}
+
+/** Compra N pacchetti con gli squerini (PACK_PRICE l'uno).
+    Quantità limitata a [1, floor(squerini/PACK_PRICE)].
+    Ritorna la quantità effettivamente comprata (0 se impossibile). */
+function buyPacks(n) {
+  const s = loadState();
+  const max = Math.floor(s.squerini / PACK_PRICE);
+  n = Math.floor(n);
+  if (!(n >= 1)) n = 1;
+  if (n > max) n = max;
+  if (n < 1 || max < 1) return 0;
+  s.squerini -= n * PACK_PRICE;
+  s.packs = (s.packs || 0) + n;
+  saveState(s);
+  return n;
 }
 
 /** Soglie [lo, hi) in [0,1) per rollRarity limitato alle rarità con
@@ -153,13 +192,16 @@ function rollPackRarities(rng) {
 }
 
 /** Open a pack: returns { cards:[card...], packId, isNew:[bool] }
-    Priorità: prima i pacchetti di benvenuto (non consumano il giornaliero),
-    poi i giornalieri gratis. */
+    Ordine di consumo: prima i benvenuto (una tantum), poi i giornalieri
+    gratis (scadono a fine giornata), infine gli acquistati con squerini
+    (riserva che non scade). */
 function openPack(cards) {
   const s = loadState();
   const useWelcome = s.welcomePacks > 0;
-  if (!useWelcome && s.packsToday >= DAILY_FREE_LIMIT) {
-    throw new Error('Nessun pacchetto gratuito rimasto oggi');
+  const useDaily = !useWelcome && s.packsToday < DAILY_FREE_LIMIT;
+  const useBought = !useWelcome && !useDaily && (s.packs || 0) > 0;
+  if (!useWelcome && !useDaily && !useBought) {
+    throw new Error('Nessun pacchetto da aprire');
   }
   const rng = makeRNG('pack_' + Date.now() + '_' + Math.random());
   const rarities = rollPackRarities(rng);
@@ -186,13 +228,12 @@ function openPack(cards) {
   rarities.sort((a, b) => a.order - b.order);
 
   const result = chosen.map(card => {
-    const rec = s.collection[card.uid] || { pulled: 0, firstPullAt: null, lastPullAt: null };
-    const isNew = !rec.firstPullAt;
-    rec.pulled += 1;
-    if (!rec.firstPullAt) rec.firstPullAt = Date.now();
-    rec.lastPullAt = Date.now();
+    const rec = s.collection[card.uid] || { count: 0, level: 1 };
+    const isNew = rec.count === 0;
+    rec.count += 1;
     s.collection[card.uid] = rec;
-    card.pulled = rec.pulled;
+    card.count = rec.count;
+    card.level = rec.level;
     card.isNew = isNew;
     return { card, isNew };
   });
@@ -202,8 +243,10 @@ function openPack(cards) {
     s.welcomePacks -= 1;
     // l'ultimo benvenuto aperto oggi: i giornalieri partono da domani
     if (s.welcomePacks === 0) s.welcomeDoneDate = todayStr();
-  } else {
+  } else if (useDaily) {
     s.packsToday += 1;
+  } else {
+    s.packs = (s.packs || 0) - 1;   // pacchetto acquistato
   }
   s.totalPulls += PACK_SIZE;
   s.lastPackDate = todayStr();
@@ -219,7 +262,7 @@ function collectionStats(cards) {
   const byRarity = {};
   for (const c of cards) {
     const rec = s.collection[c.uid];
-    if (rec && rec.pulled > 0) {
+    if (rec && rec.count > 0) {
       owned++;
       byRarity[c.rarity.id] = (byRarity[c.rarity.id] || 0) + 1;
     }
@@ -230,17 +273,73 @@ function collectionStats(cards) {
 function isOwned(uid) {
   const s = loadState();
   const rec = s.collection[uid];
-  return !!(rec && rec.pulled > 0);
+  return !!(rec && rec.count > 0);
+}
+
+/* ---------- economia carte (GDD §5) ---------- */
+
+/** Record collezione di una carta (default 1 copia, livello 1). */
+function getCardRec(uid) {
+  const s = loadState();
+  return s.collection[uid] || { count: 0, level: 1 };
+}
+
+/** Fusione: 2 copie -> +1 livello (una si consuma). Gratis. */
+function fuseCards(uid) {
+  const s = loadState();
+  const rec = getCardRec(uid);
+  const max = (SQUER.CONFIG && SQUER.CONFIG.MAX_LEVEL) || 5;
+  if (rec.count < 2) return { ok: false, reason: 'no_copies' };
+  if (rec.level >= max) return { ok: false, reason: 'max_level' };
+  rec.count -= 1;
+  rec.level += 1;
+  s.collection[uid] = rec;
+  saveState(s);
+  return { ok: true, level: rec.level, count: rec.count };
+}
+
+/** Potenziamento con valuta: costo UPGRADE_COSTS[level]. */
+function upgradeCard(uid) {
+  const s = loadState();
+  const rec = getCardRec(uid);
+  const costs = (SQUER.CONFIG && SQUER.CONFIG.UPGRADE_COSTS) || { 1: 150, 2: 300, 3: 500, 4: 800 };
+  const max = (SQUER.CONFIG && SQUER.CONFIG.MAX_LEVEL) || 5;
+  if (rec.count < 1) return { ok: false, reason: 'no_card' };
+  if (rec.level >= max) return { ok: false, reason: 'max_level' };
+  const cost = costs[rec.level];
+  if (cost == null) return { ok: false, reason: 'max_level' };
+  if (s.squerini < cost) return { ok: false, reason: 'no_money', cost };
+  s.squerini -= cost;
+  rec.level += 1;
+  s.collection[uid] = rec;
+  saveState(s);
+  return { ok: true, level: rec.level, cost };
+}
+
+/** Conversione: 1 copia in eccesso -> squerini (per rarità). */
+function convertDupe(uid, rarityId) {
+  const s = loadState();
+  const rec = getCardRec(uid);
+  const rates = (SQUER.CONFIG && SQUER.CONFIG.DUPE_CONVERSION) || { common: 20, uncommon: 35, rare: 60, superRare: 100, legendary: 150 };
+  if (rec.count < 2) return { ok: false, reason: 'no_copies' };
+  const gain = rates[rarityId] || 20;
+  rec.count -= 1;
+  s.collection[uid] = rec;
+  s.squerini += gain;
+  saveState(s);
+  return { ok: true, count: rec.count, gain };
 }
 
 /** Azzera i PROGRESSI (collezione, pacchetti, partite) ma PRESERVA il
-    profilo: nickname, squerini, mazzo, pacchetti di benvenuto rimasti e
-    tutorial. La valuta e il mazzo non si perdono mai per un reset. */
+    profilo: nickname, squerini, mazzo, pacchetti di benvenuto rimasti,
+    pacchetti acquistati e tutorial. La valuta e il mazzo non si perdono
+    mai per un reset. */
 function resetProgress() {
   const s = loadState();
   const fresh = defaultState();
   fresh.nickname = s.nickname;
   fresh.squerini = s.squerini;
+  fresh.packs = s.packs || 0;
   fresh.deck = s.deck;
   fresh.welcomePacks = s.welcomePacks;
   fresh.welcomeDoneDate = s.welcomeDoneDate;

@@ -1,223 +1,69 @@
 ﻿/* =========================================================
-   Squer TCG - Abilità di gioco (Squer Clash)
-   6 effetti, uno per carta, risolti nello scontro di zona.
-   Assegnazione per nome carta (da carte.md): modificabile qui.
-   Carte non presenti in mappa -> effetto stabile dal seed.
+   Squer TCG - Abilità v2 (core loop a turni)
+   Associazione HARDCODED per carta in cards/abilities.json
+   (titolo -> { kind, value, text }), scelta a mano per ogni
+   carta in base al vibe del titolo (vedi GDD §2.4).
+   Qui: metadati per kind (trigger/symbol/nome) + fallback.
+   Trigger: on_play / on_destroy / on_attack / on_hit / passive
    ========================================================= */
 
 var SQUER = window.SQUER || (window.SQUER = {});
 
-// ---- i 6 effetti ----
-// text = descrizione breve mostrata sulla carta (testo normale, dopo il nome)
-const ABILITIES = {
-  fortuna:    { id: 'fortuna',    symbol: '🍀', name: 'Fortuna',    text: 'Se vinci lo scontro, segni +30 PV.' },
-  rivincita:  { id: 'rivincita',  symbol: '💥', name: 'Rivincita',  text: 'Se perdi, segni comunque metà dei tuoi PV.' },
-  scudo:      { id: 'scudo',      symbol: '🛡️', name: 'Scudo',      text: "Se perdi, l'avversario segna metà dei tuoi PV." },
-  specchio:   { id: 'specchio',   symbol: '🪞', name: 'Specchio',   text: 'A PV uguali o tipo neutro, vinci tu.' },
-  sbruffone:  { id: 'sbruffone',  symbol: '😎', name: 'Sbruffone',  text: "Con più PV dell'avversaria, segni +50%." },
-  imprevisto: { id: 'imprevisto', symbol: '🎲', name: 'Imprevisto', text: 'In vantaggio di tipo, segni +50%.' },
+const ABILITIES_PATH = 'cards/abilities.json';
+
+// metadati per kind: trigger, simbolo UI, nome breve
+const KIND_META = {
+  heal_anima:     { trigger: 'on_play',    symbol: '💚', name: 'Rigenerazione' },
+  strike_anima:   { trigger: 'on_play',    symbol: '💢', name: 'Colpo diretto' },
+  deal_front:     { trigger: 'on_play',    symbol: '🔥', name: 'Assalto' },
+  aoe_play:       { trigger: 'on_play',    symbol: '💥', name: 'Esplosione' },
+  aoe_destroy:    { trigger: 'on_destroy', symbol: '💣', name: 'Vendetta' },
+  drain_anima:    { trigger: 'on_attack',  symbol: '🩸', name: 'Drenaggio' },
+  counter:        { trigger: 'on_hit',     symbol: '🗯️', name: 'Contrattacco' },
+  damage_reduce:  { trigger: 'passive',    symbol: '🛡️', name: 'Scudo' },
+  ramp_attack:    { trigger: 'on_turn_start', symbol: '📈', name: 'Crescita' },
+  heal_card:      { trigger: 'on_play',    symbol: '💗', name: 'Cura' },
+  boost_adjacent: { trigger: 'passive',    symbol: '🤝', name: 'Aura' },
+  draw:           { trigger: 'on_play',    symbol: '🎴', name: 'Intuito' },
+  revive:         { trigger: 'on_destroy', symbol: '🌀', name: 'Rinascita' },
 };
 
-// ---- assegnazione per nome carta (da carte.md) ----
-const ABILITY_BY_NAME = {
-  // comuni (70)
-  "Basic Squer": "fortuna",
-  "Default Squer": "scudo",
-  "Happy Squer": "fortuna",
-  "Egypt Squer": "fortuna",
-  "Squer Merende": "rivincita",
-  "Grin Squer": "specchio",
-  "Flashy Squer": "fortuna",
-  "Squer Regrets": "scudo",
-  "Bombing Squer": "imprevisto",
-  "Staring Squer": "specchio",
-  "Wild Squer": "rivincita",
-  "Lost Squer": "scudo",
-  "Landscape Squer": "fortuna",
-  "Challenging Squer": "specchio",
-  "Coffee Squer": "fortuna",
-  "Squer Milano A": "fortuna",
-  "Squer Milano B": "rivincita",
-  "Squer Toxicity Evening 2": "rivincita",
-  "Chad Squer": "sbruffone",
-  "Suspicious Squer": "specchio",
-  "Confident Squer": "sbruffone",
-  "Potato Squer": "scudo",
-  "Spaghetti Squer": "fortuna",
-  "Sisterhood Squer": "scudo",
-  "Very Interested Squer": "fortuna",
-  "Squer Toxicity Evening": "rivincita",
-  "Yellow Squer": "fortuna",
-  "Meh Squer": "scudo",
-  "Doggy Squer": "fortuna",
-  "Stunned Squer": "scudo",
-  "Great Idea Squer": "imprevisto",
-  "Helping Squer": "scudo",
-  "Pleased Squer": "fortuna",
-  "Not Impressed Squer": "specchio",
-  "Great Time Squer": "fortuna",
-  "Evading Squer": "scudo",
-  "Oops Squer": "rivincita",
-  "Country Squer": "fortuna",
-  "Cosplay Party Squer": "fortuna",
-  "Cute Squer": "scudo",
-  "Pool Squer": "fortuna",
-  "Cold Squer": "scudo",
-  "Eye Contact Squer": "specchio",
-  "Squer Fan A": "fortuna",
-  "Squer Fan B": "scudo",
-  "Squer Fan C": "rivincita",
-  "Dont F Ck With Squer": "rivincita",
-  "Brindisi Squer": "fortuna",
-  "Squer e Vabbe": "specchio",
-  "Groove Squer": "fortuna",
-  "Squer Del Boschetto": "fortuna",
-  "Jenga Squer": "rivincita",
-  "Travel Squer": "fortuna",
-  "Lightbulb Squer": "imprevisto",
-  "Thinking Squer": "specchio",
-  "Rainy Squer": "scudo",
-  "Problem Solving Squer": "sbruffone",
-  "Cocktail Squer": "fortuna",
-  "Mocking Squer": "specchio",
-  "Searching Squer": "fortuna",
-  "Bored Squer": "scudo",
-  "Squer Amigos": "scudo",
-  "Squer Amigos Bar": "fortuna",
-  "Squer Amigos Home": "scudo",
-  "Squer Amigos Mirror": "specchio",
-  "Squer Amigos Pizza": "fortuna",
-  "Squer Amigos Sfocati": "specchio",
-  "Squer Amigos Streets A": "fortuna",
-  "Squer Amigos Streets B": "scudo",
-  "Squer Amigos Young": "fortuna",
+// mappa titolo -> { kind, value, text } (popolata da loadAbilities)
+let ABILITY_MAP = {};
 
-  // non comuni (50)
-  "Accompanied Squer": "scudo",
-  "Epiphany Squer": "imprevisto",
-  "Wasted Squer": "rivincita",
-  "Twin Squer": "specchio",
-  "Italian Trash Squer": "rivincita",
-  "Troublemaker Squer": "imprevisto",
-  "Vampire Squer": "rivincita",
-  "Squer Malandrino": "imprevisto",
-  "Pizza Squer": "fortuna",
-  "Squeyer": "specchio",
-  "Wallpaper Squer": "scudo",
-  "Squer Barney A": "specchio",
-  "Squer Barney B": "fortuna",
-  "Squer Barney C": "scudo",
-  "Squer Barney D": "rivincita",
-  "Station Squer": "scudo",
-  "Half Dead Squer": "rivincita",
-  "Photobomb Cosplay Squer": "imprevisto",
-  "Beach Squer": "fortuna",
-  "Squer Che Sa Qualcosa A": "specchio",
-  "Squer Che Sa Qualcosa B": "imprevisto",
-  "Choppy Squer": "rivincita",
-  "Vision Squer": "imprevisto",
-  "Wrong Frame Squer": "scudo",
-  "Squer Of Thrones": "sbruffone",
-  "Pride Squer": "sbruffone",
-  "Rainbow Squer": "fortuna",
-  "Party Hard Squer": "fortuna",
-  "Wanted Squer": "rivincita",
-  "Popping Squer": "imprevisto",
-  "Lan Party Squer": "fortuna",
-  "Spider Squer Origins": "scudo",
-  "Background Squer": "scudo",
-  "Elegant Squer": "sbruffone",
-  "Abbiocco Squer": "scudo",
-  "Squering": "specchio",
-  "Screen Squer": "scudo",
-  "Champagne Squer": "fortuna",
-  "Squer Sfumato": "scudo",
-  "Lockdown Party Squer": "rivincita",
-  "Not Convinced Squer": "specchio",
-  "Squer Cualcosa Collab": "fortuna",
-  "Weird God Squer": "imprevisto",
-  "Evil Squer": "imprevisto",
-  "Blooming Squer": "fortuna",
-  "Mystic Squer": "imprevisto",
-  "Xmas Squer": "fortuna",
-  "Canada Squer": "fortuna",
-  "Mista Squer": "rivincita",
-  "Not So Happy Squer": "scudo",
-
-  // rare (35)
-  "Driver Squer": "sbruffone",
-  "Architect Squer": "scudo",
-  "Squer Ranger": "specchio",
-  "Parliament Squer": "sbruffone",
-  "Post Pool Party Squer": "fortuna",
-  "Canvas Squer": "specchio",
-  "Bottle Opener Squer": "rivincita",
-  "King Squer": "sbruffone",
-  "Squer Claus": "fortuna",
-  "Pink Fluo Squer": "imprevisto",
-  "Matera Squer": "scudo",
-  "Swinging Squer": "imprevisto",
-  "Distracted Squer": "scudo",
-  "Augment Squer": "sbruffone",
-  "30 Squer": "rivincita",
-  "Fake Happy Squer": "imprevisto",
-  "Sun God Squer": "imprevisto",
-  "Mafia Squer": "imprevisto",
-  "WTF Squer": "specchio",
-  "Pusher Squer": "sbruffone",
-  "Hole Squer": "scudo",
-  "Coast Squer": "fortuna",
-  "Degustibus Squer": "specchio",
-  "Biker Squer": "sbruffone",
-  "Hot Squer": "imprevisto",
-  "Spider Squer": "imprevisto",
-  "New Year Squer": "fortuna",
-  "Young Squer": "fortuna",
-  "Geralt Squer": "sbruffone",
-  "Interference Squer": "imprevisto",
-  "Figure Squer": "specchio",
-  "Smith Squer": "sbruffone",
-  "God Blessed Squer": "imprevisto",
-  "Time Traveler Squer": "imprevisto",
-  "Super Fast Squer": "specchio",
-
-  // super rare (20)
-  "Big Boss Squer": "sbruffone",
-  "Bikini Squer": "imprevisto",
-  "Crazy Squer": "imprevisto",
-  "Door Squer": "scudo",
-  "Dusty Squer": "scudo",
-  "Everyone Is Squer": "specchio",
-  "Guilty Squer": "rivincita",
-  "Nostalgic Squer": "fortuna",
-  "Omega Squer": "sbruffone",
-  "Peaky Blinder Squer": "imprevisto",
-  "Pika Squer": "imprevisto",
-  "Rebooting Squer": "rivincita",
-  "Sad Keanu Squer": "scudo",
-  "Serial Killer Squer": "imprevisto",
-  "She/Her Squer": "sbruffone",
-  "Corsivoe Squer": "specchio",
-  "Squer Sparrow": "sbruffone",
-  "Squer Wick": "sbruffone",
-  "Tree Squer": "scudo",
-  "WinXP Squer": "specchio",
-
-  // leggendarie (5)
-  "Fucking Squer": "imprevisto",
-  "The Photobomb Begins": "imprevisto",
-  "La Congrega Reloaded": "sbruffone",
-  "Surprise Frog Squer": "imprevisto",
-  "Photobombing Squer": "imprevisto",
-};
-
-/** Effetto di una carta: dalla mappa per nome, altrimenti stabile dal seed.
-    NON tocca il rng principale della carta (usa un seed dedicato), così
-    l'aspetto visivo delle carte esistenti non cambia. */
-function abilityForCard(card) {
-  const byName = ABILITY_BY_NAME[card.name];
-  if (byName && ABILITIES[byName]) return ABILITIES[byName];
-  const rng = makeRNG(card.file + '::ability');
-  const ids = Object.keys(ABILITIES);
-  return ABILITIES[rng.pick(ids)];
+/** Carica cards/abilities.json (cache 'no-store': è un file manuale).
+    Chiamare prima di createCardSet. */
+async function loadAbilities() {
+  try {
+    const res = await fetch(ABILITIES_PATH, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object') ABILITY_MAP = data;
+    }
+  } catch (e) { /* fallback sotto */ }
 }
+
+// ---- fallback per carte future non ancora nel file (valori scala v2, x2) ----
+const FALLBACKS = [
+  { kind: 'ramp_attack', value: 2, text: 'Ogni tuo turno in campo, +2 ATK.' },
+  { kind: 'damage_reduce', value: 10, text: 'Subisce 10 danni in meno dagli attacchi.' },
+  { kind: 'heal_anima', value: 6, text: 'Giocandola, recuperi 6 Anima.' },
+  { kind: 'deal_front', value: 12, text: 'Giocandola, fa 12 danni alla carta di fronte.' },
+  { kind: 'heal_card', value: 16, text: 'Giocandola, cura 16 PV a una carta alleata in campo.' },
+];
+
+/** Abilità di una carta: da cards/abilities.json (per titolo), altrimenti
+    stabile dal seed (file) così non cambia tra i load. */
+function abilityForCard(card) {
+  const a = ABILITY_MAP[card.name];
+  if (a && KIND_META[a.kind]) {
+    const meta = KIND_META[a.kind];
+    return { id: a.kind, trigger: meta.trigger, symbol: meta.symbol, name: meta.name, text: a.text, value: a.value };
+  }
+  const rng = makeRNG((card.file || card.uid || card.name) + '::ability-v2');
+  const f = FALLBACKS[Math.floor(rng.next() * FALLBACKS.length)];
+  const meta = KIND_META[f.kind];
+  return { id: f.kind, trigger: meta.trigger, symbol: meta.symbol, name: meta.name, text: f.text, value: f.value };
+}
+
+SQUER.ABILITIES = { loadAbilities, abilityForCard, KIND_META, get map() { return ABILITY_MAP; } };

@@ -134,7 +134,7 @@ class SquerScene {
     // card tilt
     if (this.tiltEnabled && this.cardGroup.children.length) {
       this.cardGroup.rotation.y = this.pointer.x * 0.35;
-      this.cardGroup.rotation.x = -this.pointer.y * 0.25;
+      this.cardGroup.rotation.x = this.pointer.y * 0.25; // verticale invertita: mouse su = carta su
     }
 
     // holo / foil: shift the overlay texture with the deck's tilt.

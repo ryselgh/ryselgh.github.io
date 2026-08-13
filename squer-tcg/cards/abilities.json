@@ -1,0 +1,902 @@
+﻿{
+  "Default Squer": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Basic Squer": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Happy Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Egypt Squer": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Squer Merende": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Grin Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Flashy Squer": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Squer Regrets": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Bombing Squer": {
+    "kind": "deal_front",
+    "value": 12,
+    "text": "Giocandola, fa 12 danni alla carta di fronte."
+  },
+  "Staring Squer": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Wild Squer": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Lost Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Landscape Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Challenging Squer": {
+    "kind": "deal_front",
+    "value": 12,
+    "text": "Giocandola, fa 12 danni alla carta di fronte."
+  },
+  "Coffee Squer": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Squer Milano A": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Squer Milano B": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Squer Toxicity Evening 2": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Chad Squer": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Suspicious Squer": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Confident Squer": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Potato Squer": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Spaghetti Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Sisterhood Squer": {
+    "kind": "boost_adjacent",
+    "value": 6,
+    "text": "Le carte alleate adiacenti hanno +6 ATK."
+  },
+  "Very Interested Squer": {
+    "kind": "heal_card",
+    "value": 16,
+    "text": "Giocandola, cura 16 PV a una carta alleata in campo."
+  },
+  "Squer Toxicity Evening": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Yellow Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Meh Squer": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Doggy Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Stunned Squer": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Great Idea Squer": {
+    "kind": "heal_card",
+    "value": 16,
+    "text": "Giocandola, cura 16 PV a una carta alleata in campo."
+  },
+  "Helping Squer": {
+    "kind": "heal_card",
+    "value": 16,
+    "text": "Giocandola, cura 16 PV a una carta alleata in campo."
+  },
+  "Pleased Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Not Impressed Squer": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Great Time Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Evading Squer": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Oops Squer": {
+    "kind": "aoe_destroy",
+    "value": 10,
+    "text": "Se viene distrutta, fa 10 danni a tutte le carte avversarie in campo."
+  },
+  "Country Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Cosplay Party Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Cute Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Pool Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Cold Squer": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Eye Contact Squer": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Squer Fan A": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Squer Fan B": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Squer Fan C": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Dont F Ck With Squer": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Brindisi Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Squer e Vabbe": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Groove Squer": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Squer Del Boschetto": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Jenga Squer": {
+    "kind": "aoe_destroy",
+    "value": 10,
+    "text": "Se viene distrutta, fa 10 danni a tutte le carte avversarie in campo."
+  },
+  "Travel Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Lightbulb Squer": {
+    "kind": "heal_card",
+    "value": 16,
+    "text": "Giocandola, cura 16 PV a una carta alleata in campo."
+  },
+  "Thinking Squer": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Rainy Squer": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Problem Solving Squer": {
+    "kind": "heal_card",
+    "value": 16,
+    "text": "Giocandola, cura 16 PV a una carta alleata in campo."
+  },
+  "Cocktail Squer": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Mocking Squer": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Searching Squer": {
+    "kind": "deal_front",
+    "value": 12,
+    "text": "Giocandola, fa 12 danni alla carta di fronte."
+  },
+  "Bored Squer": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Squer Amigos": {
+    "kind": "boost_adjacent",
+    "value": 6,
+    "text": "Le carte alleate adiacenti hanno +6 ATK."
+  },
+  "Squer Amigos Bar": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Squer Amigos Home": {
+    "kind": "heal_card",
+    "value": 16,
+    "text": "Giocandola, cura 16 PV a una carta alleata in campo."
+  },
+  "Squer Amigos Mirror": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Squer Amigos Pizza": {
+    "kind": "heal_anima",
+    "value": 6,
+    "text": "Giocandola, recuperi 6 Anima."
+  },
+  "Squer Amigos Sfocati": {
+    "kind": "damage_reduce",
+    "value": 10,
+    "text": "Subisce 10 danni in meno dagli attacchi."
+  },
+  "Squer Amigos Streets A": {
+    "kind": "counter",
+    "value": 10,
+    "text": "Quando subisce un attacco, fa 10 danni all'attaccante."
+  },
+  "Squer Amigos Streets B": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Squer Amigos Young": {
+    "kind": "ramp_attack",
+    "value": 2,
+    "text": "Ogni tuo turno in campo, +2 ATK."
+  },
+  "Fucking Squer": {
+    "kind": "aoe_destroy",
+    "value": 40,
+    "text": "Se viene distrutta, fa 40 danni a tutte le carte avversarie in campo."
+  },
+  "The Photobomb Begins": {
+    "kind": "aoe_play",
+    "value": 36,
+    "text": "Giocandola, fa 36 danni a tutte le carte avversarie in campo."
+  },
+  "La Congrega Reloaded": {
+    "kind": "revive",
+    "value": 2,
+    "text": "Quando viene distrutta, torna in campo con metà dei PV."
+  },
+  "Surprise Frog Squer": {
+    "kind": "strike_anima",
+    "value": 30,
+    "text": "Giocandola, togli 30 Anima all'avversario."
+  },
+  "Photobombing Squer": {
+    "kind": "drain_anima",
+    "value": 30,
+    "text": "Quando attacca, ruba 30 Anima all'avversario."
+  },
+  "Driver Squer": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "Architect Squer": {
+    "kind": "damage_reduce",
+    "value": 20,
+    "text": "Subisce 20 danni in meno dagli attacchi."
+  },
+  "Squer Ranger": {
+    "kind": "deal_front",
+    "value": 30,
+    "text": "Giocandola, fa 30 danni alla carta di fronte."
+  },
+  "Parliament Squer": {
+    "kind": "boost_adjacent",
+    "value": 14,
+    "text": "Le carte alleate adiacenti hanno +14 ATK."
+  },
+  "Post Pool Party Squer": {
+    "kind": "heal_anima",
+    "value": 16,
+    "text": "Giocandola, recuperi 16 Anima."
+  },
+  "Canvas Squer": {
+    "kind": "heal_card",
+    "value": 36,
+    "text": "Giocandola, cura 36 PV a una carta alleata in campo."
+  },
+  "Bottle Opener Squer": {
+    "kind": "aoe_play",
+    "value": 20,
+    "text": "Giocandola, fa 20 danni a tutte le carte avversarie in campo."
+  },
+  "King Squer": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "Squer Claus": {
+    "kind": "heal_anima",
+    "value": 16,
+    "text": "Giocandola, recuperi 16 Anima."
+  },
+  "Pink Fluo Squer": {
+    "kind": "counter",
+    "value": 24,
+    "text": "Quando subisce un attacco, fa 24 danni all'attaccante."
+  },
+  "Matera Squer": {
+    "kind": "damage_reduce",
+    "value": 20,
+    "text": "Subisce 20 danni in meno dagli attacchi."
+  },
+  "Swinging Squer": {
+    "kind": "counter",
+    "value": 24,
+    "text": "Quando subisce un attacco, fa 24 danni all'attaccante."
+  },
+  "Distracted Squer": {
+    "kind": "counter",
+    "value": 24,
+    "text": "Quando subisce un attacco, fa 24 danni all'attaccante."
+  },
+  "Augment Squer": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "30 Squer": {
+    "kind": "strike_anima",
+    "value": 16,
+    "text": "Giocandola, togli 16 Anima all'avversario."
+  },
+  "Fake Happy Squer": {
+    "kind": "aoe_destroy",
+    "value": 24,
+    "text": "Se viene distrutta, fa 24 danni a tutte le carte avversarie in campo."
+  },
+  "Sun God Squer": {
+    "kind": "deal_front",
+    "value": 30,
+    "text": "Giocandola, fa 30 danni alla carta di fronte."
+  },
+  "Mafia Squer": {
+    "kind": "strike_anima",
+    "value": 16,
+    "text": "Giocandola, togli 16 Anima all'avversario."
+  },
+  "WTF Squer": {
+    "kind": "draw",
+    "value": 2,
+    "text": "Giocandola, peschi 2 carta."
+  },
+  "Pusher Squer": {
+    "kind": "aoe_play",
+    "value": 20,
+    "text": "Giocandola, fa 20 danni a tutte le carte avversarie in campo."
+  },
+  "Hole Squer": {
+    "kind": "aoe_destroy",
+    "value": 24,
+    "text": "Se viene distrutta, fa 24 danni a tutte le carte avversarie in campo."
+  },
+  "Coast Squer": {
+    "kind": "heal_anima",
+    "value": 16,
+    "text": "Giocandola, recuperi 16 Anima."
+  },
+  "Degustibus Squer": {
+    "kind": "heal_anima",
+    "value": 16,
+    "text": "Giocandola, recuperi 16 Anima."
+  },
+  "Biker Squer": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "Hot Squer": {
+    "kind": "deal_front",
+    "value": 30,
+    "text": "Giocandola, fa 30 danni alla carta di fronte."
+  },
+  "Spider Squer": {
+    "kind": "counter",
+    "value": 24,
+    "text": "Quando subisce un attacco, fa 24 danni all'attaccante."
+  },
+  "New Year Squer": {
+    "kind": "heal_anima",
+    "value": 16,
+    "text": "Giocandola, recuperi 16 Anima."
+  },
+  "Young Squer": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "Geralt Squer": {
+    "kind": "deal_front",
+    "value": 30,
+    "text": "Giocandola, fa 30 danni alla carta di fronte."
+  },
+  "Interference Squer": {
+    "kind": "damage_reduce",
+    "value": 20,
+    "text": "Subisce 20 danni in meno dagli attacchi."
+  },
+  "Figure Squer": {
+    "kind": "heal_card",
+    "value": 36,
+    "text": "Giocandola, cura 36 PV a una carta alleata in campo."
+  },
+  "Smith Squer": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "God Blessed Squer": {
+    "kind": "heal_anima",
+    "value": 16,
+    "text": "Giocandola, recuperi 16 Anima."
+  },
+  "Time Traveler Squer": {
+    "kind": "draw",
+    "value": 2,
+    "text": "Giocandola, peschi 2 carta."
+  },
+  "Super Fast Squer": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "Omega Squer": {
+    "kind": "aoe_play",
+    "value": 28,
+    "text": "Giocandola, fa 28 danni a tutte le carte avversarie in campo."
+  },
+  "Big Boss Squer": {
+    "kind": "ramp_attack",
+    "value": 6,
+    "text": "Ogni tuo turno in campo, +6 ATK."
+  },
+  "Sad Keanu Squer": {
+    "kind": "aoe_destroy",
+    "value": 32,
+    "text": "Se viene distrutta, fa 32 danni a tutte le carte avversarie in campo."
+  },
+  "Crazy Squer": {
+    "kind": "draw",
+    "value": 2,
+    "text": "Giocandola, peschi 2 carta."
+  },
+  "Squer Sparrow": {
+    "kind": "drain_anima",
+    "value": 24,
+    "text": "Quando attacca, ruba 24 Anima all'avversario."
+  },
+  "Corsivoe Squer": {
+    "kind": "counter",
+    "value": 32,
+    "text": "Quando subisce un attacco, fa 32 danni all'attaccante."
+  },
+  "Bikini Squer": {
+    "kind": "heal_anima",
+    "value": 24,
+    "text": "Giocandola, recuperi 24 Anima."
+  },
+  "Dusty Squer": {
+    "kind": "damage_reduce",
+    "value": 24,
+    "text": "Subisce 24 danni in meno dagli attacchi."
+  },
+  "Rebooting Squer": {
+    "kind": "revive",
+    "value": 2,
+    "text": "Quando viene distrutta, torna in campo con metà dei PV."
+  },
+  "Door Squer": {
+    "kind": "damage_reduce",
+    "value": 24,
+    "text": "Subisce 24 danni in meno dagli attacchi."
+  },
+  "Tree Squer": {
+    "kind": "damage_reduce",
+    "value": 24,
+    "text": "Subisce 24 danni in meno dagli attacchi."
+  },
+  "Serial Killer Squer": {
+    "kind": "aoe_destroy",
+    "value": 32,
+    "text": "Se viene distrutta, fa 32 danni a tutte le carte avversarie in campo."
+  },
+  "Pika Squer": {
+    "kind": "deal_front",
+    "value": 40,
+    "text": "Giocandola, fa 40 danni alla carta di fronte."
+  },
+  "WinXP Squer": {
+    "kind": "heal_card",
+    "value": 48,
+    "text": "Giocandola, cura 48 PV a una carta alleata in campo."
+  },
+  "Guilty Squer": {
+    "kind": "strike_anima",
+    "value": 24,
+    "text": "Giocandola, togli 24 Anima all'avversario."
+  },
+  "Peaky Blinder Squer": {
+    "kind": "boost_adjacent",
+    "value": 18,
+    "text": "Le carte alleate adiacenti hanno +18 ATK."
+  },
+  "Nostalgic Squer": {
+    "kind": "heal_anima",
+    "value": 24,
+    "text": "Giocandola, recuperi 24 Anima."
+  },
+  "Everyone Is Squer": {
+    "kind": "boost_adjacent",
+    "value": 18,
+    "text": "Le carte alleate adiacenti hanno +18 ATK."
+  },
+  "She/Her Squer": {
+    "kind": "heal_card",
+    "value": 48,
+    "text": "Giocandola, cura 48 PV a una carta alleata in campo."
+  },
+  "Squer Wick": {
+    "kind": "strike_anima",
+    "value": 24,
+    "text": "Giocandola, togli 24 Anima all'avversario."
+  },
+  "Accompanied Squer": {
+    "kind": "boost_adjacent",
+    "value": 10,
+    "text": "Le carte alleate adiacenti hanno +10 ATK."
+  },
+  "Epiphany Squer": {
+    "kind": "deal_front",
+    "value": 20,
+    "text": "Giocandola, fa 20 danni alla carta di fronte."
+  },
+  "Wasted Squer": {
+    "kind": "damage_reduce",
+    "value": 14,
+    "text": "Subisce 14 danni in meno dagli attacchi."
+  },
+  "Twin Squer": {
+    "kind": "heal_card",
+    "value": 24,
+    "text": "Giocandola, cura 24 PV a una carta alleata in campo."
+  },
+  "Italian Trash Squer": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Troublemaker Squer": {
+    "kind": "strike_anima",
+    "value": 10,
+    "text": "Giocandola, togli 10 Anima all'avversario."
+  },
+  "Vampire Squer": {
+    "kind": "drain_anima",
+    "value": 10,
+    "text": "Quando attacca, ruba 10 Anima all'avversario."
+  },
+  "Squer Malandrino": {
+    "kind": "strike_anima",
+    "value": 10,
+    "text": "Giocandola, togli 10 Anima all'avversario."
+  },
+  "Pizza Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Squeyer": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "Wallpaper Squer": {
+    "kind": "damage_reduce",
+    "value": 14,
+    "text": "Subisce 14 danni in meno dagli attacchi."
+  },
+  "Squer Barney A": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Squer Barney B": {
+    "kind": "heal_card",
+    "value": 24,
+    "text": "Giocandola, cura 24 PV a una carta alleata in campo."
+  },
+  "Squer Barney C": {
+    "kind": "damage_reduce",
+    "value": 14,
+    "text": "Subisce 14 danni in meno dagli attacchi."
+  },
+  "Squer Barney D": {
+    "kind": "deal_front",
+    "value": 20,
+    "text": "Giocandola, fa 20 danni alla carta di fronte."
+  },
+  "Station Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Half Dead Squer": {
+    "kind": "aoe_destroy",
+    "value": 16,
+    "text": "Se viene distrutta, fa 16 danni a tutte le carte avversarie in campo."
+  },
+  "Photobomb Cosplay Squer": {
+    "kind": "aoe_play",
+    "value": 12,
+    "text": "Giocandola, fa 12 danni a tutte le carte avversarie in campo."
+  },
+  "Beach Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Squer Che Sa Qualcosa A": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Squer Che Sa Qualcosa B": {
+    "kind": "heal_card",
+    "value": 24,
+    "text": "Giocandola, cura 24 PV a una carta alleata in campo."
+  },
+  "Choppy Squer": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Vision Squer": {
+    "kind": "deal_front",
+    "value": 20,
+    "text": "Giocandola, fa 20 danni alla carta di fronte."
+  },
+  "Wrong Frame Squer": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Squer Of Thrones": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "Pride Squer": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Rainbow Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Party Hard Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Wanted Squer": {
+    "kind": "strike_anima",
+    "value": 10,
+    "text": "Giocandola, togli 10 Anima all'avversario."
+  },
+  "Popping Squer": {
+    "kind": "aoe_destroy",
+    "value": 16,
+    "text": "Se viene distrutta, fa 16 danni a tutte le carte avversarie in campo."
+  },
+  "Lan Party Squer": {
+    "kind": "boost_adjacent",
+    "value": 10,
+    "text": "Le carte alleate adiacenti hanno +10 ATK."
+  },
+  "Spider Squer Origins": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Background Squer": {
+    "kind": "damage_reduce",
+    "value": 14,
+    "text": "Subisce 14 danni in meno dagli attacchi."
+  },
+  "Elegant Squer": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Abbiocco Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Squering": {
+    "kind": "ramp_attack",
+    "value": 4,
+    "text": "Ogni tuo turno in campo, +4 ATK."
+  },
+  "Screen Squer": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Champagne Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Squer Sfumato": {
+    "kind": "damage_reduce",
+    "value": 14,
+    "text": "Subisce 14 danni in meno dagli attacchi."
+  },
+  "Lockdown Party Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Not Convinced Squer": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Squer Cualcosa Collab": {
+    "kind": "boost_adjacent",
+    "value": 10,
+    "text": "Le carte alleate adiacenti hanno +10 ATK."
+  },
+  "Weird God Squer": {
+    "kind": "aoe_play",
+    "value": 12,
+    "text": "Giocandola, fa 12 danni a tutte le carte avversarie in campo."
+  },
+  "Evil Squer": {
+    "kind": "strike_anima",
+    "value": 10,
+    "text": "Giocandola, togli 10 Anima all'avversario."
+  },
+  "Blooming Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Mystic Squer": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  },
+  "Xmas Squer": {
+    "kind": "heal_anima",
+    "value": 10,
+    "text": "Giocandola, recuperi 10 Anima."
+  },
+  "Canada Squer": {
+    "kind": "damage_reduce",
+    "value": 14,
+    "text": "Subisce 14 danni in meno dagli attacchi."
+  },
+  "Mista Squer": {
+    "kind": "heal_card",
+    "value": 24,
+    "text": "Giocandola, cura 24 PV a una carta alleata in campo."
+  },
+  "Not So Happy Squer": {
+    "kind": "counter",
+    "value": 16,
+    "text": "Quando subisce un attacco, fa 16 danni all'attaccante."
+  }
+}

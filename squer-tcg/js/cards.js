@@ -43,14 +43,49 @@ function nameFromFile(file) {
     .slice(0, 24) || 'Carta Misteriosa';
 }
 
-// ★ CONFIG PV per rarità (carte.md §2): fascia del valore deterministco
+// ★ CONFIG PV per rarità (GDD §2.1): fascia del valore deterministco.
+// Ricalibrati per il loop v2 con Anima 60: PV più alti (20-60) — le carte
+// durano di più e il secondo giocatore ha tempo di rispondere all'iniziativa
+// del primo (simulazione 12 tipi: meno esiti decisi dal primo colpo).
 const HP_RANGES = {
-  common: [60, 90],
-  uncommon: [85, 115],
-  rare: [110, 140],
-  superRare: [135, 165],
-  legendary: [160, 190],
+  common: [20, 33],
+  uncommon: [24, 40],
+  rare: [28, 47],
+  superRare: [33, 53],
+  legendary: [38, 60],
 };
+
+// ★ CONFIG ATK per rarità (GDD §2.1): danno base della carta.
+const ATK_RANGES = {
+  common: [15, 22],
+  uncommon: [20, 28],
+  rare: [26, 34],
+  superRare: [32, 40],
+  legendary: [38, 46],
+};
+
+/** Stats effettive di una carta al livello dato (GDD §2.3): +10% PV/ATK
+    per livello oltre il 1° (arrotondato). Usata da deck, battaglia e dettaglio. */
+function cardStatsAt(card, level) {
+  const bonus = (SQUER.CONFIG && SQUER.CONFIG.LEVEL_STAT_BONUS) || 0.10;
+  const lv = Math.max(1, level || 1);
+  const mult = 1 + bonus * (lv - 1);
+  return { hp: Math.round(card.hp * mult), atk: Math.round(card.atk * mult) };
+}
+
+// Override tipo per carta (cards/types.json): il titolo decide il tipo
+// (es. "Tree Squer" -> erba). Caricato da loadTypes().
+let TYPE_OVERRIDES = {};
+
+async function loadTypes() {
+  try {
+    const res = await fetch('cards/types.json', { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object') TYPE_OVERRIDES = data;
+    }
+  } catch (e) { /* opzionale */ }
+}
 
 /** Build a full card object from a manifest entry */
 function buildCard(entry, index, setSize) {
@@ -59,10 +94,14 @@ function buildCard(entry, index, setSize) {
   const rarity = entry.rarity && RARITIES[entry.rarity]
     ? RARITIES[entry.rarity]
     : rarityForSeed(rng);
-  const type = TYPE_KEYS[Math.floor(rng.next() * TYPE_KEYS.length)];
   const cardName = entry.name || nameFromFile(entry.file);
+  // tipo: override manuale per titolo (check tipi), altrimenti dal seed
+  const type = TYPE_OVERRIDES[cardName] && CARD_TYPES[TYPE_OVERRIDES[cardName]]
+    ? TYPE_OVERRIDES[cardName]
+    : TYPE_KEYS[Math.floor(rng.next() * TYPE_KEYS.length)];
   const hpRange = HP_RANGES[rarity.id] || HP_RANGES.common;
-  const ability = abilityForCard({ file: entry.file, name: cardName });
+  const atkRange = ATK_RANGES[rarity.id] || ATK_RANGES.common;
+  const ability = abilityForCard({ uid: entry.uid, file: entry.file, name: cardName });
   return {
     uid: entry.uid || cardUID(entry.file),
     file: entry.file,
@@ -79,10 +118,13 @@ function buildCard(entry, index, setSize) {
     typeSymbol: CARD_TYPES[type].symbol,
     typeName: CARD_TYPES[type].name,
     hp: rng.int(hpRange[0], hpRange[1]), // deterministisco, fascia per rarità
+    atk: rng.int(atkRange[0], atkRange[1]), // deterministisco, fascia per rarità
     ability: ability.id,          // id effetto di gioco (Squer Clash)
     abilitySymbol: ability.symbol,
     abilityName: ability.name,
     abilityText: ability.text,
+    abilityValue: ability.value,      // valore numerico (per il motore)
+    abilityTrigger: ability.trigger,  // trigger (per il motore)
     number: index + 1,
     setSize,
     rng,
@@ -211,6 +253,9 @@ function loadImage(src) {
 async function createCardSet(entries, onProgress) {
   const setSize = entries.length;
   const cards = [];
+  // abilità v2 da cards/abilities.json + override tipo da cards/types.json
+  // (fallback seed se mancanti)
+  await Promise.all([loadAbilities(), loadTypes()]);
   const jobs = entries.map(async (entry, i) => {
     const card = buildCard(entry, i, setSize);
     try {
@@ -249,3 +294,7 @@ async function createCardSet(entries, onProgress) {
   }
   return cards;
 }
+
+// Esposizione per la UI (es. tabella tipi nell'help)
+SQUER.CARD_TYPES = CARD_TYPES;
+SQUER.TYPES = { CARD_TYPES, TYPE_KEYS };

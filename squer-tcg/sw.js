@@ -7,7 +7,7 @@
    - Navigazioni: network-first (aggiornamenti immediati,
      fallback offline sull'ultima copia)
    ========================================================= */
-const CACHE = 'squer-tcg-v25';
+const CACHE = 'squer-tcg-v27';
 const PRECACHE = [
   './',
   'index.html',
@@ -24,7 +24,7 @@ const PRECACHE = [
   'js/packs.js',
   'js/sound.js',
   'js/scene.js',
-  'js/scene-battle.js',
+  'js/scene-battle2.js',
   'js/main.js',
   'js/install.js',
   'icons/icon-192.png',
@@ -46,6 +46,12 @@ self.addEventListener('activate', (e) => {
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+// "Forza aggiornamento" dalla UI: salta l'attesa e attiva subito la nuova
+// versione precached (bump cache), poi la pagina ricarica.
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', (e) => {

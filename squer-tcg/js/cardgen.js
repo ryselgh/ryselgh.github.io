@@ -441,30 +441,47 @@ SQUER.art = (() => {
     const hp = card.hp;
     g.fillStyle = 'rgba(6,10,18,0.6)';
     g.beginPath();
-    g.arc(72, by0, 34, 0, Math.PI * 2);
+    g.arc(52, by0, 34, 0, Math.PI * 2);
     g.fill();
-    g.strokeStyle = hp >= 160 ? '#ff5f5f' : hp >= 120 ? '#ffb02e' : pal.accent1;
+    g.strokeStyle = hp >= 40 ? '#ff5f5f' : hp >= 30 ? '#ffb02e' : pal.accent1;
     g.lineWidth = 3;
     g.stroke();
     g.fillStyle = '#ffffff';
     g.font = '700 26px "Segoe UI", sans-serif';
-    g.fillText(hp, 72, by0);
+    g.fillText(hp, 52, by0);
     g.font = '600 13px "Segoe UI", sans-serif';
     g.fillStyle = '#ffb0b0';
-    g.fillText('PV', 72, by0 + 22);
+    g.fillText('PV', 52, by0 + 22);
 
-    // energy type symbol (right of HP)
-    const tCol = TYPE_COLORS[card.type] || pal.accent1;
+    // ATK badge (accanto al PV): gemello, stesso livello
+    const atk = card.atk;
     g.fillStyle = 'rgba(6,10,18,0.6)';
     g.beginPath();
-    g.arc(148, by0, 26, 0, Math.PI * 2);
+    g.arc(128, by0, 34, 0, Math.PI * 2);
+    g.fill();
+    g.strokeStyle = atk >= 40 ? '#ff5f5f' : atk >= 30 ? '#ffb02e' : '#7ec8ff';
+    g.lineWidth = 3;
+    g.stroke();
+    g.fillStyle = '#ffffff';
+    g.font = '700 26px "Segoe UI", sans-serif';
+    g.fillText(atk, 128, by0);
+    g.font = '600 13px "Segoe UI", sans-serif';
+    g.fillStyle = '#a8d4ff';
+    g.fillText('ATK', 128, by0 + 22);
+
+    // energy type symbol (sotto i badge PV/ATK, centrato tra loro)
+    const tCol = TYPE_COLORS[card.type] || pal.accent1;
+    const tY = by0 + 44;
+    g.fillStyle = 'rgba(6,10,18,0.6)';
+    g.beginPath();
+    g.arc(90, tY, 24, 0, Math.PI * 2);
     g.fill();
     g.strokeStyle = tCol;
     g.lineWidth = 2.5;
     g.stroke();
     g.fillStyle = tCol;
-    g.font = '700 20px "Segoe UI", sans-serif';
-    g.fillText(card.typeSymbol, 148, by0 + 1);
+    g.font = '700 18px "Segoe UI", sans-serif';
+    g.fillText(card.typeSymbol, 90, tY + 1);
 
     // ABILITY: nome effetto + descrizione sono raggruppati SOTTO la
     // rarità (vedi DESCRIPTION più sotto), a metà strada tra rarità e

@@ -83,5 +83,10 @@ SQUER.sound = (() => {
     matchWin() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.2, 'triangle', 0.17, null, i * 0.09)); },
     matchLose() { [440, 349, 294, 220].forEach((f, i) => tone(f, 0.28, 'sine', 0.12, null, i * 0.18)); },
     matchDraw() { [392, 440, 494].forEach((f, i) => tone(f, 0.2, 'sine', 0.1, null, i * 0.12)); },
+    // ---- economia (M3) ----
+    upgrade() { [392, 523, 659, 784].forEach((f, i) => tone(f, 0.12, 'triangle', 0.14, null, i * 0.06)); },
+    coin() { tone(988, 0.1, 'square', 0.08); tone(1319, 0.18, 'square', 0.08, null, 0.08); },
+    // ---- timer turno: bip degli ultimi secondi ----
+    tick() { tone(1320, 0.07, 'square', 0.06); },
   };
 })();
