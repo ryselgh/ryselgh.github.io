@@ -463,6 +463,8 @@ const App = {
       if (q && !c.name.toLowerCase().includes(q)) return false;
       return true;
     });
+    // lista mostrata: il dettaglio (‹ ›) naviga SOLO tra queste carte
+    this.detailList = filtered;
 
     if (this._renderToken) this._renderToken.cancelled = true;
     const token = { cancelled: false };
@@ -504,14 +506,18 @@ const App = {
 
   // ---------- detail ----------
   openDetail(card) {
-    this.detailIndex = this.cards.indexOf(card);
+    // naviga nella lista FILTRATA corrente (rarità/possedute/ricerca),
+    // fallback su tutte le carte se non è stato renderizzato l'album
+    const list = (this.detailList && this.detailList.length) ? this.detailList : this.cards;
+    this.detailIndex = list.indexOf(card);
     if (this.detailIndex < 0) this.detailIndex = 0;
     this.showScreen('detail');
     this.renderDetail();
   },
 
   renderDetail() {
-    const card = this.cards[this.detailIndex];
+    const list = (this.detailList && this.detailList.length) ? this.detailList : this.cards;
+    const card = list[this.detailIndex];
     if (!card) return;
     const s = loadState();
     const rec = getCardRec(card.uid);
@@ -519,17 +525,35 @@ const App = {
     const max = (SQUER.CONFIG && SQUER.CONFIG.MAX_LEVEL) || 5;
     const costs = (SQUER.CONFIG && SQUER.CONFIG.UPGRADE_COSTS) || {};
     const rates = (SQUER.CONFIG && SQUER.CONFIG.DUPE_CONVERSION) || {};
-    const st = owned && rec.level > 1 ? cardStatsAt(card, rec.level) : { hp: card.hp, atk: card.atk };
-    const cost = owned && rec.level < max ? (costs[rec.level] || 0) : null;
+    $('#btn-detail-prev').disabled = this.detailIndex <= 0;
+    $('#btn-detail-next').disabled = this.detailIndex >= list.length - 1;
+
+    // carta NON posseduta: silhouette tratteggiata + numero, nome "???",
+    // niente stats/abilità/tipo (stessa filosofia delle tile vuote album)
+    if (!owned) {
+      $('#detail-title').textContent = '???';
+      $('#detail-info').innerHTML = '<div class="detail-copies dim">Non posseduta — apri pacchetti per trovarla</div>';
+      this.disposeScene();
+      $('#detail-scene').classList.add('hidden');
+      const m = $('#detail-mystery');
+      m.classList.remove('hidden');
+      m.innerHTML = `<div class="dm-card">${card.number}</div>`;
+      return;
+    }
+    $('#detail-mystery').classList.add('hidden');
+    $('#detail-scene').classList.remove('hidden');
+
+    const st = rec.level > 1 ? cardStatsAt(card, rec.level) : { hp: card.hp, atk: card.atk };
+    const cost = rec.level < max ? (costs[rec.level] || 0) : null;
     const gain = rates[card.rarity.id] || 0;
     $('#detail-title').textContent = card.name;
-    const eco = owned ? `
+    const eco = `
       <div class="detail-copies">×${rec.count} copie · Livello ${'⭐'.repeat(rec.level)}${rec.level >= max ? ' <span class="dim">MAX</span>' : ''}</div>
       <div class="economy-row">
         <button class="btn btn-ghost" id="btn-fuse" ${rec.count < 2 || rec.level >= max ? 'disabled' : ''} title="Consuma 1 copia: 2 copie -> +1 livello">🧬 Fondi (×2)</button>
         <button class="btn btn-ghost" id="btn-upgrade" ${rec.count < 1 || rec.level >= max || s.squerini < (cost || 0) ? 'disabled' : ''} title="Spendi squerini: +1 livello">⬆️ Potenzia${cost ? ` (${cost} 🪙)` : ''}</button>
         <button class="btn btn-ghost" id="btn-convert" ${rec.count < 2 ? 'disabled' : ''} title="Consuma 1 copia in eccesso">💱 Converti (+${gain} 🪙)</button>
-      </div>` : '<div class="detail-copies dim">Non posseduta — apri pacchetti per trovarla</div>';
+      </div>`;
     $('#detail-info').innerHTML = `
       <div class="rarity-name" style="color:${RARITY_TAG_COLOR[card.rarity.id]}">${card.rarity.name}</div>
       <div class="detail-meta">
@@ -544,8 +568,6 @@ const App = {
         <span class="ability-body"><b>${card.abilityName}</b> — ${card.abilityText}</span>
       </div>
       ${eco}`;
-    $('#btn-detail-prev').disabled = this.detailIndex <= 0;
-    $('#btn-detail-next').disabled = this.detailIndex >= this.cards.length - 1;
     this.disposeScene();
     this.scene = new SQUER.SquerScene($('#detail-scene'));
     this.scene.showCard(card, { flip: true });
@@ -586,8 +608,9 @@ const App = {
   },
 
   navDetail(dir) {
+    const list = (this.detailList && this.detailList.length) ? this.detailList : this.cards;
     const i = this.detailIndex + dir;
-    if (i < 0 || i >= this.cards.length) return;
+    if (i < 0 || i >= list.length) return;
     this.detailIndex = i;
     this.renderDetail();
   },
@@ -1325,7 +1348,7 @@ const App = {
       const uid = tile.dataset.uid;
       const c = this.cards.find(x => x.uid === uid);
       if (!c) return;
-      if (!isOwned(uid)) { this.toast('Non hai ancora questa carta'); return; }
+      // le non possedute si aprono comunque: il dettaglio mostra la silhouette
       this.openDetail(c);
     });
   },

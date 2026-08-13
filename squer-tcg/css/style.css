@@ -237,6 +237,23 @@ body { position: fixed; inset: 0; }
 .scene-container { flex: 1; position: relative; min-height: 0; }
 .scene-container canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
+/* Carta NON posseduta nel dettaglio: silhouette tratteggiata + numero
+   (coerente con le tile vuote dell'album: non rivela arte, nome, stats
+   o abilità della carta nascosta). */
+.detail-mystery {
+  flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+  margin: 14px auto; max-width: 240px; width: calc(100% - 40px);
+}
+.detail-mystery .dm-card {
+  width: 100%; aspect-ratio: 512/720; border: 3px dashed #2a3450;
+  background: rgba(28,35,51,.4); border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  color: #3a4560; font-size: 44px; font-weight: 800; user-select: none;
+}
+/* sovrascrive display:flex di .detail-mystery (stessa specificita' di
+   .hidden ma definita dopo): deve sparire davvero quando non serve */
+.detail-mystery.hidden { display: none; }
+
 .pack-hud { text-align: center; padding: 8px 16px 22px; }
 .pack-hud-text { color: var(--gold); font-weight: 600; font-size: 15px; min-height: 22px; }
 .pack-dots { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }

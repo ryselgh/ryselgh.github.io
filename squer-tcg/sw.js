@@ -7,7 +7,7 @@
    - Navigazioni: network-first (aggiornamenti immediati,
      fallback offline sull'ultima copia)
    ========================================================= */
-const CACHE = 'squer-tcg-v27';
+const CACHE = 'squer-tcg-v28';
 const PRECACHE = [
   './',
   'index.html',
