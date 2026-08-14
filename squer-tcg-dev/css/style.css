@@ -395,15 +395,18 @@ body { position: fixed; inset: 0; }
 ::-webkit-scrollbar-thumb { background: #2a3450; border-radius: 99px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-/* ---------- top menu (hamburger) ---------- */
+/* ---------- top menu (hamburger + mappamondo online) ---------- */
 .top-menu { position: fixed; top: calc(env(safe-area-inset-top) + 6px); right: 10px; z-index: 40; }
 .top-menu.hidden { display: none; }
+.top-menu-btns { display: flex; gap: 6px; }
 .menu-btn {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--panel2); border: 1px solid #2a3450; color: var(--text);
   font-size: 15px; cursor: pointer; box-shadow: var(--shadow);
   display: flex; align-items: center; justify-content: center;
 }
+#btn-online-menu { font-size: 16px; }
+#btn-online-menu.logged { border-color: rgba(125,216,125,.5); box-shadow: 0 0 0 1px rgba(125,216,125,.25); }
 .menu-dropdown {
   position: absolute; top: 42px; right: 0; min-width: 180px;
   background: var(--panel); border: 1px solid #2a3450; border-radius: 14px;
@@ -422,6 +425,9 @@ body { position: fixed; inset: 0; }
 #menu-update { color: #7dd87d; }
 #menu-update:hover { background: rgba(125,216,125,.1); }
 #menu-update:disabled { opacity: .6; cursor: wait; }
+
+/* ---------- modale scelta modalità (bot vs online) ---------- */
+.play-mode-buttons { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 4px; }
 
 /* ---------- collection: topbar sticky + tools ---------- */
 .collection-topbar {
@@ -695,6 +701,18 @@ body.app-ready .squerini-badge { display: inline-flex; }
 #screen-sfida { align-items: center; }
 .sfida-box { width: 100%; max-width: 420px; padding: 0 16px 24px; display: flex; flex-direction: column; gap: 6px; }
 .sfida-panel { background: var(--panel); border: 1px solid #2a3450; border-radius: 16px; padding: 16px; }
+.sfida-deck-panel { background: var(--panel); border: 1px solid #2a3450; border-radius: 16px; padding: 12px 16px; }
+.sfida-deck-head { display: flex; align-items: center; justify-content: space-between; }
+.sfida-deck-count { color: var(--muted); font-size: 12px; font-weight: 700; }
+.sfida-deck-grid { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 10px; min-height: 76px; }
+.sfida-deck-mini {
+  width: 52px; border-radius: 8px; overflow: hidden; border: 2px solid #2a3450; position: relative;
+}
+.sfida-deck-mini img { width: 100%; display: block; }
+.sfida-deck-mini .slot-el {
+  position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.7);
+  font-size: 9px; padding: 1px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .sfida-divider { text-align: center; color: var(--muted); font-size: 12px; padding: 6px 0; }
 .sfida-pin-input { text-align: center; font-size: 28px; letter-spacing: 12px; font-weight: 800; }
 .sfida-wait { text-align: center; margin-top: 12px; }

@@ -51,8 +51,19 @@ const App = {
       document.body.classList.add('app-ready');
       // First run: ask for the nickname before anything else
       if (!loadState().nickname) {
-        this.showScreen('nickname');
-        $('#nickname-input').focus();
+        // Prima volta assoluta: registrazione online (il nickname si sceglie lì)
+        SQUER.Online.loadSession();
+        this.showScreen('auth');
+        this.showAuthPanel('register');
+        $('#reg-nickname').focus();
+      } else if (!SQUER.Online.token) {
+        // Nickname già scelto in una versione precedente: registrazione
+        // precompilata col nickname (il giocatore lo "riserva" online)
+        SQUER.Online.loadSession();
+        this.showScreen('auth');
+        this.showAuthPanel('register');
+        $('#reg-nickname').value = loadState().nickname;
+        $('#reg-password').focus();
       } else {
         this.showScreen('home');
         this.refreshHome();
@@ -1295,9 +1306,27 @@ const App = {
     $('#btn-detail-back').addEventListener('click', () => { this.disposeScene(); this.showScreen('collection'); });
 
     // ---- Squer Clash ----
-    $('#btn-play').addEventListener('click', () => this.startMatch());
+    $('#btn-play').addEventListener('click', () => this.openPlayModal());
+    $('#btn-play-bot').addEventListener('click', () => {
+      $('#play-modal').classList.add('hidden');
+      this.startMatch();
+    });
+    $('#btn-play-online').addEventListener('click', () => {
+      $('#play-modal').classList.add('hidden');
+      this.playOnline();
+    });
+    $('#btn-play-cancel').addEventListener('click', () => $('#play-modal').classList.add('hidden'));
+    $('#play-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) $('#play-modal').classList.add('hidden'); });
     $('#btn-deck').addEventListener('click', () => this.showDeck());
-    $('#btn-deck-back').addEventListener('click', () => this.showScreen('home'));
+    $('#btn-deck-back').addEventListener('click', () => {
+      // se venivamo dalla sfida, torna lì (altrimenti home)
+      if (this._sfidaFrom) {
+        this._sfidaFrom = false;
+        this.openSfida();
+      } else {
+        this.showScreen('home');
+      }
+    });
     $('#btn-deck-pick').addEventListener('click', () => this.openDeckPicker());
     $('#deck-picker-done').addEventListener('click', () => {
       $('#deck-picker-modal').classList.add('hidden');
@@ -1337,7 +1366,10 @@ const App = {
       $('#menu-dropdown').classList.toggle('hidden');
     });
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.top-menu')) $('#menu-dropdown').classList.add('hidden');
+      if (!e.target.closest('.top-menu')) {
+        $('#menu-dropdown').classList.add('hidden');
+        $('#online-dropdown').classList.add('hidden');
+      }
     });
     $('#menu-reset').addEventListener('click', () => {
       $('#menu-dropdown').classList.add('hidden');
@@ -1414,21 +1446,56 @@ const App = {
     });
 
     // ---------- online (auth + sync) ----------
-    $('#btn-online').addEventListener('click', () => {
+    // Mappamondo in alto: dropdown con Amici / Scambio (+ Esci se loggato)
+    $('#btn-online-menu').addEventListener('click', (e) => {
+      e.stopPropagation();
       if (!SQUER.Online.API_BASE) { this.toast('Online non configurato in questa build'); return; }
-      if (SQUER.Online.token) {
-        // già loggato: apri la tab amici (sync già fatto all'accesso)
-        this.openFriends();
+      // chiusura reciproca dei dropdown
+      $('#menu-dropdown').classList.add('hidden');
+      const dd = $('#online-dropdown');
+      dd.classList.toggle('hidden');
+      if (!SQUER.Online.token) {
+        // non loggato: il dropdown offre solo Amici/Scambio che portano all'auth
+        $('#online-friends').textContent = '👥 Amici';
+        $('#online-trade').textContent = '🤝 Scambio';
+        $('#online-logout').classList.add('hidden');
       } else {
-        this.showScreen('auth');
+        $('#online-logout').classList.remove('hidden');
       }
+    });
+    $('#online-friends').addEventListener('click', () => {
+      $('#online-dropdown').classList.add('hidden');
+      if (!SQUER.Online.token) { this.showScreen('auth'); return; }
+      this.openFriends();
+    });
+    $('#online-trade').addEventListener('click', () => {
+      $('#online-dropdown').classList.add('hidden');
+      if (!SQUER.Online.token) { this.showScreen('auth'); return; }
+      this.openTradeHub();
+    });
+    $('#online-logout').addEventListener('click', async () => {
+      $('#online-dropdown').classList.add('hidden');
+      await SQUER.Online.logout();
+      this.toast('Disconnesso');
+      this.showScreen('home');
+      this.refreshHome();
     });
 
     // auth tabs
     $('#tab-login').addEventListener('click', () => this.showAuthPanel('login'));
     $('#tab-register').addEventListener('click', () => this.showAuthPanel('register'));
     $('#btn-recover-toggle').addEventListener('click', () => this.showAuthPanel('recover'));
-    $('#btn-auth-back').addEventListener('click', () => this.showScreen('home'));
+    $('#btn-auth-back').addEventListener('click', () => {
+      this._pendingSfida = false;
+      // senza nickname locale (primo avvio) chiediamo prima il nickname:
+      // serve anche offline
+      if (!loadState().nickname) {
+        this.showScreen('nickname');
+        $('#nickname-input').focus();
+        return;
+      }
+      this.showScreen('home');
+    });
 
     // login
     $('#btn-login').addEventListener('click', async () => {
@@ -1476,8 +1543,7 @@ const App = {
         $('#btn-backup-done').onclick = async () => {
           this.showScreen('sync');
           await this.runSync();
-        };
-      } catch (e) {
+        };      } catch (e) {
         errEl.textContent = e.message; errEl.classList.remove('hidden');
       }
     });
@@ -1493,8 +1559,16 @@ const App = {
     // friends screen
     $('#btn-friends-back').addEventListener('click', () => this.showScreen('home'));
     $('#btn-sfida-open').addEventListener('click', () => this.openSfida());
-    $('#btn-sfida-back').addEventListener('click', () => this.showScreen('friends'));
+    $('#btn-sfida-back').addEventListener('click', () => {
+      this._pendingSfida = false;
+      this.showScreen('home');
+    });
     $('#btn-sfida-create').addEventListener('click', () => this.sfidaCreate());
+    $('#btn-sfida-edit-deck').addEventListener('click', () => {
+      this._sfidaFrom = true;
+      this.showScreen('deck');
+      this.renderDeck();
+    });
     $('#btn-sfida-cancel').addEventListener('click', () => {
       if (this._sfidaPollIv) { clearInterval(this._sfidaPollIv); this._sfidaPollIv = null; }
       this.openSfida();
@@ -1697,13 +1771,74 @@ const App = {
   },
 
   // ---------- PvP: sfida con PIN ----------
+  /** Bottone Gioca: chiede la modalità (bot vs online). */
+  openPlayModal() {
+    if (!SQUER.Online.API_BASE) {
+      // build senza online: gioca solo contro il bot
+      this.startMatch();
+      return;
+    }
+    const logged = !!SQUER.Online.token;
+    $('#btn-play-online').textContent = logged ? '🌐 Online — Sfida' : '🌐 Online — Sfida (registrati)';
+    $('#play-hint').textContent = logged
+      ? 'Online: gioca contro un altro giocatore con un PIN.'
+      : 'Per giocare online ti serve un account: creane uno (2 min).';
+    $('#play-modal').classList.remove('hidden');
+  },
+
+  /** Scelta "Online" dal modale: richiede l'account, poi apre la sfida. */
+  async playOnline() {
+    if (!SQUER.Online.isOnline()) {
+      // non loggato: mostra la registrazione, poi riprende la sfida
+      this._pendingSfida = true;
+      this.showScreen('auth');
+      this.showAuthPanel('register');
+      const local = loadState().nickname;
+      if (local) $('#reg-nickname').value = local;
+      return;
+    }
+    // loggato ma mai sincronizzato in questa sessione
+    if (!SQUER.Online.synced) {
+      this._pendingSfida = true;
+      this.showScreen('sync');
+      await this.runSync();
+      return;
+    }
+    this.openSfida();
+  },
+
   /** Apre la schermata sfida (da screen-friends). */
   openSfida() {
     $('#sfida-wait').classList.add('hidden');
     $('#btn-sfida-create').classList.remove('hidden');
     $('#sfida-pin-input').value = '';
     $('#sfida-join-error').classList.add('hidden');
+    this.renderSfidaDeck();
     this.showScreen('sfida');
+  },
+
+  /** Miniature del mazzo nella schermata sfida (cosa userai nella partita). */
+  renderSfidaDeck() {
+    const s = loadState();
+    const deckCards = s.deck.map(uid => this.cards.find(c => c.uid === uid)).filter(Boolean);
+    $('#sfida-deck-count').textContent = `${deckCards.length}/8`;
+    const grid = $('#sfida-deck-grid');
+    if (!deckCards.length) {
+      grid.innerHTML = '<div class="friends-empty">Nessuna carta nel mazzo — creane uno prima di sfidare</div>';
+      $('#btn-sfida-create').disabled = true;
+      $('#btn-sfida-create').style.opacity = 0.5;
+      return;
+    }
+    $('#btn-sfida-create').disabled = false;
+    $('#btn-sfida-create').style.opacity = 1;
+    grid.innerHTML = deckCards.map(c => {
+      const rec = s.collection[c.uid];
+      const lv = rec && rec.level > 1 ? ' lv' + rec.level : '';
+      return `<div class="sfida-deck-mini" title="${c.name}">
+        <img src="${this.thumbDataUrl(c)}" alt="${c.name}">
+        <span class="slot-el">${c.typeSymbol}${lv}</span>
+      </div>`;
+    }).join('');
   },
 
   /** Crea una partita: usa il mazzo locale (uid+level) e mostra il PIN. */
@@ -1755,8 +1890,7 @@ const App = {
   },
 
   /** Deck per il PvP: dal mazzo locale, uid + livello. Min 3 carte. */
-  pvpDeck() {
-    const s = loadState();
+  pvpDeck() {    const s = loadState();
     const deck = s.deck.map(uid => {
       const rec = s.collection[uid];
       return { uid, level: rec && rec.level > 1 ? rec.level : 1 };
@@ -1891,6 +2025,18 @@ const App = {
     this.tradeOpp = { id: friendId, name: friendName };
     this.showScreen('trade');
     this.tradeRefresh();
+  },
+
+  /** Voce "Scambio" del menu online: riprende uno scambio in corso, altrimenti
+      guida alla lista amici (dove si avvia con 🤝). */
+  async openTradeHub() {
+    try {
+      const d = await SQUER.Online.listTrades();
+      const active = (d.trades || []).find(t => t.status === 'pending' || t.status === 'countered');
+      if (active) { this.openTradeById(active); return; }
+    } catch (e) { /* ignora: va dagli amici */ }
+    this.toast('Scegli un amico e tocca 🤝 per scambiare');
+    this.openFriends();
   },
 
   /** Apre lo scambio esistente (da lista). */
@@ -2106,7 +2252,15 @@ const App = {
       SQUER.Online.synced = true;
       $('#sync-title').textContent = 'Fatto!';
       $('#sync-actions').textContent = 'Collezione sincronizzata con il cloud.';
-      setTimeout(() => { this.showScreen('home'); this.refreshHome(); }, 800);
+      setTimeout(() => {
+        if (this._pendingSfida) {
+          this._pendingSfida = false;
+          this.openSfida();
+          return;
+        }
+        this.showScreen('home');
+        this.refreshHome();
+      }, 800);
     } catch (e) {
       setPhase(3, 'err');
       fail('Sync non riuscito: ' + e.message);

@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0d1117">
   <title>Squer TCG</title>
-  <link rel="stylesheet" href="css/style.css?v=74">
+  <link rel="stylesheet" href="css/style.css?v=75">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23ffc93d'/><text x='50' y='66' font-size='52' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%23141b2b'>S</text></svg>">
@@ -21,11 +21,19 @@
 
   <!-- ======= TOP MENU (home) ======= -->
   <div id="top-menu" class="top-menu">
-    <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+    <div class="top-menu-btns">
+      <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+      <button class="menu-btn" id="btn-online-menu" aria-label="Online" title="Online: amici e scambi">🌐</button>
+    </div>
     <div class="menu-dropdown hidden" id="menu-dropdown">
       <button class="menu-item" id="menu-update">🔄 Forza aggiornamento</button>
       <button class="menu-item" id="menu-reset">↺ Azzera progressi</button>
       <button class="menu-item menu-danger" id="menu-wipe">🗑 Cancella tutti i dati</button>
+    </div>
+    <div class="menu-dropdown hidden online-dropdown" id="online-dropdown">
+      <button class="menu-item" id="online-friends">👥 Amici</button>
+      <button class="menu-item" id="online-trade">🤝 Scambio</button>
+      <button class="menu-item menu-danger" id="online-logout">🚪 Esci</button>
     </div>
   </div>
 
@@ -73,7 +81,6 @@
       <div class="home-actions-row">
         <button class="btn btn-ghost" id="btn-collection">Album</button>
         <button class="btn btn-ghost" id="btn-deck">Mazzo</button>
-        <button class="btn btn-ghost" id="btn-online">🌐 Online</button>
       </div>
     </div>
 
@@ -255,9 +262,18 @@
     <div class="sfida-box">
       <p class="deck-hint">Sfida un altro giocatore online: crea una partita e condividi il PIN, oppure unisciti con il PIN di un amico.</p>
 
+      <div class="sfida-deck-panel">
+        <div class="sfida-deck-head">
+          <h3 class="friends-title" style="margin:0">🃏 Il tuo mazzo</h3>
+          <span class="sfida-deck-count" id="sfida-deck-count">0/8</span>
+        </div>
+        <div class="sfida-deck-grid" id="sfida-deck-grid"></div>
+        <button class="btn btn-ghost btn-sm" id="btn-sfida-edit-deck">✏️ Modifica mazzo</button>
+      </div>
+
       <div class="sfida-panel">
         <h3 class="friends-title">🎯 Crea una partita</h3>
-        <p class="auth-hint">Usa il tuo mazzo attuale (min 3, max 8 carte). Riceverai un PIN da condividere: scade in ~2 minuti.</p>
+        <p class="auth-hint">Usa il mazzo qui sopra (min 3, max 8 carte). Riceverai un PIN da condividere: scade in ~2 minuti.</p>
         <button class="btn btn-primary btn-big" id="btn-sfida-create">Crea partita</button>
         <div class="sfida-wait hidden" id="sfida-wait">
           <div class="sfida-pin-label">Condividi questo PIN:</div>
@@ -346,6 +362,19 @@
     <div class="battle-status" id="battle-status">Tocca una carta in mano e poi una zona per posizionarla, oppure pesca.</div>
     <div class="matchup-hint hidden" id="matchup-hint"></div>
   </section>
+
+  <!-- ======= MODALE SCELTA MODALITÀ (bot vs online) ======= -->
+  <div id="play-modal" class="modal hidden">
+    <div class="modal-card">
+      <h3>⚔️ Come vuoi giocare?</h3>
+      <div class="play-mode-buttons">
+        <button class="btn btn-primary btn-big" id="btn-play-bot">🤖 Contro SquerBot</button>
+        <button class="btn btn-primary btn-big" id="btn-play-online">🌐 Online — Sfida</button>
+      </div>
+      <p class="auth-hint" id="play-hint">Online: gioca contro un altro giocatore con un PIN.</p>
+      <button class="btn btn-ghost" id="btn-play-cancel">Annulla</button>
+    </div>
+  </div>
 
   <!-- ======= COIN FLIP (chi inizia) ======= -->
   <div id="coin-modal" class="modal hidden">
@@ -513,29 +542,29 @@
     </div>
   </div>
 
-  <script src="vendor/three.min.js?v=74"></script>
+  <script src="vendor/three.min.js?v=75"></script>
   <script>
     // CDN fallback if local copy missing
     if (typeof THREE === 'undefined') {
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
     }
   </script>
-  <script src="js/rng.js?v=74"></script>
-  <script src="js/rarity.js?v=74"></script>
-  <script src="js/cardgen.js?v=74"></script>
-  <script src="js/abilities.js?v=74"></script>
-  <script src="js/cards.js?v=74"></script>
-  <script src="js/game-config.js?v=74"></script>
-  <script src="js/packs.js?v=74"></script>
-  <script src="js/game.js?v=74"></script>
-  <script src="js/sound.js?v=74"></script>
-  <script src="js/scene.js?v=74"></script>
-  <script src="js/scene-battle2.js?v=74"></script>
+  <script src="js/rng.js?v=75"></script>
+  <script src="js/rarity.js?v=75"></script>
+  <script src="js/cardgen.js?v=75"></script>
+  <script src="js/abilities.js?v=75"></script>
+  <script src="js/cards.js?v=75"></script>
+  <script src="js/game-config.js?v=75"></script>
+  <script src="js/packs.js?v=75"></script>
+  <script src="js/game.js?v=75"></script>
+  <script src="js/sound.js?v=75"></script>
+  <script src="js/scene.js?v=75"></script>
+  <script src="js/scene-battle2.js?v=75"></script>
   <!-- BUILD DEV: punta all'API di sviluppo (worker deployato). In prod questo
        blocco non c'è: online.js usa l'API di default. -->
   <script>window.SQUER_ONLINE_API = 'https://squer-tcg-api.squer-online.workers.dev';</script>
-  <script src="js/online.js?v=74"></script>
-  <script src="js/main.js?v=74"></script>
-<script src="js/install.js?v=74"></script>
+  <script src="js/online.js?v=75"></script>
+  <script src="js/main.js?v=75"></script>
+<script src="js/install.js?v=75"></script>
 </body>
 </html>
