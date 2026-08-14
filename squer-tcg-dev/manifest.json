@@ -1,0 +1,17 @@
+{
+  "id": "squer-tcg-dev",
+  "name": "Squer TCG (DEV)",
+  "short_name": "Squer DEV",
+  "description": "BUILD DI SVILUPPO di Squer TCG: dati di test, non la versione ufficiale. Apri pacchetti, colleziona le carte e completa l'album.",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#141b2b",
+  "theme_color": "#0d1117",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

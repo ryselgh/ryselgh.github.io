@@ -1,0 +1,1263 @@
+[
+  {
+    "file": "uncommon/Accompanied Squer.jpg",
+    "name": "Accompanied Squer",
+    "uid": "sqr_133088af",
+    "rarity": "uncommon",
+    "order": 71
+  },
+  {
+    "file": "common/Sisterhood Squer.jpg",
+    "name": "Sisterhood Squer",
+    "uid": "sqr_14813a9a",
+    "rarity": "common",
+    "order": 24
+  },
+  {
+    "file": "uncommon/Epiphany Squer.jpg",
+    "name": "Epiphany Squer",
+    "uid": "sqr_148b3bf7",
+    "rarity": "uncommon",
+    "order": 72
+  },
+  {
+    "file": "common/Mocking Squer.jpg",
+    "name": "Mocking Squer",
+    "uid": "sqr_17858f0c",
+    "rarity": "common",
+    "order": 59
+  },
+  {
+    "file": "common/Squer Milano A.jpg",
+    "name": "Squer Milano A",
+    "uid": "sqr_18566ead",
+    "rarity": "common",
+    "order": 16
+  },
+  {
+    "file": "legendary/Fucking Squer.jpg",
+    "name": "Fucking Squer",
+    "uid": "sqr_1a904af9",
+    "rarity": "legendary",
+    "order": 176
+  },
+  {
+    "file": "common/Egypt Squer.jpg",
+    "name": "Egypt Squer",
+    "uid": "sqr_1af36b85",
+    "rarity": "common",
+    "order": 4
+  },
+  {
+    "file": "uncommon/Wasted Squer.jpg",
+    "name": "Wasted Squer",
+    "uid": "sqr_1b1be783",
+    "rarity": "uncommon",
+    "order": 73
+  },
+  {
+    "file": "common/Squer Merende.jpg",
+    "name": "Squer Merende",
+    "uid": "sqr_1c8368e",
+    "rarity": "common",
+    "order": 5
+  },
+  {
+    "file": "uncommon/Twin Squer.jpg",
+    "name": "Twin Squer",
+    "uid": "sqr_1cd22983",
+    "rarity": "uncommon",
+    "order": 74
+  },
+  {
+    "file": "uncommon/Italian Trash Squer.jpg",
+    "name": "Italian Trash Squer",
+    "uid": "sqr_1d223d73",
+    "rarity": "uncommon",
+    "order": 75
+  },
+  {
+    "file": "super-rare/Omega Squer.jpg",
+    "name": "Omega Squer",
+    "uid": "sqr_22111616",
+    "rarity": "superRare",
+    "order": 156
+  },
+  {
+    "file": "rare/Driver Squer.jpg",
+    "name": "Driver Squer",
+    "uid": "sqr_22b8059",
+    "rarity": "rare",
+    "order": 121
+  },
+  {
+    "file": "super-rare/Big Boss Squer.jpg",
+    "name": "Big Boss Squer",
+    "uid": "sqr_232d9e86",
+    "rarity": "superRare",
+    "order": 157
+  },
+  {
+    "file": "rare/Architect Squer.jpg",
+    "name": "Architect Squer",
+    "uid": "sqr_25607c70",
+    "rarity": "rare",
+    "order": 122
+  },
+  {
+    "file": "uncommon/Troublemaker Squer.jpg",
+    "name": "Troublemaker Squer",
+    "uid": "sqr_25aa926c",
+    "rarity": "uncommon",
+    "order": 76
+  },
+  {
+    "file": "common/Grin Squer.jpg",
+    "name": "Grin Squer",
+    "uid": "sqr_29b1962e",
+    "rarity": "common",
+    "order": 6
+  },
+  {
+    "file": "common/Flashy Squer.jpg",
+    "name": "Flashy Squer",
+    "uid": "sqr_2aa2ebd",
+    "rarity": "common",
+    "order": 7
+  },
+  {
+    "file": "rare/Squer Ranger.jpg",
+    "name": "Squer Ranger",
+    "uid": "sqr_2ae7ac22",
+    "rarity": "rare",
+    "order": 123
+  },
+  {
+    "file": "rare/Parliament Squer.jpg",
+    "name": "Parliament Squer",
+    "uid": "sqr_2bc72a4",
+    "rarity": "rare",
+    "order": 124
+  },
+  {
+    "file": "uncommon/Vampire Squer.jpg",
+    "name": "Vampire Squer",
+    "uid": "sqr_2cba74b7",
+    "rarity": "uncommon",
+    "order": 77
+  },
+  {
+    "file": "common/Squer Regrets.jpg",
+    "name": "Squer Regrets",
+    "uid": "sqr_2d79e1a4",
+    "rarity": "common",
+    "order": 8
+  },
+  {
+    "file": "common/Bombing Squer.jpg",
+    "name": "Bombing Squer",
+    "uid": "sqr_31b241f2",
+    "rarity": "common",
+    "order": 9
+  },
+  {
+    "file": "common/Staring Squer.jpg",
+    "name": "Staring Squer",
+    "uid": "sqr_336990ea",
+    "rarity": "common",
+    "order": 10
+  },
+  {
+    "file": "rare/Squer Post Pool Party.jpg",
+    "name": "Post Pool Party Squer",
+    "uid": "sqr_339591c3",
+    "rarity": "rare",
+    "order": 125
+  },
+  {
+    "file": "common/Wild Squer.jpg",
+    "name": "Wild Squer",
+    "uid": "sqr_34297174",
+    "rarity": "common",
+    "order": 11
+  },
+  {
+    "file": "common/Lost Squer.jpg",
+    "name": "Lost Squer",
+    "uid": "sqr_356af99e",
+    "rarity": "common",
+    "order": 12
+  },
+  {
+    "file": "common/Landscape Squer.jpg",
+    "name": "Landscape Squer",
+    "uid": "sqr_37e52d4b",
+    "rarity": "common",
+    "order": 13
+  },
+  {
+    "file": "common/Challenging Squer.jpg",
+    "name": "Challenging Squer",
+    "uid": "sqr_38a32030",
+    "rarity": "common",
+    "order": 14
+  },
+  {
+    "file": "uncommon/Squer Malandrino.jpg",
+    "name": "Squer Malandrino",
+    "uid": "sqr_3c412634",
+    "rarity": "uncommon",
+    "order": 78
+  },
+  {
+    "file": "common/Squer Amigos Sfocati.jpg",
+    "name": "Squer Amigos Sfocati",
+    "uid": "sqr_3c7203b9",
+    "rarity": "common",
+    "order": 67
+  },
+  {
+    "file": "super-rare/Sad Keanu Squer.jpg",
+    "name": "Sad Keanu Squer",
+    "uid": "sqr_3dbb2d27",
+    "rarity": "superRare",
+    "order": 158
+  },
+  {
+    "file": "rare/Canvas Squer.jpg",
+    "name": "Canvas Squer",
+    "uid": "sqr_4012a57f",
+    "rarity": "rare",
+    "order": 126
+  },
+  {
+    "file": "rare/Bottle Opener Squer.jpg",
+    "name": "Bottle Opener Squer",
+    "uid": "sqr_4173d40",
+    "rarity": "rare",
+    "order": 127
+  },
+  {
+    "file": "common/Squer Milano B.jpg",
+    "name": "Squer Milano B",
+    "uid": "sqr_42278d58",
+    "rarity": "common",
+    "order": 17
+  },
+  {
+    "file": "common/Travel Squer.jpg",
+    "name": "Travel Squer",
+    "uid": "sqr_43004f00",
+    "rarity": "common",
+    "order": 53
+  },
+  {
+    "file": "common/Squer Toxicity Evening 2.jpg",
+    "name": "Squer Toxicity Evening 2",
+    "uid": "sqr_456500f3",
+    "rarity": "common",
+    "order": 18
+  },
+  {
+    "file": "super-rare/Crazy Squer.jpg",
+    "name": "Crazy Squer",
+    "uid": "sqr_457f44fc",
+    "rarity": "superRare",
+    "order": 159
+  },
+  {
+    "file": "rare/King Squer.jpg",
+    "name": "King Squer",
+    "uid": "sqr_483afec",
+    "rarity": "rare",
+    "order": 128
+  },
+  {
+    "file": "common/Chad Squer.jpg",
+    "name": "Chad Squer",
+    "uid": "sqr_497fb85e",
+    "rarity": "common",
+    "order": 19
+  },
+  {
+    "file": "common/Suspicious Squer.jpg",
+    "name": "Suspicious Squer",
+    "uid": "sqr_4a5d7d8b",
+    "rarity": "common",
+    "order": 20
+  },
+  {
+    "file": "uncommon/Pizza Squer.jpg",
+    "name": "Pizza Squer",
+    "uid": "sqr_4c601b5f",
+    "rarity": "uncommon",
+    "order": 79
+  },
+  {
+    "file": "uncommon/Squeyer.jpg",
+    "name": "Squeyer",
+    "uid": "sqr_4e070a9b",
+    "rarity": "uncommon",
+    "order": 80
+  },
+  {
+    "file": "common/Confident Squer.jpg",
+    "name": "Confident Squer",
+    "uid": "sqr_4e59af82",
+    "rarity": "common",
+    "order": 21
+  },
+  {
+    "file": "super-rare/Squer Sparrow.jpg",
+    "name": "Squer Sparrow",
+    "uid": "sqr_505b4add",
+    "rarity": "superRare",
+    "order": 160
+  },
+  {
+    "file": "common/Squer Amigos Mirror.jpg",
+    "name": "Squer Amigos Mirror",
+    "uid": "sqr_50acfd19",
+    "rarity": "common",
+    "order": 65
+  },
+  {
+    "file": "rare/Squer Claus.jpg",
+    "name": "Squer Claus",
+    "uid": "sqr_5386d9d",
+    "rarity": "rare",
+    "order": 129
+  },
+  {
+    "file": "common/Squer Spaghetti.jpg",
+    "name": "Spaghetti Squer",
+    "uid": "sqr_57ceed31",
+    "rarity": "common",
+    "order": 23
+  },
+  {
+    "file": "common/Squer Amigos Streets A.jpg",
+    "name": "Squer Amigos Streets A",
+    "uid": "sqr_5a78b0ef",
+    "rarity": "common",
+    "order": 68
+  },
+  {
+    "file": "uncommon/Wallpaper Squer.jpg",
+    "name": "Wallpaper Squer",
+    "uid": "sqr_5b279e07",
+    "rarity": "uncommon",
+    "order": 81
+  },
+  {
+    "file": "rare/Pink Fluo Squer.jpg",
+    "name": "Pink Fluo Squer",
+    "uid": "sqr_5cbab3a5",
+    "rarity": "rare",
+    "order": 130
+  },
+  {
+    "file": "rare/Matera Squer.jpg",
+    "name": "Matera Squer",
+    "uid": "sqr_5d9715c3",
+    "rarity": "rare",
+    "order": 131
+  },
+  {
+    "file": "uncommon/Squer Barney D.jpg",
+    "name": "Squer Barney D",
+    "uid": "sqr_5e56c896",
+    "rarity": "uncommon",
+    "order": 85
+  },
+  {
+    "file": "common/Squer Amigos Home.jpg",
+    "name": "Squer Amigos Home",
+    "uid": "sqr_5e853891",
+    "rarity": "common",
+    "order": 64
+  },
+  {
+    "file": "uncommon/Wrong Frame Squer.jpg",
+    "name": "Wrong Frame Squer",
+    "uid": "sqr_5f630e79",
+    "rarity": "uncommon",
+    "order": 94
+  },
+  {
+    "file": "uncommon/Popping Squer.jpg",
+    "name": "Popping Squer",
+    "uid": "sqr_619f5d1e",
+    "rarity": "uncommon",
+    "order": 100
+  },
+  {
+    "file": "uncommon/Background Squer.jpg",
+    "name": "Background Squer",
+    "uid": "sqr_61e508f1",
+    "rarity": "uncommon",
+    "order": 103
+  },
+  {
+    "file": "rare/Swinging Squer.jpg",
+    "name": "Swinging Squer",
+    "uid": "sqr_630f369",
+    "rarity": "rare",
+    "order": 132
+  },
+  {
+    "file": "super-rare/Squer Corsivoe.jpg",
+    "name": "Corsivoe Squer",
+    "uid": "sqr_639aeed7",
+    "rarity": "superRare",
+    "order": 161
+  },
+  {
+    "file": "rare/Distracted Squer.jpg",
+    "name": "Distracted Squer",
+    "uid": "sqr_64129630",
+    "rarity": "rare",
+    "order": 133
+  },
+  {
+    "file": "uncommon/Station Squer.jpg",
+    "name": "Station Squer",
+    "uid": "sqr_64a94599",
+    "rarity": "uncommon",
+    "order": 86
+  },
+  {
+    "file": "uncommon/Half-Dead Squer.jpg",
+    "name": "Half Dead Squer",
+    "uid": "sqr_6761cb83",
+    "rarity": "uncommon",
+    "order": 87
+  },
+  {
+    "file": "uncommon/Photobombing Squer Classic.jpg",
+    "name": "Photobomb Cosplay Squer",
+    "uid": "sqr_67e60db9",
+    "rarity": "uncommon",
+    "order": 88
+  },
+  {
+    "file": "common/Squer Toxicity Evening.jpg",
+    "name": "Squer Toxicity Evening",
+    "uid": "sqr_68069409",
+    "rarity": "common",
+    "order": 26
+  },
+  {
+    "file": "rare/Augment Squer.jpg",
+    "name": "Augment Squer",
+    "uid": "sqr_68d3b828",
+    "rarity": "rare",
+    "order": 134
+  },
+  {
+    "file": "common/Yellow Squer.jpg",
+    "name": "Yellow Squer",
+    "uid": "sqr_6916ab48",
+    "rarity": "common",
+    "order": 27
+  },
+  {
+    "file": "uncommon/Beach Squer.jpg",
+    "name": "Beach Squer",
+    "uid": "sqr_6c9507ce",
+    "rarity": "uncommon",
+    "order": 89
+  },
+  {
+    "file": "rare/30 Squer.jpg",
+    "name": "30 Squer",
+    "uid": "sqr_6db29858",
+    "rarity": "rare",
+    "order": 135
+  },
+  {
+    "file": "super-rare/Bikini Squer.jpg",
+    "name": "Bikini Squer",
+    "uid": "sqr_6eadf7f9",
+    "rarity": "superRare",
+    "order": 162
+  },
+  {
+    "file": "uncommon/Squer che sa Qualcosa B.jpg",
+    "name": "Squer Che Sa Qualcosa B",
+    "uid": "sqr_6f26294",
+    "rarity": "uncommon",
+    "order": 91
+  },
+  {
+    "file": "rare/Fake Happy Squer.jpg",
+    "name": "Fake Happy Squer",
+    "uid": "sqr_6f29c0ac",
+    "rarity": "rare",
+    "order": 136
+  },
+  {
+    "file": "common/Meh Squer.jpg",
+    "name": "Meh Squer",
+    "uid": "sqr_711e35fc",
+    "rarity": "common",
+    "order": 28
+  },
+  {
+    "file": "common/Doggy Squer.jpg",
+    "name": "Doggy Squer",
+    "uid": "sqr_7218d598",
+    "rarity": "common",
+    "order": 29
+  },
+  {
+    "file": "super-rare/Dusty Squer.jpg",
+    "name": "Dusty Squer",
+    "uid": "sqr_732da4a",
+    "rarity": "superRare",
+    "order": 163
+  },
+  {
+    "file": "common/Stunned Squer.jpg",
+    "name": "Stunned Squer",
+    "uid": "sqr_740a5459",
+    "rarity": "common",
+    "order": 30
+  },
+  {
+    "file": "uncommon/Choppy Squer.jpg",
+    "name": "Choppy Squer",
+    "uid": "sqr_74e83582",
+    "rarity": "uncommon",
+    "order": 92
+  },
+  {
+    "file": "uncommon/Squer che sa Qualcosa A.jpg",
+    "name": "Squer Che Sa Qualcosa A",
+    "uid": "sqr_764b0b89",
+    "rarity": "uncommon",
+    "order": 90
+  },
+  {
+    "file": "common/Squer Amigos Streets B.jpg",
+    "name": "Squer Amigos Streets B",
+    "uid": "sqr_76562ac6",
+    "rarity": "common",
+    "order": 69
+  },
+  {
+    "file": "common/Helping Squer.jpg",
+    "name": "Helping Squer",
+    "uid": "sqr_769bd0df",
+    "rarity": "common",
+    "order": 32
+  },
+  {
+    "file": "uncommon/Vision Squer.jpg",
+    "name": "Vision Squer",
+    "uid": "sqr_78b6f535",
+    "rarity": "uncommon",
+    "order": 93
+  },
+  {
+    "file": "common/Pleased Squer.jpg",
+    "name": "Pleased Squer",
+    "uid": "sqr_7a199a24",
+    "rarity": "common",
+    "order": 33
+  },
+  {
+    "file": "super-rare/Rebooting Squer.jpg",
+    "name": "Rebooting Squer",
+    "uid": "sqr_7b6548fa",
+    "rarity": "superRare",
+    "order": 164
+  },
+  {
+    "file": "common/Not impressed Squer.jpg",
+    "name": "Not Impressed Squer",
+    "uid": "sqr_7eab5c8f",
+    "rarity": "common",
+    "order": 34
+  },
+  {
+    "file": "uncommon/Squer Barney C.jpg",
+    "name": "Squer Barney C",
+    "uid": "sqr_7f2fc4eb",
+    "rarity": "uncommon",
+    "order": 84
+  },
+  {
+    "file": "uncommon/Squer of Thrones.jpg",
+    "name": "Squer Of Thrones",
+    "uid": "sqr_7fb8478b",
+    "rarity": "uncommon",
+    "order": 95
+  },
+  {
+    "file": "common/Great Time Squer.jpg",
+    "name": "Great Time Squer",
+    "uid": "sqr_7ffab1e6",
+    "rarity": "common",
+    "order": 35
+  },
+  {
+    "file": "super-rare/Door Squer.jpg",
+    "name": "Door Squer",
+    "uid": "sqr_831cbe3d",
+    "rarity": "superRare",
+    "order": 165
+  },
+  {
+    "file": "uncommon/Pride Squer.jpg",
+    "name": "Pride Squer",
+    "uid": "sqr_86862e8b",
+    "rarity": "uncommon",
+    "order": 96
+  },
+  {
+    "file": "rare/Sun God Squer.jpg",
+    "name": "Sun God Squer",
+    "uid": "sqr_86fced03",
+    "rarity": "rare",
+    "order": 137
+  },
+  {
+    "file": "super-rare/Tree Squer.jpg",
+    "name": "Tree Squer",
+    "uid": "sqr_877b6425",
+    "rarity": "superRare",
+    "order": 166
+  },
+  {
+    "file": "uncommon/Rainbow Squer.jpg",
+    "name": "Rainbow Squer",
+    "uid": "sqr_882538fb",
+    "rarity": "uncommon",
+    "order": 97
+  },
+  {
+    "file": "rare/Mafia Squer.jpg",
+    "name": "Mafia Squer",
+    "uid": "sqr_88426031",
+    "rarity": "rare",
+    "order": 138
+  },
+  {
+    "file": "common/Evading Squer.jpg",
+    "name": "Evading Squer",
+    "uid": "sqr_8928f678",
+    "rarity": "common",
+    "order": 36
+  },
+  {
+    "file": "rare/Squer WTF.jpg",
+    "name": "WTF Squer",
+    "uid": "sqr_893f8bd4",
+    "rarity": "rare",
+    "order": 139
+  },
+  {
+    "file": "super-rare/Serial Killer Squer.jpg",
+    "name": "Serial Killer Squer",
+    "uid": "sqr_89b3d82e",
+    "rarity": "superRare",
+    "order": 167
+  },
+  {
+    "file": "uncommon/Party Hard Squer.jpg",
+    "name": "Party Hard Squer",
+    "uid": "sqr_8a9522a0",
+    "rarity": "uncommon",
+    "order": 98
+  },
+  {
+    "file": "super-rare/Pika Squer.jpg",
+    "name": "Pika Squer",
+    "uid": "sqr_8be17816",
+    "rarity": "superRare",
+    "order": 168
+  },
+  {
+    "file": "common/Oops Squer.jpg",
+    "name": "Oops Squer",
+    "uid": "sqr_8c5baabf",
+    "rarity": "common",
+    "order": 37
+  },
+  {
+    "file": "common/Country Squer.jpg",
+    "name": "Country Squer",
+    "uid": "sqr_8dea3aa0",
+    "rarity": "common",
+    "order": 38
+  },
+  {
+    "file": "rare/Squer Pusher.jpg",
+    "name": "Pusher Squer",
+    "uid": "sqr_8ed6a0a4",
+    "rarity": "rare",
+    "order": 140
+  },
+  {
+    "file": "uncommon/Wanted Squer.jpg",
+    "name": "Wanted Squer",
+    "uid": "sqr_8f1785f2",
+    "rarity": "uncommon",
+    "order": 99
+  },
+  {
+    "file": "rare/Hole Squer.jpg",
+    "name": "Hole Squer",
+    "uid": "sqr_8f5fba95",
+    "rarity": "rare",
+    "order": 141
+  },
+  {
+    "file": "uncommon/Squer Barney B.jpg",
+    "name": "Squer Barney B",
+    "uid": "sqr_91c8943c",
+    "rarity": "uncommon",
+    "order": 83
+  },
+  {
+    "file": "common/Squer Cosplay Party.jpg",
+    "name": "Cosplay Party Squer",
+    "uid": "sqr_92b6687",
+    "rarity": "common",
+    "order": 39
+  },
+  {
+    "file": "super-rare/Squer WinXP.jpg",
+    "name": "WinXP Squer",
+    "uid": "sqr_92d00b17",
+    "rarity": "superRare",
+    "order": 169
+  },
+  {
+    "file": "uncommon/Squer Lan Party.jpg",
+    "name": "Lan Party Squer",
+    "uid": "sqr_9a1e6d06",
+    "rarity": "uncommon",
+    "order": 101
+  },
+  {
+    "file": "uncommon/Spider Squer Origins.jpg",
+    "name": "Spider Squer Origins",
+    "uid": "sqr_9c74130b",
+    "rarity": "uncommon",
+    "order": 102
+  },
+  {
+    "file": "common/Cute Squer.jpg",
+    "name": "Cute Squer",
+    "uid": "sqr_9cf9f90b",
+    "rarity": "common",
+    "order": 40
+  },
+  {
+    "file": "common/Squer Amigos Pizza.jpg",
+    "name": "Squer Amigos Pizza",
+    "uid": "sqr_a135db06",
+    "rarity": "common",
+    "order": 66
+  },
+  {
+    "file": "common/Cold Squer.jpg",
+    "name": "Cold Squer",
+    "uid": "sqr_a3e49ef2",
+    "rarity": "common",
+    "order": 42
+  },
+  {
+    "file": "rare/Coast Squer.jpg",
+    "name": "Coast Squer",
+    "uid": "sqr_abb4d65d",
+    "rarity": "rare",
+    "order": 142
+  },
+  {
+    "file": "common/Eye Contact Squer.jpg",
+    "name": "Eye Contact Squer",
+    "uid": "sqr_ac43e007",
+    "rarity": "common",
+    "order": 43
+  },
+  {
+    "file": "common/Squer Fan A.jpg",
+    "name": "Squer Fan A",
+    "uid": "sqr_ad4a19bc",
+    "rarity": "common",
+    "order": 44
+  },
+  {
+    "file": "common/Thinking Squer.jpg",
+    "name": "Thinking Squer",
+    "uid": "sqr_aef061e4",
+    "rarity": "common",
+    "order": 55
+  },
+  {
+    "file": "super-rare/Guilty Squer.jpg",
+    "name": "Guilty Squer",
+    "uid": "sqr_b0d0b167",
+    "rarity": "superRare",
+    "order": 170
+  },
+  {
+    "file": "rare/Degustibus Squer.jpg",
+    "name": "Degustibus Squer",
+    "uid": "sqr_b1138c98",
+    "rarity": "rare",
+    "order": 143
+  },
+  {
+    "file": "common/Squer Problem Solver.jpg",
+    "name": "Problem Solving Squer",
+    "uid": "sqr_b3c3870a",
+    "rarity": "common",
+    "order": 57
+  },
+  {
+    "file": "common/Dont f-ck with Squer.jpg",
+    "name": "Dont F Ck With Squer",
+    "uid": "sqr_b6e3004e",
+    "rarity": "common",
+    "order": 47
+  },
+  {
+    "file": "rare/Biker Squer.jpg",
+    "name": "Biker Squer",
+    "uid": "sqr_b8e61eba",
+    "rarity": "rare",
+    "order": 144
+  },
+  {
+    "file": "common/Squer Brindisi.jpg",
+    "name": "Brindisi Squer",
+    "uid": "sqr_b9846148",
+    "rarity": "common",
+    "order": 48
+  },
+  {
+    "file": "common/Squer e vabbe.jpg",
+    "name": "Squer e Vabbe",
+    "uid": "sqr_ba443589",
+    "rarity": "common",
+    "order": 49
+  },
+  {
+    "file": "uncommon/Squer Barney A.jpg",
+    "name": "Squer Barney A",
+    "uid": "sqr_bc36c711",
+    "rarity": "uncommon",
+    "order": 82
+  },
+  {
+    "file": "uncommon/Elegant Squer.jpg",
+    "name": "Elegant Squer",
+    "uid": "sqr_bc934163",
+    "rarity": "uncommon",
+    "order": 104
+  },
+  {
+    "file": "legendary/The Photobomb Begins.jpg",
+    "name": "The Photobomb Begins",
+    "uid": "sqr_bda56a5",
+    "rarity": "legendary",
+    "order": 177
+  },
+  {
+    "file": "uncommon/Squer Abbiocco.jpg",
+    "name": "Abbiocco Squer",
+    "uid": "sqr_be9001d3",
+    "rarity": "uncommon",
+    "order": 105
+  },
+  {
+    "file": "common/Squer Amigos Young.jpg",
+    "name": "Squer Amigos Young",
+    "uid": "sqr_bf57bfbc",
+    "rarity": "common",
+    "order": 70
+  },
+  {
+    "file": "common/Squer del Boschetto.jpg",
+    "name": "Squer Del Boschetto",
+    "uid": "sqr_c07059c",
+    "rarity": "common",
+    "order": 51
+  },
+  {
+    "file": "uncommon/Squering.jpg",
+    "name": "Squering",
+    "uid": "sqr_c0db02a5",
+    "rarity": "uncommon",
+    "order": 106
+  },
+  {
+    "file": "rare/Hot Squer.jpg",
+    "name": "Hot Squer",
+    "uid": "sqr_c2a3f6dc",
+    "rarity": "rare",
+    "order": 145
+  },
+  {
+    "file": "rare/Spider Squer.jpg",
+    "name": "Spider Squer",
+    "uid": "sqr_c2fc6cce",
+    "rarity": "rare",
+    "order": 146
+  },
+  {
+    "file": "common/Jenga Squer.jpg",
+    "name": "Jenga Squer",
+    "uid": "sqr_c3fca62b",
+    "rarity": "common",
+    "order": 52
+  },
+  {
+    "file": "uncommon/Screen Squer.jpg",
+    "name": "Screen Squer",
+    "uid": "sqr_c4b0e4c1",
+    "rarity": "uncommon",
+    "order": 107
+  },
+  {
+    "file": "uncommon/Champagne Squer.jpg",
+    "name": "Champagne Squer",
+    "uid": "sqr_c7b00b87",
+    "rarity": "uncommon",
+    "order": 108
+  },
+  {
+    "file": "common/Happy Squer.jpg",
+    "name": "Happy Squer",
+    "uid": "sqr_c9d69cb0",
+    "rarity": "common",
+    "order": 3
+  },
+  {
+    "file": "rare/New Year Squer.jpg",
+    "name": "New Year Squer",
+    "uid": "sqr_caede3e4",
+    "rarity": "rare",
+    "order": 147
+  },
+  {
+    "file": "rare/Young Squer.jpg",
+    "name": "Young Squer",
+    "uid": "sqr_cb8bd3b",
+    "rarity": "rare",
+    "order": 148
+  },
+  {
+    "file": "rare/Geralt Squer.jpg",
+    "name": "Geralt Squer",
+    "uid": "sqr_cbe52afa",
+    "rarity": "rare",
+    "order": 149
+  },
+  {
+    "file": "common/Lightbulb Squer.jpg",
+    "name": "Lightbulb Squer",
+    "uid": "sqr_cce79b51",
+    "rarity": "common",
+    "order": 54
+  },
+  {
+    "file": "super-rare/Squer Peaky Blinder.jpg",
+    "name": "Peaky Blinder Squer",
+    "uid": "sqr_cd1ba997",
+    "rarity": "superRare",
+    "order": 171
+  },
+  {
+    "file": "uncommon/Squer Sfumato.jpg",
+    "name": "Squer Sfumato",
+    "uid": "sqr_cef685a",
+    "rarity": "uncommon",
+    "order": 109
+  },
+  {
+    "file": "uncommon/Squer Lockdown Party.jpg",
+    "name": "Lockdown Party Squer",
+    "uid": "sqr_d0c25256",
+    "rarity": "uncommon",
+    "order": 110
+  },
+  {
+    "file": "uncommon/Not Convinced Squer.jpg",
+    "name": "Not Convinced Squer",
+    "uid": "sqr_d13412e7",
+    "rarity": "uncommon",
+    "order": 111
+  },
+  {
+    "file": "common/Squer Fan C.jpg",
+    "name": "Squer Fan C",
+    "uid": "sqr_d1acb102",
+    "rarity": "common",
+    "order": 46
+  },
+  {
+    "file": "common/Squer Amigos.jpg",
+    "name": "Squer Amigos",
+    "uid": "sqr_d5260254",
+    "rarity": "common",
+    "order": 62
+  },
+  {
+    "file": "uncommon/Squer Cualcosa collab.jpg",
+    "name": "Squer Cualcosa Collab",
+    "uid": "sqr_d5e0c279",
+    "rarity": "uncommon",
+    "order": 112
+  },
+  {
+    "file": "uncommon/Weird God Squer.jpg",
+    "name": "Weird God Squer",
+    "uid": "sqr_d60b1ae6",
+    "rarity": "uncommon",
+    "order": 113
+  },
+  {
+    "file": "rare/Interference Squer.jpg",
+    "name": "Interference Squer",
+    "uid": "sqr_d67bfd6b",
+    "rarity": "rare",
+    "order": 150
+  },
+  {
+    "file": "uncommon/Evil Squer.jpg",
+    "name": "Evil Squer",
+    "uid": "sqr_d72df3f",
+    "rarity": "uncommon",
+    "order": 114
+  },
+  {
+    "file": "common/Squer Fan B.jpg",
+    "name": "Squer Fan B",
+    "uid": "sqr_d7b84c91",
+    "rarity": "common",
+    "order": 45
+  },
+  {
+    "file": "legendary/La Congrega Reloaded.jpg",
+    "name": "La Congrega Reloaded",
+    "uid": "sqr_d870a159",
+    "rarity": "legendary",
+    "order": 178
+  },
+  {
+    "file": "common/Cocktail Squer.jpg",
+    "name": "Cocktail Squer",
+    "uid": "sqr_d997d8a6",
+    "rarity": "common",
+    "order": 58
+  },
+  {
+    "file": "uncommon/Blooming Squer.jpg",
+    "name": "Blooming Squer",
+    "uid": "sqr_daf4e2fc",
+    "rarity": "uncommon",
+    "order": 115
+  },
+  {
+    "file": "common/Basic Squer.jpg",
+    "name": "Basic Squer",
+    "uid": "sqr_dba6d9bc",
+    "rarity": "common",
+    "order": 2
+  },
+  {
+    "file": "common/Searching Squer.jpg",
+    "name": "Searching Squer",
+    "uid": "sqr_dba9d8e2",
+    "rarity": "common",
+    "order": 60
+  },
+  {
+    "file": "common/Bored Squer.jpg",
+    "name": "Bored Squer",
+    "uid": "sqr_dc0c30ec",
+    "rarity": "common",
+    "order": 61
+  },
+  {
+    "file": "super-rare/Nostalgic Squer.jpg",
+    "name": "Nostalgic Squer",
+    "uid": "sqr_ded254bb",
+    "rarity": "superRare",
+    "order": 172
+  },
+  {
+    "file": "super-rare/Everyone is Squer.jpg",
+    "name": "Everyone Is Squer",
+    "uid": "sqr_df7bd8e2",
+    "rarity": "superRare",
+    "order": 173
+  },
+  {
+    "file": "legendary/Surprise Frog Squer.jpg",
+    "name": "Surprise Frog Squer",
+    "uid": "sqr_e45fe26f",
+    "rarity": "legendary",
+    "order": 179
+  },
+  {
+    "file": "uncommon/Mystic Squer.jpg",
+    "name": "Mystic Squer",
+    "uid": "sqr_e51bb0ac",
+    "rarity": "uncommon",
+    "order": 116
+  },
+  {
+    "file": "legendary/fullart/Photobombing Squer.png",
+    "name": "Photobombing Squer",
+    "uid": "sqr_e6d7415d",
+    "rarity": "legendary",
+    "fullart": true,
+    "order": 180
+  },
+  {
+    "file": "uncommon/Xmas Squer.jpg",
+    "name": "Xmas Squer",
+    "uid": "sqr_e7141f96",
+    "rarity": "uncommon",
+    "order": 117
+  },
+  {
+    "file": "common/Rainy Squer.jpg",
+    "name": "Rainy Squer",
+    "uid": "sqr_e886aa1f",
+    "rarity": "common",
+    "order": 56
+  },
+  {
+    "file": "common/Great Idea Squer.jpg",
+    "name": "Great Idea Squer",
+    "uid": "sqr_e91fc24",
+    "rarity": "common",
+    "order": 31
+  },
+  {
+    "file": "rare/Figure Squer.jpg",
+    "name": "Figure Squer",
+    "uid": "sqr_e9d58657",
+    "rarity": "rare",
+    "order": 151
+  },
+  {
+    "file": "super-rare/She-Her Squer.jpg",
+    "name": "She/Her Squer",
+    "uid": "sqr_ea216e19",
+    "rarity": "superRare",
+    "order": 174
+  },
+  {
+    "file": "common/Squer Amigos Bar.jpg",
+    "name": "Squer Amigos Bar",
+    "uid": "sqr_eace55d",
+    "rarity": "common",
+    "order": 63
+  },
+  {
+    "file": "rare/Smith Squer.jpg",
+    "name": "Smith Squer",
+    "uid": "sqr_ec22fec4",
+    "rarity": "rare",
+    "order": 152
+  },
+  {
+    "file": "common/Potato Squer.jpg",
+    "name": "Potato Squer",
+    "uid": "sqr_ed7f1393",
+    "rarity": "common",
+    "order": 22
+  },
+  {
+    "file": "super-rare/Squer Wick.jpg",
+    "name": "Squer Wick",
+    "uid": "sqr_ef580ffb",
+    "rarity": "superRare",
+    "order": 175
+  },
+  {
+    "file": "uncommon/Squer Canada.jpg",
+    "name": "Canada Squer",
+    "uid": "sqr_ef839303",
+    "rarity": "uncommon",
+    "order": 118
+  },
+  {
+    "file": "common/Pool Squer.jpg",
+    "name": "Pool Squer",
+    "uid": "sqr_efb3d676",
+    "rarity": "common",
+    "order": 41
+  },
+  {
+    "file": "common/Coffee Squer.jpg",
+    "name": "Coffee Squer",
+    "uid": "sqr_f003d9f0",
+    "rarity": "common",
+    "order": 15
+  },
+  {
+    "file": "uncommon/Mista Squer.jpg",
+    "name": "Mista Squer",
+    "uid": "sqr_f574a6d1",
+    "rarity": "uncommon",
+    "order": 119
+  },
+  {
+    "file": "common/Default Squer.jpg",
+    "name": "Default Squer",
+    "uid": "sqr_f5ddda27",
+    "rarity": "common",
+    "order": 1
+  },
+  {
+    "file": "rare/God-blessed Squer.jpg",
+    "name": "God Blessed Squer",
+    "uid": "sqr_f7a33632",
+    "rarity": "rare",
+    "order": 153
+  },
+  {
+    "file": "rare/Time Traveler Squer.jpg",
+    "name": "Time Traveler Squer",
+    "uid": "sqr_f806cc2f",
+    "rarity": "rare",
+    "order": 154
+  },
+  {
+    "file": "common/Very Interested Squer.jpg",
+    "name": "Very Interested Squer",
+    "uid": "sqr_f8687381",
+    "rarity": "common",
+    "order": 25
+  },
+  {
+    "file": "common/Groove Squer.jpg",
+    "name": "Groove Squer",
+    "uid": "sqr_fab12c0e",
+    "rarity": "common",
+    "order": 50
+  },
+  {
+    "file": "uncommon/Not So Happy Squer.jpg",
+    "name": "Not So Happy Squer",
+    "uid": "sqr_fbafa33a",
+    "rarity": "uncommon",
+    "order": 120
+  },
+  {
+    "file": "rare/Super Fast Squer.jpg",
+    "name": "Super Fast Squer",
+    "uid": "sqr_fcabf08c",
+    "rarity": "rare",
+    "order": 155
+  }
+]

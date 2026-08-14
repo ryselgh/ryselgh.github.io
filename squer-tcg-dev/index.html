@@ -1,0 +1,541 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0d1117">
+  <title>Squer TCG</title>
+  <link rel="stylesheet" href="css/style.css?v=74">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23ffc93d'/><text x='50' y='66' font-size='52' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%23141b2b'>S</text></svg>">
+</head>
+<body>
+
+  <!-- ======= BADGE VALUTA (sempre visibile, in alto a sinistra) ======= -->
+  <div class="squerini-badge" id="squerini-badge" title="Squerini">🪙 <b id="squerini-count">0</b>
+    <button class="buy-pack-btn hidden" id="btn-buy-pack" title="Acquista pacchetti">＋ Acquista</button>
+  </div>
+
+  <!-- ======= TOP MENU (home) ======= -->
+  <div id="top-menu" class="top-menu">
+    <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+    <div class="menu-dropdown hidden" id="menu-dropdown">
+      <button class="menu-item" id="menu-update">🔄 Forza aggiornamento</button>
+      <button class="menu-item" id="menu-reset">↺ Azzera progressi</button>
+      <button class="menu-item menu-danger" id="menu-wipe">🗑 Cancella tutti i dati</button>
+    </div>
+  </div>
+
+  <!-- ======= HOME ======= -->
+  <section id="screen-home" class="screen active">
+    <div class="home-bg"></div>
+    <header class="home-header">
+      <h1 class="logo"><span class="logo-badge">S</span> SQUER <span class="logo-tcg">TCG</span></h1>
+      <p class="tagline">Acchiappali tutti!</p>
+      <p class="home-nickname">👋 Ciao, <b id="home-nickname">Squer Trainer</b>!</p>
+    </header>
+
+    <div class="home-stats" id="home-stats">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-owned">0</div>
+        <div class="stat-label">Carte possedute</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-packs-closed">0</div>
+        <div class="stat-label">Pacchetti chiusi</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-packs">0</div>
+        <div class="stat-label">Pacchetti aperti</div>
+      </div>
+    </div>
+
+    <div class="collection-progress">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">0 / 0</div>
+    </div>
+
+    <div class="pack-counter" id="pack-counter">
+      <span class="pack-counter-icon">🎁</span>
+      <span id="pack-counter-text">Nessun pacchetto disponibile</span>
+    </div>
+
+    <button class="btn btn-primary btn-big" id="btn-open-pack">
+      <span class="btn-shine"></span>
+      Apri Pacchetto
+    </button>
+
+    <div class="home-actions">
+      <button class="btn btn-play" id="btn-play">Gioca</button>
+      <div class="home-actions-row">
+        <button class="btn btn-ghost" id="btn-collection">Album</button>
+        <button class="btn btn-ghost" id="btn-deck">Mazzo</button>
+        <button class="btn btn-ghost" id="btn-online">🌐 Online</button>
+      </div>
+    </div>
+
+    <button id="install-btn" class="install-btn hidden">📲 Installa app</button>
+
+    <div id="empty-banner" class="empty-banner hidden">
+      <b>Nessuna carta trovata</b><br>
+      Metti le tue immagini in <code>cards/custom/</code> e ricarica la pagina.
+      Se non funziona, avvia <code>tools/server.js</code> (o <code>start.bat</code>)
+      oppure esegui <code>node tools/build-manifest.js</code>.
+    </div>
+
+    <div class="latest-pulls" id="latest-pulls"></div>
+
+    <footer class="footer-note">Squer TCG · Made with 💛 by Erio</footer>
+  </section>
+
+  <!-- ======= NICKNAME (primo avvio) ======= -->
+  <section id="screen-nickname" class="screen">
+    <div class="nickname-box">
+      <div class="loader-logo">S</div>
+      <h2>Benvenuto in <b>Squer TCG</b>!</h2>
+      <p class="nickname-sub">Scegli il tuo nickname (3-16 caratteri): lo vedrai nelle partite.</p>
+      <input id="nickname-input" class="nickname-input" maxlength="16" placeholder="Il tuo nickname" autocomplete="off">
+      <p id="nickname-error" class="nickname-error hidden"></p>
+      <button class="btn btn-primary btn-big" id="btn-nickname-ok">Inizia!</button>
+    </div>
+  </section>
+
+  <!-- ======= ONLINE AUTH (login/registrazione) ======= -->
+  <section id="screen-auth" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-auth-back">← Indietro</button>
+      <h2>🌐 Online</h2>
+      <div class="header-spacer"></div>
+    </header>
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login">Accedi</button>
+        <button class="auth-tab" id="tab-register">Registrati</button>
+      </div>
+
+      <!-- login -->
+      <div class="auth-panel" id="panel-login">
+        <input id="login-nickname" class="nickname-input" maxlength="16" placeholder="Nickname" autocomplete="username">
+        <input id="login-password" class="nickname-input" type="password" placeholder="Password" autocomplete="current-password">
+        <p class="auth-error hidden" id="login-error"></p>
+        <button class="btn btn-primary btn-big" id="btn-login">Accedi</button>
+        <button class="btn btn-ghost" id="btn-recover-toggle">Ho dimenticato la password</button>
+      </div>
+
+      <!-- recupero -->
+      <div class="auth-panel hidden" id="panel-recover">
+        <p class="auth-hint">Recupera l'account col codice di backup (lo hai salvato alla registrazione).</p>
+        <input id="recover-nickname" class="nickname-input" maxlength="16" placeholder="Nickname" autocomplete="username">
+        <input id="recover-code" class="nickname-input" placeholder="Codice di backup (XXXX-XXXX-XXXX-XXXX)" autocomplete="off">
+        <input id="recover-password" class="nickname-input" type="password" placeholder="Nuova password (min 6)" autocomplete="new-password">
+        <p class="auth-error hidden" id="recover-error"></p>
+        <button class="btn btn-primary btn-big" id="btn-recover">Recupera account</button>
+      </div>
+
+      <!-- registrazione -->
+      <div class="auth-panel hidden" id="panel-register">
+        <input id="reg-nickname" class="nickname-input" maxlength="16" placeholder="Nickname (3-16)" autocomplete="username">
+        <input id="reg-password" class="nickname-input" type="password" placeholder="Password (min 6)" autocomplete="new-password">
+        <div class="auth-avatar-row">
+          <span class="auth-avatar-label">Emoji profilo:</span>
+          <input id="reg-avatar" class="auth-avatar-input" maxlength="4" value="🙂">
+        </div>
+        <p class="auth-error hidden" id="reg-error"></p>
+        <button class="btn btn-primary btn-big" id="btn-register">Crea account</button>
+      </div>
+
+      <!-- codice di backup (mostrato UNA volta) -->
+      <div class="auth-panel hidden" id="panel-backup">
+        <p class="auth-hint">💾 <b>Salva questo codice di backup!</b> Ti serve per recuperare l'account se dimentichi la password. Si mostra una sola volta.</p>
+        <div class="backup-code" id="backup-code"></div>
+        <button class="btn btn-primary btn-big" id="btn-backup-done">Ho salvato il codice</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= ONLINE FRIENDS (tab amici) ======= -->
+  <section id="screen-friends" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-friends-back">← Indietro</button>
+      <h2>👥 Amici</h2>
+      <div class="header-spacer">
+        <button class="btn btn-ghost btn-help" id="btn-sfida-open" title="Sfida un giocatore (PvP)">⚔️</button>
+        <button class="btn btn-ghost btn-help" id="btn-friends-add" title="Aggiungi amico">＋</button>
+      </div>
+    </header>
+    <p class="deck-hint" id="friends-me"></p>
+
+    <div class="friends-section">
+      <h3 class="friends-title">Richieste in arrivo</h3>
+      <div class="friends-list" id="friends-incoming"></div>
+      <h3 class="friends-title">Amici</h3>
+      <div class="friends-list" id="friends-list"></div>
+      <h3 class="friends-title">Richieste inviate</h3>
+      <div class="friends-list" id="friends-outgoing"></div>
+    </div>
+
+    <!-- modale aggiungi amico -->
+    <div id="friends-add-modal" class="modal hidden">
+      <div class="modal-card">
+        <h3>➕ Aggiungi amico</h3>
+        <p class="auth-hint">Inserisci il nickname esatto del giocatore.</p>
+        <input id="friends-add-nick" class="nickname-input" maxlength="16" placeholder="Nickname">
+        <p class="auth-error hidden" id="friends-add-error"></p>
+        <div class="sync-buttons">
+          <button class="btn btn-primary" id="btn-friends-send">Invia richiesta</button>
+          <button class="btn btn-ghost" id="btn-friends-add-cancel">Annulla</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modale profilo amico -->
+    <div id="friends-profile-modal" class="modal hidden">
+      <div class="modal-card">
+        <h3 id="fp-title">Profilo</h3>
+        <div class="fp-body" id="fp-body"></div>
+        <button class="btn btn-ghost" id="btn-fp-close">Chiudi</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= ONLINE TRADE (stanza scambio) ======= -->
+  <section id="screen-trade" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-trade-back">← Indietro</button>
+      <h2>🤝 Scambio</h2>
+      <div class="header-spacer"></div>
+    </header>
+
+    <div class="trade-status" id="trade-status">…</div>
+
+    <div class="trade-table">
+      <!-- lato mio -->
+      <div class="trade-side">
+        <div class="trade-side-label">🫵 Le tue carte</div>
+        <div class="trade-cards" id="trade-mine"></div>
+        <button class="btn btn-ghost btn-sm" id="btn-trade-add">＋ Aggiungi carta</button>
+      </div>
+      <div class="trade-vs">⚡ ⇄ ⚡</div>
+      <!-- lato avversario -->
+      <div class="trade-side">
+        <div class="trade-side-label" id="trade-opp-label">🤖 Avversario</div>
+        <div class="trade-cards" id="trade-opp"></div>
+        <div class="trade-opp-status" id="trade-opp-status"></div>
+      </div>
+    </div>
+
+    <div class="trade-actions" id="trade-actions"></div>
+    <div class="trade-log" id="trade-log"></div>
+
+    <!-- modale scelta carte (dalla propria collezione) -->
+    <div id="trade-pick-modal" class="modal hidden">
+      <div class="modal-card">
+        <h3>🗃 Scegli le carte da offrire</h3>
+        <p class="auth-hint">Max 3 carte. Si scambiano col loro livello.</p>
+        <div class="trade-pick-grid" id="trade-pick-grid"></div>
+        <div class="sync-buttons">
+          <button class="btn btn-primary" id="btn-trade-pick-done">Fatto</button>
+          <button class="btn btn-ghost" id="btn-trade-pick-cancel">Annulla</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= ONLINE SFIDA (PvP con PIN) ======= -->
+  <section id="screen-sfida" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-sfida-back">← Indietro</button>
+      <h2>⚔️ Sfida</h2>
+      <div class="header-spacer"></div>
+    </header>
+
+    <div class="sfida-box">
+      <p class="deck-hint">Sfida un altro giocatore online: crea una partita e condividi il PIN, oppure unisciti con il PIN di un amico.</p>
+
+      <div class="sfida-panel">
+        <h3 class="friends-title">🎯 Crea una partita</h3>
+        <p class="auth-hint">Usa il tuo mazzo attuale (min 3, max 8 carte). Riceverai un PIN da condividere: scade in ~2 minuti.</p>
+        <button class="btn btn-primary btn-big" id="btn-sfida-create">Crea partita</button>
+        <div class="sfida-wait hidden" id="sfida-wait">
+          <div class="sfida-pin-label">Condividi questo PIN:</div>
+          <div class="sfida-pin" id="sfida-pin">0000</div>
+          <p class="auth-hint" id="sfida-wait-text">In attesa di un avversario…</p>
+          <button class="btn btn-ghost" id="btn-sfida-cancel">Annulla</button>
+        </div>
+      </div>
+
+      <div class="sfida-divider">— oppure —</div>
+
+      <div class="sfida-panel">
+        <h3 class="friends-title">🔑 Unisciti con un PIN</h3>
+        <input id="sfida-pin-input" class="nickname-input sfida-pin-input" maxlength="4" inputmode="numeric" placeholder="0000" autocomplete="off">
+        <p class="auth-error hidden" id="sfida-join-error"></p>
+        <button class="btn btn-primary btn-big" id="btn-sfida-join">Unisciti</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= ONLINE SYNC (caricamento a fasi) ======= -->
+  <section id="screen-sync" class="screen">
+    <div class="sync-box">
+      <div class="loader-logo">S</div>
+      <h2 id="sync-title">Connessione…</h2>
+      <div class="sync-phases" id="sync-phases"></div>
+      <p class="auth-hint" id="sync-actions"></p>
+      <div class="sync-buttons hidden" id="sync-buttons">
+        <button class="btn btn-primary" id="btn-sync-retry">Riprova</button>
+        <button class="btn btn-ghost" id="btn-sync-offline">Continua offline</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= DECK (mazzo) ======= -->
+  <section id="screen-deck" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-deck-back">← Indietro</button>
+      <h2>Il tuo mazzo <span id="deck-count" class="deck-count">0/8</span></h2>
+      <div class="header-spacer"></div>
+    </header>
+    <p class="deck-hint">Il tuo mazzo da 8 carte: le peschi a ogni partita. Niente duplicati.</p>
+    <div id="deck-grid" class="deck-grid"></div>
+    <button class="btn btn-ghost" id="btn-deck-pick">＋ Scegli dalla collezione</button>
+    <p class="deck-lock" id="deck-lock-msg"></p>
+  </section>
+
+  <!-- ======= BATTLE (v2 a turni) ======= -->
+  <section id="screen-battle" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-battle-quit" title="Abbandona">✕</button>
+      <h2>⚔️ Squer Clash</h2>
+      <div class="header-spacer">
+        <button class="btn btn-ghost btn-help" id="battle-help" title="Come si gioca">?</button>
+      </div>
+    </header>
+
+    <div class="battle-hud">
+      <div class="anima-row bot">
+        <span class="anima-name" id="anima-b-name">🤖 SquerBot</span>
+        <div class="anima-track"><div class="anima-fill bot" id="anima-b-fill"></div></div>
+        <b class="anima-num" id="anima-b">60</b>
+      </div>
+      <div class="battle-turn" id="battle-turn">Turno 1</div>
+      <div class="anima-row me">
+        <span class="anima-name">👤 <b id="battle-nick">Tu</b></span>
+        <div class="anima-track"><div class="anima-fill me" id="anima-p-fill"></div></div>
+        <b class="anima-num" id="anima-p">60</b>
+      </div>
+    </div>
+
+    <div class="battle-3d" id="battle-3d">
+      <div id="battle-scene" class="scene-container battle-scene-3d"></div>
+    </div>
+
+    <div class="battle-meta">
+      <span>🃏 Mazzo: <b id="deck-count-live">4</b></span>
+      <span>🗑 Scarti: <b id="discard-count-live">0</b></span>
+    </div>
+
+    <div class="battle-actions" id="battle-actions">
+      <button class="btn btn-primary" id="btn-draw" title="Pesca una carta e scegli se sostituirla">Pesca</button>
+      <button class="btn btn-primary hidden" id="btn-attack">Attacca</button>
+      <button class="btn btn-ghost hidden" id="btn-cancel">Annulla</button>
+    </div>
+    <div class="battle-status" id="battle-status">Tocca una carta in mano e poi una zona per posizionarla, oppure pesca.</div>
+    <div class="matchup-hint hidden" id="matchup-hint"></div>
+  </section>
+
+  <!-- ======= COIN FLIP (chi inizia) ======= -->
+  <div id="coin-modal" class="modal hidden">
+    <div class="coin-box">
+      <div class="coin" id="coin-3d">
+        <div class="coin-face coin-front">O</div>
+        <div class="coin-face coin-back">X</div>
+      </div>
+      <div class="coin-result" id="coin-result">Chi inizierà?</div>
+      <div class="coin-sub" id="coin-sub">Lancio di moneta…</div>
+    </div>
+  </div>
+
+  <!-- ======= DRAW MODAL (scelta pesca) ======= -->
+  <div id="draw-modal" class="modal hidden">
+    <div class="modal-card">
+      <h3>🃏 Carta pescata</h3>
+      <div class="draw-preview" id="draw-preview"></div>
+      <p class="draw-hint">Tienila scartando una carta della mano, oppure rimettila nel mazzo:</p>
+      <div class="draw-hand" id="draw-hand"></div>
+      <button class="btn btn-ghost hidden" id="draw-keep-none">Tieni (senza scartare)</button>
+      <button class="btn btn-ghost" id="draw-reject">↩ Rifiuta (rimetti nel mazzo)</button>
+    </div>
+  </div>
+
+  <!-- ======= HELP MODAL (regole) ======= -->
+  <div id="help-modal" class="modal hidden">
+    <div class="modal-card">
+      <h3>📜 Come si gioca</h3>
+      <div class="help-body">
+        <p><b>Obiettivo:</b> azzera l'Anima (60) di SquerBot. Se nessuno resta senza Anima, la partita continua finché un giocatore non vince.</p>
+        <p><b>1 azione per turno:</b></p>
+        <ul>
+          <li>🃏 <b>Pesca</b> una carta e scegli se sostituirla con una in mano (o rifiutarla).</li>
+          <li>📦 <b>Posiziona</b>: tocca una carta in mano, poi una zona del tuo campo per difenderla.</li>
+          <li>⚔️ <b>Attacca</b>: tocca una tua carta in campo, poi il bottone Attacca: colpisce la zona in fronte (o l'Anima se è scoperta).</li>
+        </ul>
+        <p><b>Tipi:</b> ogni carta ha uno dei 12 tipi. Ogni tipo vince su 2 tipi e perde contro 2: attacchi con il tipo giusto fanno danno ×2, col tipo sbagliato ×0.5.</p>
+        <div class="types-table-wrap">
+          <table class="types-table" id="types-table"></table>
+        </div>
+        <p><b>Abilità</b> scattano quando giocata / distrutta / attacca / subisce / a inizio turno (leggi il testo sulla carta).</p>
+        <p><b>Quando il mazzo finisce</b>, gli scarti tornano nel mazzo.</p>
+      </div>
+      <button class="btn btn-primary" id="help-close">Capito!</button>
+    </div>
+  </div>
+
+  <!-- ======= RESULT MODAL ======= -->
+  <div id="result-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-badge" id="result-icon">🏆</div>
+      <h3 id="result-title">Vittoria!</h3>
+      <div class="result-score" id="result-score">12 — 8</div>
+      <div class="result-zones" id="result-zones"></div>
+      <div class="result-reward" id="result-reward">+8 🪙 Squerini</div>
+      <button class="btn btn-primary" id="result-rematch">⚔️ Rigioca</button>
+      <button class="btn btn-ghost" id="result-home">Home</button>
+    </div>
+  </div>
+
+  <!-- ======= DECK PICKER MODAL ======= -->
+  <div id="deck-picker-modal" class="modal hidden">
+    <div class="modal-card modal-wide">
+      <h3>Scegli le carte del mazzo <span id="deck-picker-count" class="deck-count">0/8</span></h3>
+      <div id="deck-picker-grid" class="deck-picker-grid"></div>
+      <button class="btn btn-primary" id="deck-picker-done">Fatto</button>
+    </div>
+  </div>
+
+  <!-- ======= BUY PACK MODAL ======= -->
+  <div id="buy-modal" class="modal hidden">
+    <div class="modal-card buy-modal">
+      <h3>Acquista pacchetti</h3>
+      <p class="buy-price-hint" id="buy-price-hint">100 🪙 l'uno</p>
+      <div class="buy-stepper">
+        <button class="btn buy-step" id="buy-minus" aria-label="Diminuisci">−</button>
+        <span class="buy-qty" id="buy-qty">1</span>
+        <button class="btn buy-step" id="buy-plus" aria-label="Aumenta">＋</button>
+      </div>
+      <p class="buy-total" id="buy-total">Totale: 100 🪙</p>
+      <div class="buy-actions">
+        <button class="btn btn-ghost" id="buy-cancel">Annulla</button>
+        <button class="btn btn-primary" id="buy-confirm">Acquista</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= PACK OPENING ======= -->
+  <section id="screen-pack" class="screen">
+    <div class="pack-topbar">
+      <button class="btn btn-ghost btn-back" id="btn-pack-back">← Indietro</button>
+      <span class="pack-top-title" id="pack-top-title">Apri il pacchetto</span>
+    </div>
+    <div id="pack-new-banner" class="pack-new-banner hidden">✦ NUOVA!</div>
+    <div id="pack-scene" class="scene-container"></div>
+    <div id="pack-hud" class="pack-hud">
+      <div id="pack-hud-text" class="pack-hud-text">Trascina per aprire!</div>
+      <div class="pack-dots" id="pack-dots"></div>
+    </div>
+  </section>
+
+  <!-- ======= COLLECTION ======= -->
+  <section id="screen-collection" class="screen">
+    <div class="collection-topbar">
+      <header class="screen-header">
+        <button class="btn btn-ghost btn-back" id="btn-collection-back" title="Indietro">←</button>
+        <h2>Album</h2>
+        <div class="header-spacer"></div>
+      </header>
+      <div class="filter-row">
+        <button class="chip active" data-filter="all">Tutte</button>
+        <button class="chip" data-filter="common">Comuni</button>
+        <button class="chip" data-filter="uncommon">Non Comuni</button>
+        <button class="chip" data-filter="rare">Rare</button>
+        <button class="chip" data-filter="superRare">Super Rare</button>
+        <button class="chip" data-filter="legendary">Leggendarie</button>
+      </div>
+      <div class="collection-tools">
+        <input type="search" id="search-input" class="search-input" placeholder="🔍 Cerca per nome..." autocomplete="off">
+        <div class="own-toggle" id="own-toggle">
+          <button class="chip active" data-own="all">Tutte</button>
+          <button class="chip" data-own="owned">Possedute</button>
+        </div>
+      </div>
+    </div>
+    <div id="collection-grid" class="collection-grid"></div>
+  </section>
+
+  <!-- ======= CARD DETAIL ======= -->
+  <section id="screen-detail" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-detail-back" title="Indietro">←</button>
+      <h2 id="detail-title">Carta</h2>
+      <div class="header-spacer detail-nav">
+        <button class="btn btn-ghost btn-nav" id="btn-detail-prev" title="Carta precedente">‹</button>
+        <button class="btn btn-ghost btn-nav" id="btn-detail-next" title="Carta successiva">›</button>
+      </div>
+    </header>
+    <div id="detail-scene" class="scene-container"></div>
+    <div id="detail-mystery" class="detail-mystery hidden"></div>
+    <div class="detail-info" id="detail-info"></div>
+  </section>
+
+  <!-- ======= PACK SUMMARY MODAL ======= -->
+  <div id="pack-summary-modal" class="modal hidden">
+    <div class="modal-card modal-wide">
+      <div class="modal-badge">✨</div>
+      <h3 id="summary-title">Nuove carte!</h3>
+      <div class="summary-list" id="summary-list"></div>
+      <button class="btn btn-primary" id="summary-continue">Continua</button>
+    </div>
+  </div>
+
+  <!-- ======= TOAST ======= -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ======= LOADING ======= -->
+  <div id="loader" class="loader">
+    <div class="loader-inner">
+      <div class="loader-logo">S</div>
+      <div class="loader-title">SQUER TCG</div>
+      <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
+      <div class="loader-text" id="loader-text">Caricamento carte...</div>
+    </div>
+  </div>
+
+  <script src="vendor/three.min.js?v=74"></script>
+  <script>
+    // CDN fallback if local copy missing
+    if (typeof THREE === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
+  <script src="js/rng.js?v=74"></script>
+  <script src="js/rarity.js?v=74"></script>
+  <script src="js/cardgen.js?v=74"></script>
+  <script src="js/abilities.js?v=74"></script>
+  <script src="js/cards.js?v=74"></script>
+  <script src="js/game-config.js?v=74"></script>
+  <script src="js/packs.js?v=74"></script>
+  <script src="js/game.js?v=74"></script>
+  <script src="js/sound.js?v=74"></script>
+  <script src="js/scene.js?v=74"></script>
+  <script src="js/scene-battle2.js?v=74"></script>
+  <!-- BUILD DEV: punta all'API di sviluppo (worker deployato). In prod questo
+       blocco non c'è: online.js usa l'API di default. -->
+  <script>window.SQUER_ONLINE_API = 'https://squer-tcg-api.squer-online.workers.dev';</script>
+  <script src="js/online.js?v=74"></script>
+  <script src="js/main.js?v=74"></script>
+<script src="js/install.js?v=74"></script>
+</body>
+</html>
