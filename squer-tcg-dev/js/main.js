@@ -49,24 +49,24 @@ const App = {
       this.buildTypesTable();
       // Currency badge and menu: app ready (badge must not float over the loader)
       document.body.classList.add('app-ready');
-      // First run: ask for the nickname before anything else
-      if (!loadState().nickname) {
+      // Sessione online già attiva? Vai dritto a home (il login NON va
+      // richiesto a ogni apertura).
+      SQUER.Online.loadSession();
+      if (SQUER.Online.token) {
+        this.showScreen('home');
+        this.refreshHome();
+      } else if (!loadState().nickname) {
         // Prima volta assoluta: registrazione online (il nickname si sceglie lì)
-        SQUER.Online.loadSession();
         this.showScreen('auth');
         this.showAuthPanel('register');
         $('#reg-nickname').focus();
-      } else if (!SQUER.Online.token) {
+      } else {
         // Nickname già scelto in una versione precedente: registrazione
-        // precompilata col nickname (il giocatore lo "riserva" online)
-        SQUER.Online.loadSession();
+        // precompilata col nickname (normalizzato ai caratteri concessi)
         this.showScreen('auth');
         this.showAuthPanel('register');
-        $('#reg-nickname').value = loadState().nickname;
+        $('#reg-nickname').value = this.normalizeNickname(loadState().nickname);
         $('#reg-password').focus();
-      } else {
-        this.showScreen('home');
-        this.refreshHome();
       }
       if (!this.cards.length) $('#empty-banner').classList.remove('hidden');
       this.watchManifestChanges();
@@ -95,6 +95,15 @@ const App = {
   updateLoader(p, text) {
     if (this._loaderIv) clearInterval(this._loaderIv);    $('#loader-fill').style.width = p + '%';
     if (text) $('#loader-text').textContent = text;
+  },
+
+  /** Adatta un nickname vecchio (o libero) ai caratteri concessi dal server:
+      a-z A-Z 0-9 _, max 16. Utile per precompilare la registrazione. */
+  normalizeNickname(raw) {
+    let n = String(raw || '').trim();
+    n = n.replace(/[^a-zA-Z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+    n = n.slice(0, 16);
+    return n;
   },
 
   /** Help table of the 12 types, generated from TYPE_BEATS + CARD_TYPES
@@ -916,8 +925,8 @@ const App = {
         el.classList.remove('urgent');
       }
     } else {
-      const oppName = this._pvp ? (this._pvpOppNick || 'Avversario') : 'SquerBot';
-      $('#battle-turn').textContent = `${turno} · ⚔️ ${oppName}`;
+      const oppName = this._pvp ? (this._pvpOpp ? `${this._pvpOpp.avatar || '⚔️'} ${this._pvpOpp.nickname}` : '⚔️ Avversario') : '🤖 SquerBot';
+      $('#battle-turn').textContent = `${turno} · ${oppName} sta giocando…`;
       $('#battle-turn').classList.remove('urgent');
     }
   },
@@ -964,7 +973,9 @@ const App = {
     $('#btn-cancel').classList.toggle('hidden', !sel);
     let msg;
     if (m.over) msg = 'Partita finita';
-    else if (!isP) msg = this._pvp ? '⚔️ Avversario sta giocando…' : '🤖 SquerBot sta giocando…';
+    else if (!isP) msg = this._pvp
+      ? `⚔️ ${this._pvpOpp ? this._pvpOpp.nickname : 'Avversario'} sta giocando…`
+      : '🤖 SquerBot sta giocando…';
     else if (sel && sel.type === 'hand') {
       msg = 'Tocca una zona del tuo campo per posizionare la carta.';
       this.renderMatchupHint();
@@ -1270,7 +1281,7 @@ const App = {
     this.pvpPollStop();
     if (this._sfidaPollIv) { clearInterval(this._sfidaPollIv); this._sfidaPollIv = null; }
     this._pvp = null;
-    this._pvpOppNick = null;
+    this._pvpOpp = null;
     this._pvpMatchId = null;
   },
 
@@ -1315,7 +1326,6 @@ const App = {
       $('#play-modal').classList.add('hidden');
       this.playOnline();
     });
-    $('#btn-play-cancel').addEventListener('click', () => $('#play-modal').classList.add('hidden'));
     $('#play-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) $('#play-modal').classList.add('hidden'); });
     $('#btn-deck').addEventListener('click', () => this.showDeck());
     $('#btn-deck-back').addEventListener('click', () => {
@@ -1535,6 +1545,12 @@ const App = {
       const avatar = $('#reg-avatar').value.trim() || '🙂';
       const errEl = $('#reg-error');
       errEl.classList.add('hidden');
+      // l'emoji profilo deve essere UNA sola emoji (niente lettere/testo)
+      if (!/^\p{Extended_Pictographic}$/u.test(avatar)) {
+        errEl.textContent = 'Profilo: inserisci 1 sola emoji (es. 🙂)';
+        errEl.classList.remove('hidden');
+        return;
+      }
       try {
         const d = await SQUER.Online.register(nick, pass, avatar);
         // mostra il codice di backup UNA volta
@@ -1664,7 +1680,7 @@ const App = {
     try {
       const d = await SQUER.Online.listFriends();
       const me = SQUER.Online.user;
-      $('#friends-me').textContent = `Connesso come ${me.nickname} ${me.avatar_emoji || ''} · ${me.level_text}`;
+      $('#friends-me').textContent = `Connesso come ${me.avatar_emoji || ''} ${me.nickname} · ${me.level_text}`;
 
       const incoming = $('#friends-incoming');
       incoming.innerHTML = d.incoming.length
@@ -1778,11 +1794,6 @@ const App = {
       this.startMatch();
       return;
     }
-    const logged = !!SQUER.Online.token;
-    $('#btn-play-online').textContent = logged ? '🌐 Online — Sfida' : '🌐 Online — Sfida (registrati)';
-    $('#play-hint').textContent = logged
-      ? 'Online: gioca contro un altro giocatore con un PIN.'
-      : 'Per giocare online ti serve un account: creane uno (2 min).';
     $('#play-modal').classList.remove('hidden');
   },
 
@@ -1863,7 +1874,8 @@ const App = {
       const v = await SQUER.Online.getMatch(this._pvpMatchId);
       if (v.status === 'active') {
         clearInterval(this._sfidaPollIv); this._sfidaPollIv = null;
-        $('#sfida-wait-text').textContent = 'Avversario trovato!';
+        const opp = (v.opp_nick && v.opp_nick.nickname) ? `${v.opp_nick.avatar || '⚔️'} ${v.opp_nick.nickname}` : 'un avversario';
+        $('#sfida-wait-text').textContent = `${opp} si è unito!`;
         setTimeout(() => this.startPvp(v), 600);
       } else if (v.status === 'expired') {
         clearInterval(this._sfidaPollIv); this._sfidaPollIv = null;
@@ -1912,7 +1924,8 @@ const App = {
     this.disposeScene();
     this.showScreen('battle');
     this._pvp = { id: view.id, mySide: view.my_side, seq: view.events_seq || 0, outcome: view.outcome };
-    this._pvpOppNick = view.opp_nick || 'Avversario';
+    this._pvpOpp = (view.opp_nick && view.opp_nick.nickname) ? view.opp_nick : null;
+    const oppLabel = this._pvpOpp ? `${this._pvpOpp.avatar || '⚔️'} ${this._pvpOpp.nickname}` : '⚔️ Avversario';
     // lo stato dal server ha già p = io
     this.match = view.match;
     if (this.match.maxTurns == null) this.match.maxTurns = Infinity;
@@ -1930,7 +1943,7 @@ const App = {
       onHandDrag: (index) => this.onHandDrag(index),
     });
     $('#battle-nick').textContent = SQUER.Online.user ? (SQUER.Online.user.nickname || 'Tu') : 'Tu';
-    $('#anima-b-name').textContent = '⚔️ ' + (view.opp_nick || 'Avversario');
+    $('#anima-b-name').textContent = oppLabel;
     this.renderBattle();
     // flusso: se tocca a me, attendo la mossa; altrimenti poll sull'avversario
     if (!this.match.over && !view.my_turn) this.pvpPollStart();
@@ -1944,6 +1957,10 @@ const App = {
     this._pvp.seq = seq;
     this._pvp.myTurn = view.my_turn;
     this._pvp.outcome = view.outcome;
+    if (view.opp_nick && view.opp_nick.nickname) {
+      this._pvpOpp = view.opp_nick;
+      $('#anima-b-name').textContent = `${view.opp_nick.avatar || '⚔️'} ${view.opp_nick.nickname}`;
+    }
     view.match.events = []; // gli eventi li rigioca processEvents
     this.match = view.match;
     if (this.match.maxTurns == null) this.match.maxTurns = Infinity;
@@ -1977,15 +1994,44 @@ const App = {
     if (this._pvpPollIv) { clearInterval(this._pvpPollIv); this._pvpPollIv = null; }
   },
 
-  /** Invia una mossa al server e applica la risposta. */
+  /** Invia una mossa al server e applica la risposta.
+      Ottimismo per place/attack: la carta si muove SUBITO in campo (il flusso
+      di animazione del drag non si rompe), poi il server conferma e sostituisce
+      lo stato vero. Se il server rifiuta, si ricarica lo stato reale. */
   async pvpMove(action, extra = {}) {
+    // optimistic: applica localmente per l'animazione (solo per il turno mio)
+    if ((action === 'place' || action === 'attack') && this.match && !this.match.over) {
+      this.pvpOptimistic(action, extra);
+    }
     try {
       const v = await SQUER.Online.moveMatch(this._pvp.id, action, extra);
       this.applyPvpView(v);
     } catch (e) {
       if (/Non è il tuo turno/.test(e.message)) { this.toast('Non è il tuo turno'); return; }
       this.toast(e.message);
+      // rollback: ricarica lo stato vero dal server
+      try {
+        const v = await SQUER.Online.getMatch(this._pvp.id);
+        this.applyPvpView(v);
+      } catch (e2) { /* resta come siamo */ }
     }
+  },
+
+  /** Applica la mossa su una COPIA locale dello stato (solo per la resa
+      visiva immediata). Il server resta la fonte di verità. */
+  pvpOptimistic(action, extra) {
+    try {
+      const st = SQUER.GAME.restoreMatch(JSON.parse(JSON.stringify(this.match)));
+      let r = null;
+      if (action === 'place') r = SQUER.GAME.actionPlace(st, 'p', extra.handIndex, extra.zone);
+      else if (action === 'attack') r = SQUER.GAME.actionAttack(st, 'p', extra.zone);
+      if (!r || !r.ok) return;
+      // aggiorna solo la resa (anima/zona/mano) senza toccare turno ed eventi:
+      // il server decide la verità e applyPvpView la sostituisce
+      this.match = st;
+      this._sel = null;
+      this.renderBattle();
+    } catch (e) { /* ignora: il server è la verità */ }
   },
 
   /** Fine partita PvP: risultato dal server (outcome dal MIO lato). */
@@ -2250,6 +2296,11 @@ const App = {
       SQUER.PACKS.saveState(s);
       setPhase(3, 'ok');
       SQUER.Online.synced = true;
+      // il nickname dell'account diventa il nickname locale (così al prossimo
+      // avvio l'app non richiede di nuovo login/registrazione)
+      const s3 = SQUER.PACKS.loadState();
+      if (SQUER.Online.user && SQUER.Online.user.nickname) s3.nickname = SQUER.Online.user.nickname;
+      SQUER.PACKS.saveState(s3);
       $('#sync-title').textContent = 'Fatto!';
       $('#sync-actions').textContent = 'Collezione sincronizzata con il cloud.';
       setTimeout(() => {
