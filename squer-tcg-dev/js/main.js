@@ -1012,10 +1012,26 @@ const App = {
       msg = 'Tocca una zona del tuo campo per posizionare la carta.';
       this.renderMatchupHint();
     }
-    else if (sel && sel.type === 'zone') msg = 'Premi ⚔️ Attacca per colpire il fronte (o tocca un\'altra carta).';
+    else if (sel && sel.type === 'zone') {
+      msg = 'Premi ⚔️ Attacca per colpire il fronte (o tocca un\'altra carta).';
+      // avviso superefficace/poco efficace anche quando si seleziona la
+      // propria carta per attaccare (stesso badge del drag)
+      this.renderAttackMatchup(sel.zone);
+    }
     else msg = 'Pesca, oppure tocca una carta in mano per posizionarla, o una in campo per attaccare.';
     $('#battle-status').textContent = msg;
     if (!(sel && sel.type === 'hand')) this.clearMatchupHint();
+    if (!(sel && sel.type === 'zone')) this.onPadMatchup(null, null);
+  },
+
+  /** Matchup della carta selezionata per ATTACCARE contro la carta di fronte
+      (stessa zona avversaria). Usa il badge #pad-matchup (verde/rosso). */
+  renderAttackMatchup(zone) {
+    const atkSlot = this.match && this.match.zones && this.match.zones.p && this.match.zones.p[zone];
+    const defSlot = this.match && this.match.zones && this.match.zones.b && this.match.zones.b[zone];
+    if (!atkSlot || !defSlot) { this.onPadMatchup(null, null); return; }
+    const adv = SQUER.GAME.typeAdvantage(atkSlot.card.type, defSlot.card.type);
+    this.onPadMatchup(zone, adv);
   },
 
   /** Placement hint: for each enemy field card shows whether the selected
@@ -2003,7 +2019,7 @@ const App = {
     SQUER.sound.unlock();
     this.disposeScene();
     this.showScreen('battle');
-    this._pvp = { id: view.id, mySide: view.my_side, seq: view.events_seq || 0, outcome: view.outcome };
+    this._pvp = { id: view.id, mySide: view.my_side, seq: view.events_seq || 0, outcome: view.outcome, reward: view.reward != null ? view.reward : 0 };
     this._pvpOpp = (view.opp_nick && view.opp_nick.nickname) ? view.opp_nick : null;
     const oppLabel = this._pvpOpp ? `${this._pvpOpp.avatar || '⚔️'} ${this._pvpOpp.nickname}` : '⚔️ Avversario';
     // lo stato dal server ha già p = io
@@ -2052,6 +2068,7 @@ const App = {
     this._pvp.seq = seq;
     this._pvp.myTurn = view.my_turn;
     this._pvp.outcome = view.outcome;
+    this._pvp.reward = view.reward != null ? view.reward : 0;
     if (view.opp_nick && view.opp_nick.nickname) {
       this._pvpOpp = view.opp_nick;
       $('#anima-b-name').textContent = `${view.opp_nick.avatar || '⚔️'} ${view.opp_nick.nickname}`;
@@ -2152,9 +2169,16 @@ const App = {
     $('#result-icon').textContent = isWin ? '🏆' : (isDraw ? '🤝' : (isAbandon ? '🚪' : '💀'));
     $('#result-title').textContent = isWin ? 'Vittoria!' : (isDraw ? 'Pareggio' : (isAbandon ? 'Avversario assente' : 'Sconfitta'));
     $('#result-score').classList.add('hidden');
-    // PvP: niente pillola ricompensa (solo il titolo + Rigioca/Home)
-    $('#result-reward').classList.add('hidden');
-    $('#result-reward').textContent = '';
+    // pillola ricompensa: come col bot (win 30 / draw 15 / lose 10, 0 se
+    // hai abbandonato) — il reward arriva dal server (fonte di verità)
+    const reward = this._pvp && this._pvp.reward != null ? this._pvp.reward : 0;
+    $('#result-reward').textContent = reward > 0 ? `+${reward} 🪙 Squerini` : 'Nessun guadagno';
+    $('#result-reward').classList.remove('hidden');
+    // aggiorna gli squerini locali (il sync cloud li riconfermerà)
+    const s = loadState();
+    s.squerini = (s.squerini || 0) + reward;
+    saveState(s);
+    this.updateSqueriniBadge();
     $('#result-zones').innerHTML = '';
     $('#result-zones').classList.add('hidden');
     $('#result-rematch').textContent = '⚔️ Rigioca';
