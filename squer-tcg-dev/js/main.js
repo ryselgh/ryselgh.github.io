@@ -830,8 +830,13 @@ const App = {
       onHandDrag: (index) => this.onHandDrag(index),
     });
     $('#battle-nick').textContent = loadState().nickname || 'Tu';
+    // emoji profilo locale accanto alla propria Anima (online)
+    if (SQUER.Online.user && SQUER.Online.user.avatar_emoji) {
+      $('#battle-me-avatar').textContent = SQUER.Online.user.avatar_emoji;
+    }
     this.renderBattle();
     if (this.match.turnPlayer === 'b') this.botTurn();
+    else this.showTurnNotice(`${SQUER.Online.user && SQUER.Online.user.avatar_emoji ? SQUER.Online.user.avatar_emoji + ' ' : ''}${loadState().nickname || 'Tu'}`);
   },
 
   cardOrig(uid) { return this.cards.find(c => c.uid === uid) || null; },
@@ -899,8 +904,28 @@ const App = {
         }, 1000);
       }
     } else {
-      this._lastTimerPlayer = 'b';
-      if (this._turnIv) { clearInterval(this._turnIv); this._turnIv = null; }
+      // turno avversario: in PvP il timer resta visibile col countdown (60s)
+      if (this._pvp && (!this._turnIv || this._lastTimerPlayer !== 'b')) {
+        this._lastTimerPlayer = 'b';
+        if (this._pvpTurnLeft == null || this._pvpTurnLeft <= 0) {
+          this._pvpTurnLeft = (SQUER.CONFIG && SQUER.CONFIG.TURN_TIME_SEC) || 60;
+        }
+        if (this._turnIv) clearInterval(this._turnIv);
+        this._turnIv = setInterval(() => {
+          this._pvpTurnLeft--;
+          this._updateTurnDisplay();
+          if (this._pvpTurnLeft <= 0) {
+            clearInterval(this._turnIv);
+            this._turnIv = null;
+            // il server gestisce il timeout del turno avversario: il poll
+            // aggiornerà quando tocca di nuovo a noi
+            this._pvpTurnLeft = 0;
+          }
+        }, 1000);
+      } else if (!this._pvp && this._lastTimerPlayer !== 'b') {
+        this._lastTimerPlayer = 'b';
+        if (this._turnIv) { clearInterval(this._turnIv); this._turnIv = null; }
+      }
     }
     this._updateTurnDisplay();
   },
@@ -925,9 +950,15 @@ const App = {
         el.classList.remove('urgent');
       }
     } else {
-      const oppName = this._pvp ? (this._pvpOpp ? `${this._pvpOpp.avatar || '⚔️'} ${this._pvpOpp.nickname}` : '⚔️ Avversario') : '🤖 SquerBot';
-      $('#battle-turn').textContent = `${turno} · ${oppName} sta giocando…`;
+      // turno avversario: il TIMER resta visibile (PvP: countdown dal server;
+      // bot: nessun timer, resta solo il turno)
       $('#battle-turn').classList.remove('urgent');
+      if (this._pvp) {
+        const left = this._pvpTurnLeft != null ? this._pvpTurnLeft : '…';
+        $('#battle-turn').textContent = `${turno} · ⏱ ${left}s`;
+      } else {
+        $('#battle-turn').textContent = `${turno} · 🤖`;
+      }
     }
   },
 
@@ -1307,6 +1338,21 @@ const App = {
     t.classList.remove('hidden');
     clearTimeout(this._toastT);
     this._toastT = setTimeout(() => t.classList.add('hidden'), 2200);
+  },
+
+  /** Banner centrato "Tocca a <nome>" per 2s (cambio turno). */
+  showTurnNotice(label) {
+    const el = $('#turn-notice');
+    if (!el) return;
+    $('#turn-notice-name').textContent = label;
+    el.classList.remove('hidden');
+    // riavvia l'animazione
+    void el.offsetWidth;
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+    clearTimeout(this._turnNoticeT);
+    this._turnNoticeT = setTimeout(() => el.classList.add('hidden'), 2000);
   },
 
   bindEvents() {
@@ -1950,6 +1996,7 @@ const App = {
     this._turnIv = null;
     this._turnLeft = null;
     this._lastTimerPlayer = view.my_turn ? 'p' : 'b';
+    this._pvpTurnLeft = view.my_turn ? null : ((SQUER.CONFIG && SQUER.CONFIG.TURN_TIME_SEC) || 60);
     this._notifiedEnd = false;
     this.scene = new SQUER.BattleScene2($('#battle-scene'), {
       onZoneTap: (player, zone) => this.onZoneTap(player, zone),
@@ -1958,8 +2005,20 @@ const App = {
       onHandDrag: (index) => this.onHandDrag(index),
     });
     $('#battle-nick').textContent = SQUER.Online.user ? (SQUER.Online.user.nickname || 'Tu') : 'Tu';
+    if (SQUER.Online.user && SQUER.Online.user.avatar_emoji) {
+      $('#battle-me-avatar').textContent = SQUER.Online.user.avatar_emoji;
+    }
     $('#anima-b-name').textContent = oppLabel;
     this.renderBattle();
+    // notifica "Tocca a" per chi inizia
+    if (!this.match.over) {
+      if (view.my_turn) {
+        const me = SQUER.Online.user;
+        this.showTurnNotice(`${me && me.avatar_emoji ? me.avatar_emoji + ' ' : ''}${me ? me.nickname : 'Tu'}`);
+      } else {
+        this.showTurnNotice(oppLabel);
+      }
+    }
     // flusso: se tocca a me, attendo la mossa; altrimenti poll sull'avversario
     if (!this.match.over && !view.my_turn) this.pvpPollStart();
   },
@@ -1969,6 +2028,7 @@ const App = {
     if (!view || !view.match) return;
     const seq = view.events_seq || 0;
     const freshEvents = seq > this._pvp.seq ? (view.match.events || []) : [];
+    const prevMyTurn = this._pvp.myTurn;
     this._pvp.seq = seq;
     this._pvp.myTurn = view.my_turn;
     this._pvp.outcome = view.outcome;
@@ -1982,11 +2042,20 @@ const App = {
     this.renderBattle();
     if (freshEvents.length) this.processEvents(freshEvents);
     if (this.match.over) { this.pvpFinish(); return; }
+    // notifica "Tocca a" quando il turno cambia
+    if (view.my_turn && !prevMyTurn) {
+      const me = SQUER.Online.user;
+      this.showTurnNotice(`${me && me.avatar_emoji ? me.avatar_emoji + ' ' : ''}${me ? me.nickname : 'Tu'}`);
+    } else if (!view.my_turn && prevMyTurn && this._pvpOpp) {
+      this.showTurnNotice(`${this._pvpOpp.avatar || '⚔️'} ${this._pvpOpp.nickname}`);
+    }
     if (view.my_turn) {
       this.pvpPollStop();
       this._lastTimerPlayer = 'p';
+      this._pvpTurnLeft = null; // il countdown mio lo gestisce _turnTick
     } else {
       this._lastTimerPlayer = 'b';
+      this._pvpTurnLeft = this._pvpTurnLeft == null ? ((SQUER.CONFIG && SQUER.CONFIG.TURN_TIME_SEC) || 60) : this._pvpTurnLeft;
       this.pvpPollStart();
     }
   },
