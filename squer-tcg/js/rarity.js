@@ -1,14 +1,9 @@
-/* =========================================================
-   Squer TCG - Rarity system
-   Each rarity: drop weight, frame palette, effects, label
-   ========================================================= */
+// Each rarity: drop weight, frame palette, effects, label.
 
-// ★ CONFIG PULL — percentuali di uscita delle rarità.
-// I valori NON sono percentuali ma PESI: la probabilità di una carta è
-//   peso / somma dei pesi.
-// Nota: la pity in js/packs.js garantisce almeno una Rara+ per pacchetto,
-// quindi le percentuali reali per pacchetto sono leggermente più alte per
-// rare/super-rare/leggendarie.
+// ★ CONFIG — rarity draw rates. Values are WEIGHTS, not percentages: a card's
+// chance is weight / sum of weights. Pity in js/packs.js guarantees at least
+// one Rare+ per pack, so real per-pack rates skew slightly higher for
+// rare/super-rare/legendary.
 const RARITY_WEIGHTS = {
   common: 55,
   uncommon: 38,

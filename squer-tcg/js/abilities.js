@@ -1,17 +1,14 @@
-﻿/* =========================================================
-   Squer TCG - Abilità v2 (core loop a turni)
-   Associazione HARDCODED per carta in cards/abilities.json
-   (titolo -> { kind, value, text }), scelta a mano per ogni
-   carta in base al vibe del titolo (vedi GDD §2.4).
-   Qui: metadati per kind (trigger/symbol/nome) + fallback.
-   Trigger: on_play / on_destroy / on_attack / on_hit / passive
-   ========================================================= */
+﻿// Ability system v2 (turn-based core loop). Per-card assignment is HARDCODED
+// in cards/abilities.json (title -> { kind, value, text }), chosen by hand
+// from each title's vibe (see GDD §2.4). This file: per-kind metadata
+// (trigger/symbol/name) + seed fallback.
+// Triggers: on_play / on_destroy / on_attack / on_hit / on_turn_start / passive
 
 var SQUER = window.SQUER || (window.SQUER = {});
 
 const ABILITIES_PATH = 'cards/abilities.json';
 
-// metadati per kind: trigger, simbolo UI, nome breve
+// per-kind metadata: trigger, UI symbol, short name
 const KIND_META = {
   heal_anima:     { trigger: 'on_play',    symbol: '💚', name: 'Rigenerazione' },
   strike_anima:   { trigger: 'on_play',    symbol: '💢', name: 'Colpo diretto' },
@@ -28,11 +25,11 @@ const KIND_META = {
   revive:         { trigger: 'on_destroy', symbol: '🌀', name: 'Rinascita' },
 };
 
-// mappa titolo -> { kind, value, text } (popolata da loadAbilities)
+// title -> { kind, value, text } map (populated by loadAbilities)
 let ABILITY_MAP = {};
 
-/** Carica cards/abilities.json (cache 'no-store': è un file manuale).
-    Chiamare prima di createCardSet. */
+/** Load cards/abilities.json (cache 'no-store': it's a hand-edited file).
+    Call before createCardSet. */
 async function loadAbilities() {
   try {
     const res = await fetch(ABILITIES_PATH, { cache: 'no-store' });
@@ -40,10 +37,10 @@ async function loadAbilities() {
       const data = await res.json();
       if (data && typeof data === 'object') ABILITY_MAP = data;
     }
-  } catch (e) { /* fallback sotto */ }
+  } catch (e) { /* fall back below */ }
 }
 
-// ---- fallback per carte future non ancora nel file (valori scala v2, x2) ----
+// ---- fallbacks for future cards not yet in the file (v2-scale values, x2) ----
 const FALLBACKS = [
   { kind: 'ramp_attack', value: 2, text: 'Ogni tuo turno in campo, +2 ATK.' },
   { kind: 'damage_reduce', value: 10, text: 'Subisce 10 danni in meno dagli attacchi.' },
@@ -52,8 +49,8 @@ const FALLBACKS = [
   { kind: 'heal_card', value: 16, text: 'Giocandola, cura 16 PV a una carta alleata in campo.' },
 ];
 
-/** Abilità di una carta: da cards/abilities.json (per titolo), altrimenti
-    stabile dal seed (file) così non cambia tra i load. */
+/** A card's ability: from cards/abilities.json (by title), else seeded from
+    the file so it stays stable across loads. */
 function abilityForCard(card) {
   const a = ABILITY_MAP[card.name];
   if (a && KIND_META[a.kind]) {

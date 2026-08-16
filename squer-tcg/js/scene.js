@@ -1,27 +1,23 @@
-﻿/* =========================================================
-   Squer TCG - three.js 3D scene
-   Card tilt, flip reveal, pack opening ceremony, sparkles,
-   holographic shift and edge glow effects.
-   ========================================================= */
+﻿// Squer TCG three.js 3D scene: card tilt, flip reveal, pack opening
+// ceremony, sparkles, holographic shift and edge glow effects.
 
 var SQUER = window.SQUER || (window.SQUER = {});
 
-// ★ LARGHEZZA BANDE — UNICA costante da modificare (qui, in scene.js).
-// Più piccolo = bande holo più larghe (effetto più disteso); 1 = originale.
-// La griglia fine della texture si adatta da sola a questo stesso valore
-// (vedi makeFoilTexture in cardgen.js), quindi NON compaiono "quadretti"
-// quando si distende l'effetto. Non serve toccare altro.
+// FOIL BAND WIDTH — the only constant to tweak (here, in scene.js).
+// Smaller = wider holo bands (more spread effect); 1 = original.
+// The foil texture grid adapts to this same value (see makeFoilTexture
+// in cardgen.js), so no checkerboard shows when the effect is stretched.
 const FOIL_REPEAT = 0.15;
 SQUER.FOIL_REPEAT = FOIL_REPEAT;
 
-// ★ ZOOM CARTE — moltiplica la scala delle carte sia nello spacchettamento
-// sia nell'album (dettaglio). 1 = attuale, >1 = piu' zoommate, <1 = piu' piccole.
-// Prova valori come 1.1, 1.2, 1.3... (la camera ha margine fino a ~1.5).
+// CARD ZOOM — multiplies card scale in both pack opening and the album
+// detail view. 1 = current, >1 = bigger, <1 = smaller.
+// Try 1.1, 1.2, 1.3... (the camera allows up to ~1.5).
 const CARD_ZOOM = 2;
 SQUER.CARD_ZOOM = CARD_ZOOM;
 
-// ★ ZOOM DETTAGLIO — distanza della camera quando si fa tap sulla carta nel
-// dettaglio (piu' piccolo = piu' vicino = piu' zoommato). 9 = default (lontano).
+// DETAIL ZOOM — camera distance when tapping a card in the detail view
+// (smaller = closer = more zoomed). 9 = default (far).
 const DETAIL_ZOOM_Z = 5.2;
 SQUER.DETAIL_ZOOM_Z = DETAIL_ZOOM_Z;
 
@@ -68,8 +64,8 @@ class SquerScene {
     rim.position.set(-3, -1, -2);
     this.scene.add(rim);
 
-    // subtle ground glow — scala con CARD_ZOOM così la carta grande
-    // (dettaglio) non lo compenetra mai, a qualunque valore di zoom
+    // ground glow — scales with CARD_ZOOM so the big detail card
+    // never clips into it at any zoom value
     const glow = new THREE.Mesh(
       new THREE.PlaneGeometry(8 * CARD_ZOOM, 8 * CARD_ZOOM),
       new THREE.MeshBasicMaterial({ color: 0x1a1f2e, transparent: true, opacity: 0.4 })
@@ -134,26 +130,25 @@ class SquerScene {
     // card tilt
     if (this.tiltEnabled && this.cardGroup.children.length) {
       this.cardGroup.rotation.y = this.pointer.x * 0.35;
-      this.cardGroup.rotation.x = this.pointer.y * 0.25; // verticale invertita: mouse su = carta su
+      this.cardGroup.rotation.x = this.pointer.y * 0.25; // vertical inverted: mouse up = card up
     }
 
-    // holo / foil: shift the overlay texture with the deck's tilt.
-    // Nessuna animazione a tempo: l'effetto è statico da fermo e
-    // "reagisce alla luce" solo quando la carta viene ruotata.
+    // holo/foil: shift the overlay texture with the deck tilt, so the
+    // effect reacts to light instead of animating on its own.
     const ry = this.cardGroup.rotation.y;
     const rx = this.cardGroup.rotation.x;
     for (let i = this.fxMats.length - 1; i >= 0; i--) {
       const f = this.fxMats[i];
       if (!f.mesh.parent) { this.fxMats.splice(i, 1); continue; }
-      // la velocità visiva dello sweep resta quella approvata: con bande
-      // più larghe (repeat < 1) l'offset va scalato per non muoversi il doppio
+      // scale offset by repeat so wider bands (repeat < 1) keep the
+      // approved visual sweep speed instead of moving twice as fast
       const rep = f.repeat || 1;
       f.mat.map.offset.x = ry * 0.6 * rep;
       f.mat.map.offset.y = rx * 0.6 * rep;
     }
 
-    // sparkles: una "onda di luce" attraversa la carta con la rotazione
-    // e accende le stelline che incontra (specular sweep)
+    // sparkles: a light wave sweeps across the card with the rotation,
+    // lighting up the sparkles it passes (specular sweep)
     const sweep = ry * 0.5 + 0.5;
     for (let i = this.sparkles.length - 1; i >= 0; i--) {
       const s = this.sparkles[i];
@@ -178,9 +173,9 @@ class SquerScene {
     this.renderer.render(this.scene, this.camera);
   }
 
-  // ---- card creation -------------------------------------
-  /** Build a card mesh (front/back/edges). Riusabile da altre scene
-      (es. BattleScene) via SQUER.buildCardMesh. */
+  // card creation
+  /** Build a card mesh (front/back/edges); reusable from other scenes
+      (e.g. BattleScene) via SQUER.buildCardMesh. */
   makeCardMesh(card, scale = 1) {
     return buildCardMesh(card, scale);
   }
@@ -201,12 +196,12 @@ class SquerScene {
       });
     }
 
-    // tap sulla carta -> zoom 3D della camera (vedi _toggleDetailZoom)
+    // tap on the card -> 3D camera zoom (see _toggleDetailZoom)
     this._bindDetailTap();
     return mesh;
   }
 
-  /** Tap (non drag) sulla carta nel dettaglio: zoom avanti/indietro 3D */
+  /** Tap (not drag) on the detail card: 3D camera zoom in/out */
   _bindDetailTap() {
     const el = this.renderer.domElement;
     let sx = null, sy = null;
@@ -233,7 +228,7 @@ class SquerScene {
     };
   }
 
-  /** Alterna lo zoom della camera: tap = avvicina, tap = allontana */
+  /** Toggle camera zoom: tap zooms in, next tap zooms out */
   _toggleDetailZoom() {
     this._detailZoomed = !this._detailZoomed;
     const targetZ = this._detailZoomed ? DETAIL_ZOOM_Z : 9;
@@ -254,7 +249,7 @@ class SquerScene {
 
   _applyEffects(card, mesh) {
     const fx = card.effects || [];
-    // dimensioni reali della carta (variano: dettaglio 1.15, pacchetto 0.8)
+    // actual card dims (vary: detail 1.15, pack 0.8)
     const { w: cw, h: ch, d: cd } = mesh.userData.dims;
     for (const e of fx) {
       if (e.type === 'sparkle') {
@@ -268,22 +263,20 @@ class SquerScene {
             map: tex, transparent: true, opacity: e.opacity, blending: THREE.AdditiveBlending,
             depthWrite: false,
           });
-          // Piano foil con la STESSA stondatura della carta: la faccia è
-          // disegnata come rounded-rect (inset 3px, raggio 14px su canvas
-          // 512x720), riprodotto qui in unità mondo così la patina coincide
-          // esattamente con il bordo della carta.
+          // Foil plane with the SAME corner rounding as the card face
+          // (inset 3px, radius 14px on a 512x720 canvas), reproduced in
+          // world units so the foil matches the card edge exactly.
           const inset = 3 / 512 * cw;
           const radius = 14 / 512 * cw;
           const shape = roundedRectShape(cw - inset * 2, ch - inset * 2, radius);
           const plane = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat);
 
-          // Larghezza bande: legge la costante condivisa FOIL_REPEAT (in
-          // cima a questo file). La griglia della texture usa lo stesso
-          // valore, quindi non compaiono mai "quadretti".
+          // Band width reads the shared FOIL_REPEAT constant (top of this
+          // file); the texture grid uses the same value, so no checkering.
           const REPEAT = SQUER.FOIL_REPEAT || 0.5;
-          // ShapeGeometry genera UV = coordinate grezze del vertice (unità
-          // mondo), non 0..1: normalizziamo prima, poi applichiamo REPEAT,
-          // così la larghezza delle bande è costante a qualunque scala.
+          // ShapeGeometry emits raw world-space vertex UVs, not 0..1:
+          // normalize first, then apply REPEAT so band width stays
+          // constant at any scale.
           const sw = cw - inset * 2, sh = ch - inset * 2;
           const uv = plane.geometry.attributes.uv;
           for (let i = 0; i < uv.count; i++) {
@@ -319,15 +312,15 @@ class SquerScene {
       transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false,
     });
     const sprite = new THREE.Sprite(mat);
-    // dimensioni e posizioni relative alla carta (stesso bug della patina:
-    // erano fissate per scala 1 e finivano fuori dai bordi sui pacchetti)
+    // size and position relative to the card (same fix as the foil: they
+    // were fixed for scale 1 and ended up outside the edges on packs)
     sprite.scale.set(e.r * cw * 3.75, e.r * cw * 3.75, 1);
     sprite.position.set((e.x - 0.5) * cw * 0.85, (0.5 - e.y) * ch * 0.85, cd / 2 + 0.02);
     mesh.add(sprite);
     this.sparkles.push({ mesh: sprite, x: e.x, card: mesh });
   }
 
-  // ---- pack opening ----
+  // pack opening
   showPack(onSwipe) {
     this.clearCard();
     this.tiltEnabled = false;
@@ -335,7 +328,7 @@ class SquerScene {
     this.scene.add(this.packGroup);
 
     const packTex = new THREE.CanvasTexture(SQUER.packArt());
-    // spessore proporzionale al numero di carte (piu carte = bustina piu spessa)
+    // thickness proportional to card count (more cards = thicker pack)
     const packDepth = 0.04 * PACK_SIZE;
     const body = new THREE.Mesh(
       new THREE.BoxGeometry(1.5, 2.1, packDepth),
@@ -355,8 +348,7 @@ class SquerScene {
 
     this.packGroup.position.y = 0.2;
     this.packGroup.rotation.y = 0.4;
-    // ★ il pacchetto scala con CARD_ZOOM: le carte escono
-    // da una bustina proporzionata, non da una piu' piccola di loro
+    // pack scales with CARD_ZOOM so cards exit a proportioned wrapper
     this.packGroup.scale.setScalar(CARD_ZOOM * 1.05);
 
     // gentle float
@@ -432,8 +424,8 @@ class SquerScene {
     for (let i = 0; i < n; i++) {
       const mesh = this.makeCardMesh(cards[i].card, CARD_ZOOM);
       mesh.rotation.y = 0; // face-up
-      // blocco compatto: la carta 0 (prima) sta davanti (z piu alta),
-      // cosi' durante l'uscita si vede la prima carta, non l'ultima
+      // compact block: card 0 (first) stays in front (higher z), so the
+      // first card is visible while exiting, not the last
       mesh.position.set(0, 0, (n - 1 - i) * 0.002);
       mesh.userData.revealed = false;
       this._applyEffects(cards[i].card, mesh);
@@ -446,15 +438,14 @@ class SquerScene {
     this._onReveal = onReveal;
     this._onStackDone = onStackDone;
     this._bindStackTap();
-    // nascondi gli sparkle di tutte le carte: si mostrano solo sulla carta
-    // in cima (quella rivelata), altrimenti quelli delle carte dietro
-    // si vedrebbero in sovrapposizione a quelle davanti
+    // hide sparkles on all cards: only the top (revealed) card shows them,
+    // otherwise ones behind would overlap the cards in front
     this.sparkles.forEach(s => s.mesh.visible = false);
 
-    // resting position: top card centered, lower cards offset down-right.
-    // ★ OFFSET DIAGONALE — modifica qui per aumentare/diminuire lo sfalsamento:
-    //   endX = i * 0.04  (spostamento orizzontale per carta)
-    //   endY = -i * 0.03 (spostamento verticale per carta)
+    // resting position: top card centered, lower cards fanned down-right.
+    // DIAGONAL OFFSET — tweak here to change the stagger:
+    //   endX = i * 0.04  (horizontal step per card)
+    //   endY = -i * 0.03 (vertical step per card)
     const endX = (i) => i * 0.01;
     const endY = (i) => -i * 0.01;
     const endZ = (i) => zTop - i * zStep;
@@ -506,16 +497,15 @@ class SquerScene {
 
   /** Swipe the top card to the right, then reveal the next one */
   _dismissTop() {
-    // anti-rimbalzo: se la carta sta già swipeando, ignora i tap rapidi,
-    // altrimenti una seconda tween sullo stesso mesh (il vecchio callback
-    // non è ancora girato, la carta non è ancora rimossa) combatterebbe con
-    // la prima lasciando la carta bloccata a metà, inclinata, davanti alle
-    // altre — e salterebbe lo stackIndex.
+    // debounce: ignore rapid taps while a card is already swiping, else a
+    // second tween on the same mesh (the old callback hasn't fired, the
+    // card isn't removed) would fight the first, leaving the card stuck
+    // mid-air tilted in front of the others and skipping stackIndex.
     if (this._dismissing) return;
     const mesh = this._stack[this._stackIndex];
     if (!mesh) return;
     this._dismissing = true;
-    this._setSparklesVisible(mesh, false); // nascondi i suoi sparkle
+    this._setSparklesVisible(mesh, false); // hide its sparkles
     const sx = mesh.position.x, sy = mesh.position.y;
     this._tween(0.4, (k) => {
       const e = easeInCubic(k);
@@ -549,7 +539,7 @@ class SquerScene {
       const dx = p.clientX - startX;
       const dy = p.clientY - startY;
       if (Math.abs(dx) + Math.abs(dy) > 8) moved = true;
-      // drag: ruota la carta in cima per vedere gli effetti olografici
+      // drag: rotate the top card to see its holographic effects
       this._dragCard(dx, dy);
     };
     const up = (e) => {
@@ -559,11 +549,10 @@ class SquerScene {
       const dy = p.clientY - startY;
       const dist = Math.hypot(dx, dy);
       startX = null;
-      // riporta sempre il mazzo in posizione neutra al rilascio
+      // always snap the stack back to neutral on release
       this._snapCard();
       if (dist < 10) {
-        // tap semplice -> swipe a destra (se la carta non è ancora stata
-        // rivelata dall'auto-reveal, prima rivelala)
+        // simple tap -> swipe right (reveal first if auto-reveal hasn't)
         const mesh = this._stack[this._stackIndex];
         if (mesh && !mesh.userData.revealed) this._revealTop();
         else this._dismissTop();
@@ -586,15 +575,15 @@ class SquerScene {
     };
   }
 
-  /** Ruota TUTTO il mazzo visibile seguendo il trascinamento del dito
-      (entro limiti), così la carta in cima non si compenetra con quelle dietro */
+  /** Rotate the WHOLE visible stack following the finger drag (clamped),
+      so the top card doesn't intersect the ones behind it */
   _dragCard(dx, dy) {
-    const MAX = 0.55; // limite massimo di rotazione (radianti)
+    const MAX = 0.55; // max rotation (radians)
     this.cardGroup.rotation.y = THREE.MathUtils.clamp(dx * 0.004, -MAX, MAX);
     this.cardGroup.rotation.x = THREE.MathUtils.clamp(-dy * 0.004, -MAX, MAX);
   }
 
-  /** Riporta il mazzo in posizione neutra dopo un drag */
+  /** Snap the stack back to neutral after a drag */
   _snapCard() {
     const ry = this.cardGroup.rotation.y, rx = this.cardGroup.rotation.x;
     this._tween(0.35, (k) => {
@@ -650,7 +639,7 @@ class SquerScene {
     }, () => this.scene.remove(pts));
   }
 
-  // ---- helpers ----
+  // helpers
   _tween(dur, update, onDone, loop = false) {
     this.animations.push({ t: 0, dur, update, onDone, loop, ease: null });
   }
@@ -699,20 +688,20 @@ function easeInCubic(k) { return k * k * k; }
 function easeOutBack(k) { const c = 1.70158; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); }
 function easeOutCubic2(k) { return easeOutCubic(k); }
 
-/** Mesh carta 3D standalone (front/back/edge), riusabile da altre scene
-    (es. BattleScene). Stesso codice di SquerScene.makeCardMesh. */
+/** Standalone 3D card mesh (front/back/edge), reusable from other scenes
+    (e.g. BattleScene). Same code as SquerScene.makeCardMesh. */
 function buildCardMesh(card, scale = 1) {
   const w = 1.6 * scale, h = 2.25 * scale, d = 0.05 * scale;
-  // ★ angoli stondati: stesso raggio del bordino bianco disegnato sul
-  // canvas (14px su 512), così la geometria 3D coincide col bordo e
-  // gli angoli non risultano piu' a punta
+  // rounded corners: same radius as the white edge drawn on the canvas
+  // (14px on 512), so the 3D geometry matches the border and corners
+  // aren't pointy
   const radius = 14 / 512 * w;
   const shape = roundedRectShape(w, h, radius);
   const geo = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
-  geo.translate(0, 0, -d / 2); // centra su z (front a +d/2, back a -d/2)
+  geo.translate(0, 0, -d / 2); // center on z (front at +d/2, back at -d/2)
 
-  // UV delle facce front/back: ExtrudeGeometry le genera in unita' mondo
-  // (shape centrata), le normalizziamo a 0..1 per mappare la texture
+  // front/back face UVs: ExtrudeGeometry emits world units (centered
+  // shape), so normalize to 0..1 to map the texture
   const pos = geo.attributes.position;
   const uv = geo.attributes.uv;
   for (let i = 0; i < pos.count; i += 3) {
@@ -720,7 +709,7 @@ function buildCardMesh(card, scale = 1) {
     const bx = pos.getX(i + 1), by = pos.getY(i + 1);
     const cx = pos.getX(i + 2), cy = pos.getY(i + 2);
     const nz = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-    if (Math.abs(nz) > 1e-6) { // faccia front/back (i lati hanno nz = 0)
+    if (Math.abs(nz) > 1e-6) { // front/back face (sides have nz = 0)
       for (let j = 0; j < 3; j++) {
         const x = pos.getX(i + j), y = pos.getY(i + j);
         uv.setXY(i + j, (x + w / 2) / w, (y + h / 2) / h);
@@ -728,7 +717,7 @@ function buildCardMesh(card, scale = 1) {
     }
   }
 
-  // raggruppa i triangoli per materiale: front (nz>0), back (nz<0), lati
+  // group triangles by material: front (nz>0), back (nz<0), sides
   const groups = [];
   let cur = null;
   const flush = () => { if (cur && cur.count > 0) groups.push(cur); };

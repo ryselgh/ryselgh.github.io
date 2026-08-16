@@ -1,54 +1,51 @@
-﻿/* =========================================================
-   Squer TCG - Collection, packs & daily-limit persistence
-   localStorage-backed. Free packs per day + pity system.
-   ========================================================= */
+﻿// Collection, packs & daily-limit persistence (localStorage).
+// Free packs per day + pity system.
 
 var SQUER = window.SQUER || (window.SQUER = {});
 
 const STORE_KEY = 'squer_tcg_state_v1';
-const PACK_SIZE = 10;           // ★ CONFIG: carte per pacchetto
-const DAILY_FREE_LIMIT = 3;     // ★ CONFIG: pacchetti gratuiti al giorno
+const PACK_SIZE = 10;           // ★ CONFIG: cards per pack
+const DAILY_FREE_LIMIT = 3;     // ★ CONFIG: free packs per day
 
-// ★ CONFIG PITY — se un pacchetto non contiene nessuna rare+ (order >= 2),
-// una carta casuale viene sostituita con una rare+ (pool di rare/super
-// rare/leggendarie, pescata con i loro pesi relativi).
-// Per disattivare la pity: PITY_RARE_ORDER = 99.
+// ★ CONFIG PITY — if a pack has no rare+ (order >= 2), a random card is
+// replaced with a rare+ (rare/super rare/legendary pool, rolled with their
+// relative weights). Disable with PITY_RARE_ORDER = 99.
 const PITY_RARE_ORDER = 2;
 
-// ★ CONFIG BIAS COLLEZIONE — favorisce le carte non ancora possedute
-// quando si pesca una rarità alta.
-//   UNOWNED_BIAS_RARE_ORDER: rarità minima a cui si applica (2 = rare+)
-//   UNOWNED_BIAS_CHANCE:     probabilità di pescare dalle non possedute (0-1)
-//                            (0 = nessun bias, 1 = sempre da non possedute)
-// Il bias pesca solo tra le carte non possedute DELLA STESSA rarità del posto.
+// ★ CONFIG COLLECTION BIAS — favors cards you don't own yet when rolling a
+// high rarity.
+//   UNOWNED_BIAS_RARE_ORDER: minimum rarity it applies to (2 = rare+)
+//   UNOWNED_BIAS_CHANCE:     chance of rolling from unowned cards (0-1)
+//                            (0 = no bias, 1 = always from unowned)
+// The bias only rolls among unowned cards OF THE SAME rarity as the slot.
 const UNOWNED_BIAS_RARE_ORDER = 1;
 const UNOWNED_BIAS_CHANCE = 0.05;
 
-// ★ CONFIG CAP RARITÀ — tetto massimo di carte rare+ (order >= 2) nel
-// pacchetto, in percentuale del totale. Le eccedenze (scelte a caso, fair)
-// vengono rigenerate come common/uncommon coi loro pesi.
-//   RARE_PLUS_MAX_PCT: 30 = max 3 carte rare+ su 10 (minimo garantito 1)
+// ★ CONFIG RARITY CAP — max share of rare+ (order >= 2) cards per pack, as
+// a percentage of the total. Surplus (picked randomly, fair) is re-rolled
+// as common/uncommon with their weights.
+//   RARE_PLUS_MAX_PCT: 30 = max 3 rare+ out of 10 (minimum guaranteed 1)
 const RARE_PLUS_MAX_PCT = 30;
 
 function defaultState() {
   return {
     version: 3,
-    collection: {},        // uid -> { count, level }  (copie + livello 1-5)
+    collection: {},        // uid -> { count, level }  (copies + level 1-5)
     packsOpened: 0,
     packsToday: 0,
     lastPackDate: todayStr(),
     totalPulls: 0,
     pity: 0,               // packs without a rare+
-    // ---- profilo gioco (Squer Clash) ----
-    nickname: '',          // obbligatorio al primo avvio (3-16 caratteri)
-    squerini: 0,           // valuta: compra pacchetti extra
-    packs: 0,              // pacchetti ACQUISTATI con squerini (non ancora aperti)
-    deck: [],              // uid delle carte del mazzo (DECK_SIZE, mai duplicati)
-    matches: [],           // storico partite
-    welcomePacks: WELCOME_PACKS, // pacchetti di benvenuto rimasti (una tantum)
-    welcomeDoneDate: null, // data in cui è stato aperto l'ULTIMO benvenuto:
-                           // i pacchetti giornalieri si sbloccano dal giorno dopo
-    tutorialDone: false,   // tutorial completato / skippato
+    // ---- game profile (Squer Clash) ----
+    nickname: '',          // required on first run (3-16 chars)
+    squerini: 0,           // currency: buys extra packs
+    packs: 0,              // packs BOUGHT with squerini (not yet opened)
+    deck: [],              // deck card uids (DECK_SIZE, never duplicated)
+    matches: [],           // match history
+    welcomePacks: WELCOME_PACKS, // welcome packs remaining (one-time)
+    welcomeDoneDate: null, // date the LAST welcome pack was opened: daily
+                           // packs unlock from the following day
+    tutorialDone: false,   // tutorial completed / skipped
   };
 }
 
@@ -57,8 +54,8 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** Migrazione vecchio stato (v2: collection { pulled }) -> v3 { count, level }.
-    Le copie pescate in passato diventano count (minimo 1), livello 1. */
+/** Migrates old state (v2: collection { pulled }) -> v3 { count, level }.
+    Past pulls become count (min 1), level 1. */
 function migrateState(s) {
   if (s.version >= 3) return s;
   const coll = {};
@@ -81,7 +78,7 @@ function loadState() {
     const s = JSON.parse(raw);
     const wasOld = s.version < 3;
     migrateState(s);
-    if (wasOld) saveState(s); // persisti la migrazione v2 -> v3
+    if (wasOld) saveState(s); // persist the v2 -> v3 migration
     // roll over daily counter if date changed
     if (s.lastPackDate !== todayStr()) {
       s.packsToday = 0;
@@ -102,10 +99,10 @@ function getState() {
   return s;
 }
 
-/** Pacchetti giornalieri disponibili OGGI.
-    - Mai cumulabili: ogni giorno si riparte da 0 verso DAILY_FREE_LIMIT.
-    - Si sbloccano SOLO dal giorno successivo all'apertura dell'ultimo
-      pacchetto di benvenuto: al primo avvio conta solo il benvenuto. */
+/** Free packs available TODAY.
+    - Never cumulative: each day restarts at 0 toward DAILY_FREE_LIMIT.
+    - Unlock ONLY from the day after the last welcome pack was opened:
+      on first run only the welcome pack counts. */
 function dailyRemaining() {
   const s = loadState();
   const unlocked = s.welcomePacks === 0 &&
@@ -118,8 +115,8 @@ function packsRemaining() {
   return s.welcomePacks + dailyRemaining() + (s.packs || 0);
 }
 
-/** Dettaglio pacchetti disponibili: benvenuto (una tantum) + giornalieri
-    + acquistati (riserva che non scade). */
+/** Available packs detail: welcome (one-time) + daily + bought (a reserve
+    that never expires). */
 function packsBreakdown() {
   const s = loadState();
   return { welcome: s.welcomePacks, daily: dailyRemaining(), bought: s.packs || 0 };
@@ -129,9 +126,9 @@ function canOpenPack() {
   return packsRemaining() > 0;
 }
 
-/** Compra N pacchetti con gli squerini (PACK_PRICE l'uno).
-    Quantità limitata a [1, floor(squerini/PACK_PRICE)].
-    Ritorna la quantità effettivamente comprata (0 se impossibile). */
+/** Buys N packs with squerini (PACK_PRICE each).
+    Quantity clamped to [1, floor(squerini/PACK_PRICE)].
+    Returns the quantity actually bought (0 if impossible). */
 function buyPacks(n) {
   const s = loadState();
   const max = Math.floor(s.squerini / PACK_PRICE);
@@ -145,9 +142,9 @@ function buyPacks(n) {
   return n;
 }
 
-/** Soglie [lo, hi) in [0,1) per rollRarity limitato alle rarità con
-    order in [minOrder, maxOrder] — calcolate dai pesi, quindi robuste
-    a qualsiasi modifica di RARITY_WEIGHTS */
+/** Thresholds [lo, hi) in [0,1) for rollRarity limited to rarities with
+    order in [minOrder, maxOrder] — computed from weights, so robust to any
+    RARITY_WEIGHTS change */
 function rarityBounds(minOrder, maxOrder) {
   const total = RARITY_LIST.reduce((s, r) => s + r.weight, 0);
   let lo = 0, hi = 0;
@@ -158,26 +155,26 @@ function rarityBounds(minOrder, maxOrder) {
   return [lo / total, hi / total];
 }
 
-/** Roll delle rarità di un pacchetto:
-   1) genera ogni carta con i pesi normali;
-   2) PITY: se non c'è nessuna rare+ (order >= PITY_RARE_ORDER), sostituisci
-      una carta CASUALE con una rare+ (pool rare/super rare/leggendarie);
-   3) CAP: se le rare+ superano RARE_PLUS_MAX_PCT% del pacchetto, le
-      eccedenze (scelte a caso, fair) vengono rigenerate come
-      common/uncommon coi loro pesi. */
+/** Rolls a pack's rarities:
+   1) each card with normal weights;
+   2) PITY: if there's no rare+ (order >= PITY_RARE_ORDER), replace a RANDOM
+      card with a rare+ (rare/super rare/legendary pool);
+   3) CAP: if rare+ exceed RARE_PLUS_MAX_PCT% of the pack, the surplus
+      (picked randomly, fair) is re-rolled as common/uncommon with their
+      weights. */
 function rollPackRarities(rng) {
   const rarities = [];
   for (let i = 0; i < PACK_SIZE; i++) {
     rarities.push(rollRarity(rng.next()));
   }
 
-  // 2) pity: sostituzione casuale (non l'ultima carta)
+  // 2) pity: random replacement (not the last card)
   if (!rarities.some(r => r.order >= PITY_RARE_ORDER)) {
     const [lo, hi] = rarityBounds(PITY_RARE_ORDER, 4);
     rarities[Math.floor(rng.next() * PACK_SIZE)] = rollRarity(rng.range(lo, hi));
   }
 
-  // 3) cap: eccedenze rigenerate come common/uncommon (fair: shuffle)
+  // 3) cap: surplus re-rolled as common/uncommon (fair: shuffled)
   const maxRarePlus = Math.max(1, Math.floor(PACK_SIZE * RARE_PLUS_MAX_PCT / 100));
   const rareIdx = [];
   rarities.forEach((r, i) => { if (r.order >= 2) rareIdx.push(i); });
@@ -191,10 +188,10 @@ function rollPackRarities(rng) {
   return rarities;
 }
 
-/** Open a pack: returns { cards:[card...], packId, isNew:[bool] }
-    Ordine di consumo: prima i benvenuto (una tantum), poi i giornalieri
-    gratis (scadono a fine giornata), infine gli acquistati con squerini
-    (riserva che non scade). */
+/** Opens a pack: returns { cards:[card...], packId, isNew:[bool] }
+    Consumption order: welcome packs first (one-time), then daily free
+    (expire at the end of the day), then packs bought with squerini
+    (a reserve that never expires). */
 function openPack(cards) {
   const s = loadState();
   const useWelcome = s.welcomePacks > 0;
@@ -208,12 +205,12 @@ function openPack(cards) {
   const packId = 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
   const chosen = rarities.map((rar, i) => {
-    // pick a card of the SAME rarity as the slot: il cap sulle rare+ vale
-    // sulle carte effettive, non solo sui "posti" (prima il pool era tutte
-    // le carte e un posto common poteva pescare una legendary)
+    // Pick a card of the SAME rarity as the slot: the rare+ cap applies to
+    // the actual cards, not just the "slots" (the old pool was all cards,
+    // so a common slot could pull a legendary)
     let pool = cards.filter(c => c.rarity.order === rar.order);
-    if (pool.length === 0) pool = cards; // fallback: rarità senza carte
-    // bias toward unowned (della stessa rarità) for rare+ slots
+    if (pool.length === 0) pool = cards; // fallback: no cards of that rarity
+    // bias toward unowned (same rarity) for rare+ slots
     if (rar.order >= UNOWNED_BIAS_RARE_ORDER) {
       const unowned = pool.filter(c => !s.collection[c.uid]);
       if (unowned.length > 0 && rng.next() < UNOWNED_BIAS_CHANCE) pool = unowned;
@@ -221,9 +218,8 @@ function openPack(cards) {
     return pool[Math.floor(rng.next() * pool.length)];
   });
 
-  // ordine di rivelazione: rarita' crescente, cosi' le carte piu' rare
-  // restano in fondo al pacchetto e vengono rivelate per ultime
-  // (sort stabile: a parita' di rarita' resta l'ordine casuale del roll)
+  // Reveal order: ascending rarity, so the rarest cards sit at the back and
+  // are revealed last (stable sort: same-rarity cards keep the roll order)
   chosen.sort((a, b) => a.rarity.order - b.rarity.order);
   rarities.sort((a, b) => a.order - b.order);
 
@@ -241,12 +237,12 @@ function openPack(cards) {
   s.packsOpened += 1;
   if (useWelcome) {
     s.welcomePacks -= 1;
-    // l'ultimo benvenuto aperto oggi: i giornalieri partono da domani
+    // Last welcome opened today: dailies start tomorrow
     if (s.welcomePacks === 0) s.welcomeDoneDate = todayStr();
   } else if (useDaily) {
     s.packsToday += 1;
   } else {
-    s.packs = (s.packs || 0) - 1;   // pacchetto acquistato
+    s.packs = (s.packs || 0) - 1;   // bought pack
   }
   s.totalPulls += PACK_SIZE;
   s.lastPackDate = todayStr();
@@ -276,15 +272,15 @@ function isOwned(uid) {
   return !!(rec && rec.count > 0);
 }
 
-/* ---------- economia carte (GDD §5) ---------- */
+// ---------- card economy (GDD §5) ----------
 
-/** Record collezione di una carta (default 1 copia, livello 1). */
+/** Collection record of a card (default 1 copy, level 1). */
 function getCardRec(uid) {
   const s = loadState();
   return s.collection[uid] || { count: 0, level: 1 };
 }
 
-/** Fusione: 2 copie -> +1 livello (una si consuma). Gratis. */
+/** Fuse: 2 copies -> +1 level (one copy consumed). Free. */
 function fuseCards(uid) {
   const s = loadState();
   const rec = getCardRec(uid);
@@ -298,7 +294,7 @@ function fuseCards(uid) {
   return { ok: true, level: rec.level, count: rec.count };
 }
 
-/** Potenziamento con valuta: costo UPGRADE_COSTS[level]. */
+/** Upgrade with currency: costs UPGRADE_COSTS[level]. */
 function upgradeCard(uid) {
   const s = loadState();
   const rec = getCardRec(uid);
@@ -316,7 +312,7 @@ function upgradeCard(uid) {
   return { ok: true, level: rec.level, cost };
 }
 
-/** Conversione: 1 copia in eccesso -> squerini (per rarità). */
+/** Convert: 1 surplus copy -> squerini (per rarity). */
 function convertDupe(uid, rarityId) {
   const s = loadState();
   const rec = getCardRec(uid);
@@ -330,10 +326,9 @@ function convertDupe(uid, rarityId) {
   return { ok: true, count: rec.count, gain };
 }
 
-/** Azzera i PROGRESSI (collezione, pacchetti, partite) ma PRESERVA il
-    profilo: nickname, squerini, mazzo, pacchetti di benvenuto rimasti,
-    pacchetti acquistati e tutorial. La valuta e il mazzo non si perdono
-    mai per un reset. */
+/** Resets PROGRESS (collection, packs, matches) but PRESERVES the profile:
+    nickname, squerini, deck, remaining welcome packs, bought packs and
+    tutorial. Currency and deck are never lost on a reset. */
 function resetProgress() {
   const s = loadState();
   const fresh = defaultState();
@@ -347,8 +342,11 @@ function resetProgress() {
   saveState(fresh);
 }
 
-/** Cancella TUTTI i dati: come se l'app fosse appena installata.
-    Ripropone nickname e pacchetti di benvenuto. */
+/** Deletes ALL data: as if the app were freshly installed.
+    Re-asks for nickname and welcome packs. */
 function wipeAllData() {
   try { localStorage.removeItem(STORE_KEY); } catch (e) {}
 }
+
+// Exposed API (used by online.js for sync and by the app)
+SQUER.PACKS = { loadState, saveState, wipeAllData, dailyRemaining, packsRemaining, openPack, defaultState };

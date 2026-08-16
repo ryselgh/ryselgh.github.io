@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0d1117">
   <title>Squer TCG</title>
-  <link rel="stylesheet" href="css/style.css?v=69">
+  <link rel="stylesheet" href="css/style.css?v=90">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23ffc93d'/><text x='50' y='66' font-size='52' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%23141b2b'>S</text></svg>">
@@ -21,11 +21,19 @@
 
   <!-- ======= TOP MENU (home) ======= -->
   <div id="top-menu" class="top-menu">
-    <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+    <div class="top-menu-btns">
+      <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+      <button class="menu-btn" id="btn-online-menu" aria-label="Online" title="Online: amici e scambi">🌐</button>
+    </div>
     <div class="menu-dropdown hidden" id="menu-dropdown">
-      <button class="menu-item" id="menu-update">🔄 Forza aggiornamento</button>
+      <button class="menu-item" id="menu-update">↻ Forza Update</button>
       <button class="menu-item" id="menu-reset">↺ Azzera progressi</button>
       <button class="menu-item menu-danger" id="menu-wipe">🗑 Cancella tutti i dati</button>
+    </div>
+    <div class="menu-dropdown hidden online-dropdown" id="online-dropdown">
+      <button class="menu-item" id="online-friends">👥 Amici</button>
+      <button class="menu-item" id="online-trade">🤝 Scambio</button>
+      <button class="menu-item menu-danger" id="online-logout">🚪 Logout</button>
     </div>
   </div>
 
@@ -102,10 +110,208 @@
     </div>
   </section>
 
+  <!-- ======= ONLINE AUTH (login/registrazione) ======= -->
+  <section id="screen-auth" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-auth-back">← Indietro</button>
+      <h2>🌐 Online</h2>
+      <div class="header-spacer"></div>
+    </header>
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login">Accedi</button>
+        <button class="auth-tab" id="tab-register">Registrati</button>
+      </div>
+
+      <!-- login -->
+      <div class="auth-panel" id="panel-login">
+        <input id="login-nickname" class="nickname-input" maxlength="16" placeholder="Nickname" autocomplete="username">
+        <input id="login-password" class="nickname-input" type="password" placeholder="Password" autocomplete="current-password">
+        <p class="auth-error hidden" id="login-error"></p>
+        <button class="btn btn-primary btn-big" id="btn-login">Accedi</button>
+        <button class="btn btn-ghost" id="btn-recover-toggle">Ho dimenticato la password</button>
+      </div>
+
+      <!-- recupero -->
+      <div class="auth-panel hidden" id="panel-recover">
+        <p class="auth-hint">Recupera l'account col codice di backup (lo hai salvato alla registrazione).</p>
+        <input id="recover-nickname" class="nickname-input" maxlength="16" placeholder="Nickname" autocomplete="username">
+        <input id="recover-code" class="nickname-input" placeholder="Codice di backup (XXXX-XXXX-XXXX-XXXX)" autocomplete="off">
+        <input id="recover-password" class="nickname-input" type="password" placeholder="Nuova password (min 6)" autocomplete="new-password">
+        <p class="auth-error hidden" id="recover-error"></p>
+        <button class="btn btn-primary btn-big" id="btn-recover">Recupera account</button>
+      </div>
+
+      <!-- registrazione -->
+      <div class="auth-panel hidden" id="panel-register">
+        <input id="reg-nickname" class="nickname-input" maxlength="16" placeholder="Nickname (3-16)" autocomplete="username">
+        <input id="reg-password" class="nickname-input" type="password" placeholder="Password (min 6)" autocomplete="new-password">
+        <div class="auth-avatar-row">
+          <span class="auth-avatar-label">Emoji profilo:</span>
+          <input id="reg-avatar" class="auth-avatar-input" maxlength="4" value="🙂">
+        </div>
+        <p class="auth-error hidden" id="reg-error"></p>
+        <button class="btn btn-primary btn-big" id="btn-register">Crea account</button>
+      </div>
+
+      <!-- codice di backup (mostrato UNA volta) -->
+      <div class="auth-panel hidden" id="panel-backup">
+        <p class="auth-hint">💾 <b>Salva questo codice di backup!</b> Ti serve per recuperare l'account se dimentichi la password. Si mostra una sola volta.</p>
+        <div class="backup-code" id="backup-code"></div>
+        <button class="btn btn-primary btn-big" id="btn-backup-done">Ho salvato il codice</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= ONLINE FRIENDS (tab amici) ======= -->
+  <section id="screen-friends" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-friends-back" title="Indietro">←</button>
+      <h2>👥 Amici</h2>
+      <div class="header-spacer">
+        <button class="btn btn-ghost btn-help" id="btn-sfida-open" title="Sfida un giocatore (PvP)">⚔️</button>
+        <button class="btn btn-ghost btn-help" id="btn-friends-add" title="Aggiungi amico">＋</button>
+      </div>
+    </header>
+    <p class="deck-hint" id="friends-me"></p>
+
+    <div class="friends-section">
+      <h3 class="friends-title">Richieste in arrivo</h3>
+      <div class="friends-list" id="friends-incoming"></div>
+      <h3 class="friends-title">Amici</h3>
+      <div class="friends-list" id="friends-list"></div>
+      <h3 class="friends-title">Richieste inviate</h3>
+      <div class="friends-list" id="friends-outgoing"></div>
+    </div>
+
+    <!-- modale aggiungi amico -->
+    <div id="friends-add-modal" class="modal hidden">
+      <div class="modal-card">
+        <h3>➕ Aggiungi amico</h3>
+        <p class="auth-hint">Inserisci il nickname esatto del giocatore.</p>
+        <input id="friends-add-nick" class="nickname-input" maxlength="16" placeholder="Nickname">
+        <p class="auth-error hidden" id="friends-add-error"></p>
+        <div class="sync-buttons">
+          <button class="btn btn-primary" id="btn-friends-send">Invia richiesta</button>
+          <button class="btn btn-ghost" id="btn-friends-add-cancel">Annulla</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modale profilo amico -->
+    <div id="friends-profile-modal" class="modal hidden">
+      <div class="modal-card">
+        <h3 id="fp-title">Profilo</h3>
+        <div class="fp-body" id="fp-body"></div>
+        <button class="btn btn-ghost" id="btn-fp-close">Chiudi</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= ONLINE TRADE (stanza scambio) ======= -->
+  <section id="screen-trade" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-trade-back" title="Indietro">←</button>
+      <h2>🤝 Scambio</h2>
+      <div class="header-spacer"></div>
+    </header>
+
+    <div class="trade-status" id="trade-status">…</div>
+
+    <div class="trade-table">
+      <!-- lato mio -->
+      <div class="trade-side">
+        <div class="trade-side-label">🫵 Le tue carte</div>
+        <div class="trade-cards" id="trade-mine"></div>
+        <button class="btn btn-ghost btn-sm" id="btn-trade-add">＋ Aggiungi carta</button>
+      </div>
+      <div class="trade-vs">⚡ ⇄ ⚡</div>
+      <!-- lato avversario -->
+      <div class="trade-side">
+        <div class="trade-side-label" id="trade-opp-label">🤖 Avversario</div>
+        <div class="trade-cards" id="trade-opp"></div>
+        <div class="trade-opp-status" id="trade-opp-status"></div>
+      </div>
+    </div>
+
+    <div class="trade-actions" id="trade-actions"></div>
+    <div class="trade-log" id="trade-log"></div>
+
+    <!-- modale scelta carte (dalla propria collezione) -->
+    <div id="trade-pick-modal" class="modal hidden">
+      <div class="modal-card">
+        <h3>🗃 Scegli le carte da offrire</h3>
+        <p class="auth-hint">Max 3 carte. Si scambiano col loro livello.</p>
+        <div class="trade-pick-grid" id="trade-pick-grid"></div>
+        <div class="sync-buttons">
+          <button class="btn btn-primary" id="btn-trade-pick-done">Fatto</button>
+          <button class="btn btn-ghost" id="btn-trade-pick-cancel">Annulla</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= ONLINE SFIDA (PvP con PIN) ======= -->
+  <section id="screen-sfida" class="screen">
+    <header class="screen-header">
+      <button class="btn btn-ghost btn-back" id="btn-sfida-back" title="Indietro">←</button>
+      <h2>⚔️ Squer Clash Online</h2>
+      <div class="header-spacer"></div>
+    </header>
+
+    <div class="sfida-box">
+      <p class="deck-hint">Sfida un altro giocatore online: crea una partita e condividi il PIN, oppure unisciti con il PIN di un amico.</p>
+
+      <div class="sfida-deck-panel">
+        <div class="sfida-deck-head">
+          <h3 class="friends-title" style="margin:0">🃏 Il tuo mazzo</h3>
+          <span class="sfida-deck-count" id="sfida-deck-count">0/8</span>
+        </div>
+        <div class="sfida-deck-grid" id="sfida-deck-grid"></div>
+        <button class="btn btn-ghost btn-sm" id="btn-sfida-edit-deck">✏️ Modifica mazzo</button>
+      </div>
+
+      <div class="sfida-panel">
+        <h3 class="friends-title">🎯 Crea una partita</h3>
+        <p class="auth-hint">Usa il mazzo qui sopra (min 3, max 8 carte). Riceverai un PIN da condividere: scade in ~2 minuti.</p>
+        <button class="btn btn-primary btn-big" id="btn-sfida-create">Crea partita</button>
+        <div class="sfida-wait hidden" id="sfida-wait">
+          <div class="sfida-pin-label">Condividi questo PIN:</div>
+          <div class="sfida-pin" id="sfida-pin">0000</div>
+          <p class="auth-hint" id="sfida-wait-text">In attesa di un avversario…</p>
+          <button class="btn btn-ghost" id="btn-sfida-cancel">Annulla</button>
+        </div>
+      </div>
+
+      <div class="sfida-divider">— oppure —</div>
+
+      <div class="sfida-panel">
+        <h3 class="friends-title">🔑 Unisciti con un PIN</h3>
+        <input id="sfida-pin-input" class="nickname-input sfida-pin-input" maxlength="4" inputmode="numeric" placeholder="0000" autocomplete="off">
+        <p class="auth-error hidden" id="sfida-join-error"></p>
+        <button class="btn btn-primary btn-big" id="btn-sfida-join">Unisciti</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= ONLINE SYNC (caricamento a fasi) ======= -->
+  <section id="screen-sync" class="screen">
+    <div class="sync-box">
+      <div class="loader-logo">S</div>
+      <h2 id="sync-title">Connessione…</h2>
+      <div class="sync-phases" id="sync-phases"></div>
+      <p class="auth-hint" id="sync-actions"></p>
+      <div class="sync-buttons hidden" id="sync-buttons">
+        <button class="btn btn-primary" id="btn-sync-retry">Riprova</button>
+        <button class="btn btn-ghost" id="btn-sync-offline">Continua offline</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ======= DECK (mazzo) ======= -->
   <section id="screen-deck" class="screen">
     <header class="screen-header">
-      <button class="btn btn-ghost btn-back" id="btn-deck-back">← Indietro</button>
+      <button class="btn btn-ghost btn-back" id="btn-deck-back" title="Indietro">←</button>
       <h2>Il tuo mazzo <span id="deck-count" class="deck-count">0/8</span></h2>
       <div class="header-spacer"></div>
     </header>
@@ -127,16 +333,22 @@
 
     <div class="battle-hud">
       <div class="anima-row bot">
-        <span class="anima-name">🤖 SquerBot</span>
+        <span class="anima-name" id="anima-b-name">🤖 SquerBot</span>
         <div class="anima-track"><div class="anima-fill bot" id="anima-b-fill"></div></div>
         <b class="anima-num" id="anima-b">60</b>
       </div>
       <div class="battle-turn" id="battle-turn">Turno 1</div>
       <div class="anima-row me">
-        <span class="anima-name">👤 <b id="battle-nick">Tu</b></span>
+        <span class="anima-name"><span id="battle-me-avatar">👤</span> <b id="battle-nick">Tu</b></span>
         <div class="anima-track"><div class="anima-fill me" id="anima-p-fill"></div></div>
         <b class="anima-num" id="anima-p">60</b>
       </div>
+    </div>
+
+    <!-- notifica "Tocca a" (centro, 2s) -->
+    <div class="turn-notice hidden" id="turn-notice">
+      <div class="turn-notice-label">Tocca a</div>
+      <div class="turn-notice-name" id="turn-notice-name">🙂 Giocatore</div>
     </div>
 
     <div class="battle-3d" id="battle-3d">
@@ -153,9 +365,20 @@
       <button class="btn btn-primary hidden" id="btn-attack">Attacca</button>
       <button class="btn btn-ghost hidden" id="btn-cancel">Annulla</button>
     </div>
+    <div class="pad-matchup hidden" id="pad-matchup"></div>
     <div class="battle-status" id="battle-status">Tocca una carta in mano e poi una zona per posizionarla, oppure pesca.</div>
     <div class="matchup-hint hidden" id="matchup-hint"></div>
   </section>
+
+  <!-- ======= MODALE SCELTA MODALITÀ (bot vs online) ======= -->
+  <div id="play-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="play-mode-buttons">
+        <button class="btn btn-primary btn-big" id="btn-play-bot">🤖 SquerBot</button>
+        <button class="btn btn-primary btn-big" id="btn-play-online">🌐 Online</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ======= COIN FLIP (chi inizia) ======= -->
   <div id="coin-modal" class="modal hidden">
@@ -323,25 +546,26 @@
     </div>
   </div>
 
-  <script src="vendor/three.min.js?v=69"></script>
+  <script src="vendor/three.min.js?v=90"></script>
   <script>
     // CDN fallback if local copy missing
     if (typeof THREE === 'undefined') {
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
     }
   </script>
-  <script src="js/rng.js?v=69"></script>
-  <script src="js/rarity.js?v=69"></script>
-  <script src="js/cardgen.js?v=69"></script>
-  <script src="js/abilities.js?v=69"></script>
-  <script src="js/cards.js?v=69"></script>
-  <script src="js/game-config.js?v=69"></script>
-  <script src="js/packs.js?v=69"></script>
-  <script src="js/game.js?v=69"></script>
-  <script src="js/sound.js?v=69"></script>
-  <script src="js/scene.js?v=69"></script>
-  <script src="js/scene-battle2.js?v=69"></script>
-  <script src="js/main.js?v=69"></script>
-<script src="js/install.js?v=69"></script>
+  <script src="js/rng.js?v=90"></script>
+  <script src="js/rarity.js?v=90"></script>
+  <script src="js/cardgen.js?v=90"></script>
+  <script src="js/abilities.js?v=90"></script>
+  <script src="js/cards.js?v=90"></script>
+  <script src="js/game-config.js?v=90"></script>
+  <script src="js/packs.js?v=90"></script>
+  <script src="js/game.js?v=90"></script>
+  <script src="js/sound.js?v=90"></script>
+  <script src="js/scene.js?v=90"></script>
+  <script src="js/scene-battle2.js?v=90"></script>
+  <script src="js/online.js?v=90"></script>
+  <script src="js/main.js?v=90"></script>
+<script src="js/install.js?v=90"></script>
 </body>
 </html>

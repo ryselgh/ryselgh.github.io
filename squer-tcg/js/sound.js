@@ -1,6 +1,4 @@
-﻿/* =========================================================
-   Squer TCG - tiny WebAudio sound effects (no assets)
-   ========================================================= */
+﻿// Tiny WebAudio sound effects generated at runtime (no audio assets).
 
 var SQUER = window.SQUER || (window.SQUER = {});
 SQUER.sound = (() => {
@@ -73,7 +71,7 @@ SQUER.sound = (() => {
       [392, 523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.2, 'triangle', 0.2, null, i * 0.08));
       tone(2093, 0.8, 'sine', 0.08, null, 0.56);
     },
-    // ---- suoni battaglia (Squer Clash) ----
+    // ---- battle sounds (Squer Clash) ----
     place() { tone(240, 0.09, 'square', 0.07); tone(360, 0.09, 'square', 0.05, null, 0.05); },
     remove() { tone(200, 0.08, 'square', 0.05); },
     hit() { tone(120, 0.22, 'sawtooth', 0.14, 60); tone(80, 0.3, 'square', 0.08, 40, 0.02); },
@@ -83,10 +81,10 @@ SQUER.sound = (() => {
     matchWin() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.2, 'triangle', 0.17, null, i * 0.09)); },
     matchLose() { [440, 349, 294, 220].forEach((f, i) => tone(f, 0.28, 'sine', 0.12, null, i * 0.18)); },
     matchDraw() { [392, 440, 494].forEach((f, i) => tone(f, 0.2, 'sine', 0.1, null, i * 0.12)); },
-    // ---- economia (M3) ----
+    // ---- economy (M3) ----
     upgrade() { [392, 523, 659, 784].forEach((f, i) => tone(f, 0.12, 'triangle', 0.14, null, i * 0.06)); },
     coin() { tone(988, 0.1, 'square', 0.08); tone(1319, 0.18, 'square', 0.08, null, 0.08); },
-    // ---- timer turno: bip degli ultimi secondi ----
+    // ---- turn timer: beeps on the last seconds ----
     tick() { tone(1320, 0.07, 'square', 0.06); },
   };
 })();

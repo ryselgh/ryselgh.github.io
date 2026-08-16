@@ -1,7 +1,5 @@
-﻿/* =========================================================
-   Squer TCG - Card data model + manifest loader
-   Each file in cards/custom/ becomes exactly one unique card.
-   ========================================================= */
+﻿// Card data model + manifest loader.
+// Each file in cards/custom/ becomes exactly one unique card.
 
 var SQUER = window.SQUER || (window.SQUER = {});
 
@@ -30,7 +28,7 @@ const TYPE_NAMES = {
 /** Pretty-print a filename into a card name (handles UUID-style names) */
 function nameFromFile(file) {
   const base = file.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
-  // UUID-ish: starts with digits followed by hex chunks (es. esportazioni iPhone)
+  // UUID-ish: digits followed by hex chunks (e.g. iPhone exports)
   if (/^\d+[\s-][0-9a-f]{8}[\s-]/i.test(base)) {
     const num = base.split(/\s+/)[0];
     if (/^\d+$/.test(num)) return 'Carta ' + num;
@@ -43,10 +41,10 @@ function nameFromFile(file) {
     .slice(0, 24) || 'Carta Misteriosa';
 }
 
-// ★ CONFIG PV per rarità (GDD §2.1): fascia del valore deterministco.
-// Ricalibrati per il loop v2 con Anima 60: PV più alti (20-60) — le carte
-// durano di più e il secondo giocatore ha tempo di rispondere all'iniziativa
-// del primo (simulazione 12 tipi: meno esiti decisi dal primo colpo).
+// ★ CONFIG HP range per rarity (GDD §2.1): the deterministic stat window.
+// Rebalanced for the v2 loop with Anima 60: higher HP (20-60) makes cards
+// last longer, giving the second player time to answer the first player's
+// initiative (12-type simulation: fewer games decided by the first hit).
 const HP_RANGES = {
   common: [20, 33],
   uncommon: [24, 40],
@@ -55,7 +53,7 @@ const HP_RANGES = {
   legendary: [38, 60],
 };
 
-// ★ CONFIG ATK per rarità (GDD §2.1): danno base della carta.
+// ★ CONFIG ATK range per rarity (GDD §2.1): the card's base damage.
 const ATK_RANGES = {
   common: [15, 22],
   uncommon: [20, 28],
@@ -64,8 +62,8 @@ const ATK_RANGES = {
   legendary: [38, 46],
 };
 
-/** Stats effettive di una carta al livello dato (GDD §2.3): +10% PV/ATK
-    per livello oltre il 1° (arrotondato). Usata da deck, battaglia e dettaglio. */
+/** Actual card stats at a given level (GDD §2.3): +10% HP/ATK per level
+    past the first (rounded). Used by deck, battle and detail views. */
 function cardStatsAt(card, level) {
   const bonus = (SQUER.CONFIG && SQUER.CONFIG.LEVEL_STAT_BONUS) || 0.10;
   const lv = Math.max(1, level || 1);
@@ -73,8 +71,8 @@ function cardStatsAt(card, level) {
   return { hp: Math.round(card.hp * mult), atk: Math.round(card.atk * mult) };
 }
 
-// Override tipo per carta (cards/types.json): il titolo decide il tipo
-// (es. "Tree Squer" -> erba). Caricato da loadTypes().
+// Per-card type override (cards/types.json): the title decides the type
+// (e.g. "Tree Squer" -> erba). Loaded by loadTypes().
 let TYPE_OVERRIDES = {};
 
 async function loadTypes() {
@@ -90,12 +88,12 @@ async function loadTypes() {
 /** Build a full card object from a manifest entry */
 function buildCard(entry, index, setSize) {
   const rng = makeRNG(entry.file);
-  // rarità dal manifest (sottocartella di cards/custom/), altrimenti casuale
+  // rarity from the manifest (cards/custom/ subfolder), else random from seed
   const rarity = entry.rarity && RARITIES[entry.rarity]
     ? RARITIES[entry.rarity]
     : rarityForSeed(rng);
   const cardName = entry.name || nameFromFile(entry.file);
-  // tipo: override manuale per titolo (check tipi), altrimenti dal seed
+  // type: manual override by title, else derived from the seed
   const type = TYPE_OVERRIDES[cardName] && CARD_TYPES[TYPE_OVERRIDES[cardName]]
     ? TYPE_OVERRIDES[cardName]
     : TYPE_KEYS[Math.floor(rng.next() * TYPE_KEYS.length)];
@@ -106,25 +104,25 @@ function buildCard(entry, index, setSize) {
     uid: entry.uid || cardUID(entry.file),
     file: entry.file,
     name: cardName,
-    order: entry.order,         // override ordine interno (cards/order.json)
+    order: entry.order,         // override album order (cards/order.json)
     image: null,            // loaded HTMLImageElement
     canvas: null,           // generated card art
     foilCanvas: null,       // holographic foil overlay texture
     palette: null,
     effects: [],
     rarity,
-    fullart: !!entry.fullart, // variante senza frame (PNG con trasparenza)
+    fullart: !!entry.fullart, // frameless variant (transparent PNG)
     type,
     typeSymbol: CARD_TYPES[type].symbol,
     typeName: CARD_TYPES[type].name,
-    hp: rng.int(hpRange[0], hpRange[1]), // deterministisco, fascia per rarità
-    atk: rng.int(atkRange[0], atkRange[1]), // deterministisco, fascia per rarità
-    ability: ability.id,          // id effetto di gioco (Squer Clash)
+    hp: rng.int(hpRange[0], hpRange[1]), // deterministic, rarity window
+    atk: rng.int(atkRange[0], atkRange[1]), // deterministic, rarity window
+    ability: ability.id,          // game effect id (Squer Clash)
     abilitySymbol: ability.symbol,
     abilityName: ability.name,
     abilityText: ability.text,
-    abilityValue: ability.value,      // valore numerico (per il motore)
-    abilityTrigger: ability.trigger,  // trigger (per il motore)
+    abilityValue: ability.value,      // numeric value (for the engine)
+    abilityTrigger: ability.trigger,  // trigger (for the engine)
     number: index + 1,
     setSize,
     rng,
@@ -137,7 +135,7 @@ function buildCard(entry, index, setSize) {
 const MANIFEST_PATH = 'cards/manifest.json';
 const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif', '.bmp']);
 
-/** Load optional cards/names.json override: { "file.png": "Nome Carta" } */
+/** Load optional cards/names.json override: { "file.png": "Card Name" } */
 async function loadNamesMap() {
   try {
     const res = await fetch('cards/names.json', { cache: 'no-store' });
@@ -149,7 +147,7 @@ async function loadNamesMap() {
   return {};
 }
 
-/** cartella -> id rarità (sottocartelle di cards/custom/) */
+/** folder -> rarity id (subfolders of cards/custom/) */
 const RARITY_DIR_MAP = {
   common: 'common', uncommon: 'uncommon', rare: 'rare',
   'super-rare': 'superRare', legendary: 'legendary',
@@ -162,7 +160,7 @@ function rarityFromPath(file) {
 }
 
 /** Try to auto-discover images from the directory listing of cards/custom/
-    (funziona con python http.server e con tools/server.js) */
+    (works with python http.server and tools/server.js) */
 async function tryDirectoryListing() {
   try {
     const res = await fetch('cards/custom/', { cache: 'no-store' });
@@ -181,7 +179,7 @@ async function tryDirectoryListing() {
         if (!files.includes(href)) files.push(href);
       }
     }
-    // scansiona anche le sottocartelle (una per rarità, o legendary/fullart)
+    // also scan subfolders (one per rarity, or legendary/fullart)
     for (const dir of dirs) {
       try {
         const sub = await fetch('cards/custom/' + dir + '/', { cache: 'no-store' });
@@ -253,8 +251,8 @@ function loadImage(src) {
 async function createCardSet(entries, onProgress) {
   const setSize = entries.length;
   const cards = [];
-  // abilità v2 da cards/abilities.json + override tipo da cards/types.json
-  // (fallback seed se mancanti)
+  // abilities from cards/abilities.json + type override from cards/types.json
+  // (seed fallback when missing)
   await Promise.all([loadAbilities(), loadTypes()]);
   const jobs = entries.map(async (entry, i) => {
     const card = buildCard(entry, i, setSize);
@@ -267,10 +265,10 @@ async function createCardSet(entries, onProgress) {
     if (onProgress) onProgress(cards.length, setSize, 'images');
   });
   await Promise.all(jobs);
-  // ordine album: rarita' crescente (common 1-70, uncommon 71-120, rare,
-  // super-rare, legendary in coda), fullart per ultima nella sua rarita',
-  // poi order override manuale (cards/order.json, carte senza order in coda
-  // per uid), uid come ultimo criterio di stabilità
+  // album order: rarity ascending (common 1-70, uncommon 71-120, rare,
+  // super-rare, legendary last), fullart last within its rarity, then manual
+  // order override (cards/order.json, un-ordered cards last by uid), uid as
+  // the final stability tiebreaker
   const orderOf = c => (typeof c.order === 'number' ? c.order : Infinity);
   cards.sort((a, b) =>
     a.rarity.order - b.rarity.order ||
@@ -278,13 +276,13 @@ async function createCardSet(entries, onProgress) {
     orderOf(a) - orderOf(b) ||
     (a.uid < b.uid ? -1 : a.uid > b.uid ? 1 : 0)
   );
-  // numeri finali PRIMA del draw: il canvas deve mostrare il numero
-  // della posizione nell'album, non l'indice del manifest
+  // final numbers BEFORE drawing: the canvas must show the album position,
+  // not the manifest index
   cards.forEach((c, i) => { c.number = i + 1; c.setSize = cards.length; });
-  // disegno dei canvas A BLOCCHI (chunked): draw() è CPU-intensive e, se
-  // fatto tutto in un colpo, blocca la UI per secondi senza mostrare nulla.
-  // A blocchi con una pausa tra l'uno e l'altro, la barra avanza e l'utente
-  // vede "Disegno carte... X / 180" fino a 180 / 180.
+  // canvas drawing runs in CHUNKS: draw() is CPU-intensive, and doing it all
+  // at once freezes the UI for seconds with no feedback. Chunking with a
+  // yield between batches keeps the progress bar advancing ("Drawing cards…
+  // X / 180" up to 180 / 180).
   const CHUNK = 18;
   for (let i = 0; i < cards.length; i += CHUNK) {
     const slice = cards.slice(i, i + CHUNK);
@@ -295,6 +293,6 @@ async function createCardSet(entries, onProgress) {
   return cards;
 }
 
-// Esposizione per la UI (es. tabella tipi nell'help)
+// Exposed for the UI (e.g. the type chart in the help screen)
 SQUER.CARD_TYPES = CARD_TYPES;
 SQUER.TYPES = { CARD_TYPES, TYPE_KEYS };

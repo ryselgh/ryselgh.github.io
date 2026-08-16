@@ -1,14 +1,10 @@
-﻿/* =========================================================
-   Squer TCG - Procedural card art generator
-   Every custom image becomes a unique card: seeded procedural
-   frame art + rarity styling + effects metadata for 3D scene.
-   Output: { canvas, foilCanvas, effects:[...], palette }
-   ========================================================= */
+﻿// Squer TCG procedural card art generator: seeded frame art + rarity
+// styling + effects metadata. Output: { canvas, foilCanvas, effects:[...], palette }.
 
 var SQUER = window.SQUER || (window.SQUER = {});
 const W = 512, H = 720;
 
-// ---- tiny canvas helpers ---------------------------------
+// tiny canvas helpers
 function cv(w, h) {
   const c = document.createElement('canvas');
   c.width = w;
@@ -18,15 +14,15 @@ function cv(w, h) {
 function ctx2(c) { return c.getContext('2d'); }
 function hsl(h, s, l, a = 1) { return `hsla(${h},${s}%,${l}%,${a})`; }
 
-/** Colori per tipo elementale (hex) — usati per la palette affine
-    (rarità + tipo) e per il badge del tipo */
+/** Element type colors (hex) — used for the affine palette
+    (rarity + type) and the type badge */
 const TYPE_COLORS = {
   fuoco: '#ff7043', acqua: '#4fc3f7', folgore: '#ffe082', erba: '#81c784',
   psico: '#ba68c8', lottatore: '#ff8a65', buio: '#7e8aa0', fata: '#f48fb1',
   drago: '#b39ddb', metallo: '#b0bec5', spettrale: '#9575cd', normale: '#cfd8dc',
 };
 
-/** hue (0-360) di un colore hex #rrggbb — per derivare la palette dalla rarità */
+/** hue (0-360) of a hex #rrggbb color — to derive the palette from rarity */
 function hueOf(hex) {
   const n = parseInt(hex.replace('#', ''), 16);
   const r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
@@ -68,10 +64,10 @@ function makeFoilTexture(type) {
   const c = cv(W, H);
   const g = ctx2(c);
   const palettes = {
-    foil:    [[210,55,80],[230,50,75],[260,55,78],[190,50,75]],                    // iridescente blu/viola
-    contrast:[[0,40,12],[0,0,62],[0,0,95],[0,0,48],[0,0,18]],                      // cromato alto contrasto
-    rainbow: [[0,95,60],[35,95,60],[70,95,60],[130,95,55],[200,90,55],[260,90,55],[300,90,55]], // arcobaleno
-    gold:    [[0,75,45],[0,80,78],[50,70,60],[0,90,85],[50,65,35]],             // oro cromato
+    foil:    [[210,55,80],[230,50,75],[260,55,78],[190,50,75]],                    // iridescent blue/purple
+    contrast:[[0,40,12],[0,0,62],[0,0,95],[0,0,48],[0,0,18]],                      // high-contrast chrome
+    rainbow: [[0,95,60],[35,95,60],[70,95,60],[130,90,55],[200,90,55],[260,90,55],[300,90,55]], // rainbow
+    gold:    [[0,75,45],[0,80,78],[50,70,60],[0,90,85],[50,65,35]],             // chrome gold
   };
   const pal = palettes[type] || palettes.foil;
   // precompute rgb for each palette entry (per-pixel loop below)
@@ -81,10 +77,9 @@ function makeFoilTexture(type) {
   const d = img.data;
   const peak = 0.55; // max band alpha (material opacity multiplies this)
 
-  // Ogni banda = una voce della palette. La fase t = (x/W + y/H) * L
-  // avanza di esattamente L (= pal.length) quando la texture si avvolge
-  // su entrambi gli assi: un ciclo intero di palette, quindi niente salto
-  // di colore né cucitura visibile, qualunque sia lo scorrimento.
+  // Each band = one palette entry. The phase t = (x/W + y/H) * L advances
+  // by exactly L (= pal.length) when the texture wraps on either axis: a
+  // full palette cycle, so no color jump or visible seam at any offset.
   const L = pal.length;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
@@ -102,10 +97,10 @@ function makeFoilTexture(type) {
   }
   g.putImageData(img, 0, 0);
 
-  // fine foil grid: la densità si adatta alla distensione (FOIL_REPEAT,
-// definito in scene.js) così la griglia resta visivamente costante e non
-// compaiono "quadretti" quando si distende l'effetto (REPEAT < 1). Linee
-// centrate nelle celle, NESSUNA sul wrap: seamless (spaziatura uniforme).
+  // fine foil grid: density adapts to the stretch (FOIL_REPEAT, defined
+  // in scene.js) so the grid stays visually constant and no "checkerboard"
+  // appears when the effect is stretched (REPEAT < 1). Lines centered in
+  // cells, NONE on the wrap: seamless (uniform spacing).
   const rep = SQUER.FOIL_REPEAT || 0.5;
   const cols = Math.max(4, Math.round(30 / rep));
   const rows = Math.max(4, Math.round(42 / rep));
@@ -125,7 +120,7 @@ function makeFoilTexture(type) {
 SQUER.art = (() => {
   const CARD_W = 512, CARD_H = 720;
 
-  // ---- pattern painters (seeded) -------------------------
+  // pattern painters (seeded)
   const patterns = {
     hex(g, rng, W, H, colors, size) {
       const s = size || rng.range(34, 58);
@@ -236,13 +231,13 @@ SQUER.art = (() => {
     },
   };
 
-  /** Palette AFFINE: combina la rarità (hue h) con il tipo elementale
-      (hueTipo). Bordo/frame e accenti principali restano della rarità;
-      lo sfondo sfuma verso il colore del tipo, e pattern/forme/sparkle
-      sono tinti dal tipo: ogni carta ha una combinazione unica ma la
-      rarità resta riconoscibile.
-      ECCEZIONE legendary: gradiente dorato puro (niente tinta del tipo),
-      il contorno del simbolo del tipo resta comunque del colore del tipo. */
+  /** AFFINE palette: blends rarity (hue h) with the element type
+      (hueTipo). Border/frame and main accents stay from rarity; the
+      background fades toward the type color, and patterns/shapes/sparkles
+      are tinted by the type: each card is unique yet rarity stays
+      recognizable.
+      EXCEPTION legendary: pure golden gradient (no type tint); the type
+      symbol outline stays the type color anyway. */
   function makePalette(rar, rng, hueTipo) {
     const h = hueOf(rar.frame[0]);
     const t = hueTipo;
@@ -264,19 +259,19 @@ SQUER.art = (() => {
     return {
       baseH: h,
       bg1: rar.frame[0],
-      bg2: hsl(t, 55, rng.range(16, 30)),      // fondo: colore scuro del tipo
+      bg2: hsl(t, 55, rng.range(16, 30)),      // background: dark type color
       pat: [
-        hsl(t, 45, rng.range(58, 72)),         // pattern: variazioni del tipo
+        hsl(t, 45, rng.range(58, 72)),         // pattern: type variations
         hsl(t, 38, rng.range(42, 56)),
         hsl(t, 50, rng.range(72, 85)),
-        hsl(h, 40, rng.range(30, 45)),         // + un colore della rarità
+        hsl(h, 40, rng.range(30, 45)),         // + one rarity color
       ],
       accent1: rar.accent,
-      accent2: hsl(t, 50, rng.range(68, 82)),  // forme/sparkle del tipo
+      accent2: hsl(t, 50, rng.range(68, 82)),  // type-tinted shapes/sparkles
     };
   }
 
-  // ---- main draw -----------------------------------------
+  // main draw
   function draw(card) {
     const rng = card.rng;
     const rar = card.rarity;
@@ -284,13 +279,13 @@ SQUER.art = (() => {
     const g = ctx2(c);
     const pal = makePalette(rar, rng, hueOf(TYPE_COLORS[card.type] || rar.frame[0]));
     const effects = [];
-    // fullart: variante senza frame — solo l'immagine su tutta la carta
+    // fullart: no-frame variant — just the image across the whole card
     const isFull = !!card.fullart;
 
     // --- background gradient ---
-    // Palette AFFINE: parte dal colore della rarita' (riconoscibile:
-    // legendary sempre con base oro) e sfuma verso il colore scuro del
-    // tipo elementale (fuoco rosso, acqua blu, erba verde, ...).
+    // AFFINE palette: starts from the rarity color (recognizable;
+    // legendary always gold-based) and fades into the dark element type
+    // color (fire red, water blue, grass green, ...).
     const grad = g.createLinearGradient(0, 0, W * rng.range(0.3, 1), H * rng.range(0.3, 1));
     grad.addColorStop(0, rar.frame[0]);
     grad.addColorStop(1, pal.bg2);
@@ -332,8 +327,8 @@ SQUER.art = (() => {
     const winX = 34, winY = 96, winW = W - 68, winH = 300;
 
     if (isFull) {
-      // --- FULLART: immagine intera, centrata su tutta la carta (contain-fit:
-      // niente crop, si vede tutto; le barre mostrano il background) ---
+      // --- FULLART: whole image centered on the card (contain-fit: no
+      // crop, everything visible; bars show the background) ---
       if (img) {
         const iw = img.width, ih = img.height;
         const scale = Math.min(W / iw, H / ih);
@@ -372,7 +367,7 @@ SQUER.art = (() => {
         g.fillRect(winX, winY, winW, winH);
       }
 
-      // inner frame line (rarity accent, non la palette dell'immagine)
+      // inner frame line (rarity accent, not the image palette)
       g.strokeStyle = rar.accent;
       g.globalAlpha = 0.85;
       g.lineWidth = 3;
@@ -433,8 +428,8 @@ SQUER.art = (() => {
     g.fillRect(W / 2 - nameSize * 1.6, plateY + 20, nameSize * 3.2, 2.5);
 
     // --- BOTTOM PANEL (rarity + stats + number) ---
-    // disegnato sempre (anche sulle fullart, in sovrimpressione: gli sfondi
-    // scuri semi-trasparenti tengono le scritte leggibili sopra l'immagine)
+    // always drawn (also on fullarts, overlaid: dark semi-transparent
+    // backgrounds keep the text readable above the image)
     const by0 = winY + winH + 30; // 426
 
     // HP / power badge (left)
@@ -453,7 +448,7 @@ SQUER.art = (() => {
     g.fillStyle = '#ffb0b0';
     g.fillText('PV', 52, by0 + 22);
 
-    // ATK badge (accanto al PV): gemello, stesso livello
+    // ATK badge (next to HP): twin, same level
     const atk = card.atk;
     g.fillStyle = 'rgba(6,10,18,0.6)';
     g.beginPath();
@@ -469,7 +464,7 @@ SQUER.art = (() => {
     g.fillStyle = '#a8d4ff';
     g.fillText('ATK', 128, by0 + 22);
 
-    // energy type symbol (sotto i badge PV/ATK, centrato tra loro)
+    // energy type symbol (below HP/ATK badges, centered between them)
     const tCol = TYPE_COLORS[card.type] || pal.accent1;
     const tY = by0 + 44;
     g.fillStyle = 'rgba(6,10,18,0.6)';
@@ -483,9 +478,9 @@ SQUER.art = (() => {
     g.font = '700 18px "Segoe UI", sans-serif';
     g.fillText(card.typeSymbol, 90, tY + 1);
 
-    // ABILITY: nome effetto + descrizione sono raggruppati SOTTO la
-    // rarità (vedi DESCRIPTION più sotto), a metà strada tra rarità e
-    // numero di collezione. Qui in alto (right of HP) niente box nero.
+    // ABILITY: effect name + description are grouped BELOW the rarity
+    // (see DESCRIPTION further down), halfway between rarity and card
+    // number. Up here (right of HP) no black box.
 
     // RARITY GEM (center-bottom)
     const gemY = by0 + 44;
@@ -523,7 +518,7 @@ SQUER.art = (() => {
     g.stroke();
     g.restore();
 
-    // rarity label (outer glow nero trasparente: leggibile su ogni sfondo)
+    // rarity label (dark outer glow: readable on any background)
     const rarLabel = rar.name.toUpperCase();
     g.font = '700 22px "Segoe UI", sans-serif';
     g.shadowColor = 'rgba(0,0,0,0.9)';
@@ -532,16 +527,16 @@ SQUER.art = (() => {
     g.fillText(rarLabel, W / 2, gemY + 60);
     g.shadowBlur = 0;
 
-    // ABILITY TITLE + DESCRIPTION — raggruppati sotto la rarità, a metà
-    // strada tra rarità e numero di collezione. Titolo (simbolo + nome)
-    // sopra, descrizione (max 2 righe, con ellissi se troppo lunga) sotto:
-    // nessun box nero, leggibilità garantita dal glow nero come per la
-    // rarità. Il blocco non tocca mai il numero di collezione (H-40).
+    // ABILITY TITLE + DESCRIPTION — grouped below the rarity, halfway
+    // between rarity and card number. Title (symbol + name) on top,
+    // description (max 2 lines, ellipsis if too long) below: no black
+    // box, readability via dark glow as for the rarity. The block never
+    // touches the card number (H-40).
     if (card.abilityName) {
-      const descCenterY = (gemY + 60 + (H - 40)) / 2;   // 605: metà tra i due
-      const maxW = W - 90;                               // margine dai bordi
+      const descCenterY = (gemY + 60 + (H - 40)) / 2;   // 605: halfway between the two
+      const maxW = W - 90;                               // margin from the edges
       const lh = 21;
-      // titolo effetto (grassetto, accent della rarità)
+      // effect title (bold, rarity accent)
       g.textBaseline = 'middle';
       g.font = '700 15px "Segoe UI", sans-serif';
       g.fillStyle = pal.accent1;
@@ -549,7 +544,7 @@ SQUER.art = (() => {
       g.shadowBlur = 8;
       const title = card.abilitySymbol + ' ' + card.abilityName.toUpperCase();
       g.fillText(title, W / 2, descCenterY - 26);
-      // descrizione sotto il titolo (max 2 righe, ellissi finale)
+      // description below the title (max 2 lines, trailing ellipsis)
       if (card.abilityText) {
         g.font = '600 15px "Segoe UI", sans-serif';
         g.fillStyle = 'rgba(255,255,255,0.92)';
@@ -561,17 +556,17 @@ SQUER.art = (() => {
           if (g.measureText(t).width > maxW && line) {
             lines.push(line);
             line = w;
-            if (lines.length >= 2) { line += '…'; break; }  // max 2 righe
+            if (lines.length >= 2) { line += '…'; break; }  // max 2 lines
           } else line = t;
         }
         if (line && lines.length < 2) lines.push(line);
-        const y0 = descCenterY + 8 - ((lines.length - 1) * lh) / 2;  // centro
+        const y0 = descCenterY + 8 - ((lines.length - 1) * lh) / 2;  // centered
         lines.forEach((ln, i) => g.fillText(ln, W / 2, y0 + i * lh));
       }
       g.shadowBlur = 0;
     }
 
-    // card number + set tag (bottom, stesso outer glow)
+    // card number + set tag (bottom, same outer glow)
     const numText = `${card.number} / ${card.setSize}`;
     const setText = '✦ SQUER TCG ✦';
     g.shadowColor = 'rgba(0,0,0,0.9)';
@@ -585,9 +580,9 @@ SQUER.art = (() => {
     g.shadowBlur = 0;
 
     // --- holo / foil effects (for 3D scene) ---
-    // Ogni rarità ha un effetto riconoscibile. Nessuna animazione a tempo:
-    // il piano foil è statico e la scena 3D ne sposta la texture in base
-    // alla rotazione della carta (simulazione della luce).
+    // Each rarity gets a recognizable effect. No time-based animation:
+    // the foil plane is static and the 3D scene shifts its texture by
+    // the card rotation (light simulation).
     const foilType = { uncommon: 'foil', rare: 'contrast', superRare: 'rainbow', legendary: 'gold' }[rar.id];
     if (foilType) {
       card.foilCanvas = makeFoilTexture(foilType, rng);
@@ -607,10 +602,9 @@ SQUER.art = (() => {
       }
     }
 
-    // --- card edge border (bordino) ---
-    // sottile cornice chiara su tutto il bordo della carta:
-    // quando le carte sono impilate con offset, il bordo pulito
-    // nasconde il contenuto delle carte sotto.
+    // --- card edge border ---
+    // thin light frame around the whole card edge: when cards are stacked
+    // with an offset, the clean border hides the content of cards below.
     g.strokeStyle = 'rgba(255,255,255,0.9)';
     g.lineWidth = 6;
     roundRect(g, 3, 3, W - 6, H - 6, 14);
@@ -629,7 +623,7 @@ SQUER.art = (() => {
   return { draw, W: CARD_W, H: CARD_H };
 })();
 
-/* ---- Card back texture (procedural) ---- */
+// Card back texture (procedural)
 SQUER.artBack = () => {
   const c = cv(W, H);
   const g = ctx2(c);
@@ -675,7 +669,7 @@ SQUER.artBack = () => {
   return c;
 };
 
-/* ---- pack wrapper texture (procedural) ---- */
+// Pack wrapper texture (procedural)
 SQUER.packArt = () => {
   const c = cv(300, 420);
   const g = ctx2(c);

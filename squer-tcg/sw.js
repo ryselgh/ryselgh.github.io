@@ -7,7 +7,7 @@
    - Navigazioni: network-first (aggiornamenti immediati,
      fallback offline sull'ultima copia)
    ========================================================= */
-const CACHE = 'squer-tcg-v28';
+const CACHE = 'squer-tcg-v29';
 const PRECACHE = [
   './',
   'index.html',
@@ -25,6 +25,7 @@ const PRECACHE = [
   'js/sound.js',
   'js/scene.js',
   'js/scene-battle2.js',
+  'js/online.js',
   'js/main.js',
   'js/install.js',
   'icons/icon-192.png',

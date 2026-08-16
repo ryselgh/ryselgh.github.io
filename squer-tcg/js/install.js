@@ -1,15 +1,8 @@
-/* =========================================================
-   Squer TCG - Installazione PWA
-   - Chrome/Edge (desktop + Android): beforeinstallprompt
-     -> mostra il bottone e apre il popup ufficiale
-   - iOS Safari: nessuna API ufficiale -> il bottone mostra
-     le istruzioni "Condividi -> Aggiungi alla schermata Home"
-   - Bottone nascosto se l'app è già installata
-   - Su mobile, quando il gioco NON è installato: home
-     semplificata (classe body "pwa-cta") con solo titolo,
-     bottone "Installa" grande al centro e footer
-   - Registrazione del service worker
-   ========================================================= */
+// PWA installation: install button, iOS hint, service worker registration.
+// Chrome/Edge/Android use beforeinstallprompt; iOS shows "Share -> Add to
+// Home Screen" instructions; the button hides once the app is installed.
+// On mobile, when NOT installed, home becomes a simplified "install" page
+// (body class "pwa-cta"): title, big install button, footer.
 (() => {
   const btn = document.getElementById('install-btn');
   if (!btn) return;
@@ -20,18 +13,18 @@
     navigator.standalone === true;
 
   let deferredPrompt = null;
-  let installable = false; // true = il bottone è mostrato (app installabile)
+  let installable = false; // true = button shown (app installable)
 
-  // home semplificata "installa": solo su mobile e solo se non è già installata
+  // Simplified "install" home: only on mobile and only if not installed
   function updatePwaCta() {
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     document.body.classList.toggle('pwa-cta', !isStandalone && isMobile && installable);
   }
 
-  // già installata come app: home normale, niente bottone
+  // Already installed as an app: normal home, no button
   if (isStandalone) return;
 
-  /* ---------- hint per iOS ---------- */
+  // ---------- iOS hint ----------
   function showIosHint() {
     const overlay = document.createElement('div');
     overlay.className = 'ios-hint';
@@ -51,14 +44,14 @@
     document.body.appendChild(overlay);
   }
 
-  /* ---------- iOS: solo istruzioni ---------- */
+  // ---------- iOS: instructions only ----------
   if (isIOS) {
     installable = true;
     btn.classList.remove('hidden');
     btn.textContent = '\u{1F4F1} Aggiungi alla Home';
     btn.addEventListener('click', showIosHint);
   } else {
-    /* ---------- Chrome / Edge / Android ---------- */
+    // ---------- Chrome / Edge / Android ----------
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -88,13 +81,13 @@
   window.addEventListener('resize', updatePwaCta);
   updatePwaCta();
 
-  /* ---------- registrazione service worker ---------- */
+  // ---------- service worker registration ----------
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js')
         .then((reg) => {
-          // Prima visita assoluta del dispositivo: lo si marca e non si mostra
-          // alcun avviso (non c'è ancora nulla da aggiornare).
+          // Absolute first visit on this device: mark it and show no banner
+          // (there's nothing to update yet).
           const VKEY = 'squer_sw_seen_v1';
           const firstRun = !localStorage.getItem(VKEY);
           if (firstRun) localStorage.setItem(VKEY, '1');
@@ -106,11 +99,10 @@
             showUpdateBanner();
           };
 
-          // Il service worker usa skipWaiting + clients.claim: quando esiste
-          // una nuova versione, al successivo avvio/riapertura dell'app il
-          // browser la installa subito e il "controller" cambia. Questo evento
-          // scatta quindi SOLO in presenza di un vero aggiornamento (al primo
-          // install lo escludiamo col flag sopra).
+          // The service worker uses skipWaiting + clients.claim: when a new
+          // version exists, the browser installs it on the next launch/reopen
+          // and the "controller" changes. So this event fires ONLY on a real
+          // update (on first install it's excluded by the flag above).
           if (!firstRun) {
             navigator.serviceWorker.addEventListener('controllerchange', notify);
             reg.addEventListener('updatefound', () => {
@@ -125,7 +117,7 @@
     });
   }
 
-  /** Banner breve: nuova versione pronta, tap su "Aggiorna" per applicarla */
+  /** Short banner: new version ready, tap "Aggiorna" to apply it */
   function showUpdateBanner() {
     if (document.getElementById('update-banner')) return;
     const b = document.createElement('div');

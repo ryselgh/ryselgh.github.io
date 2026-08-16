@@ -1,23 +1,19 @@
-﻿/* =========================================================
-   Squer TCG - Logica di gioco v2 "Squer Clash" (logica pura)
-   Nessuna dipendenza dalla scena 3D: testabile in isolamento.
-   GDD §2-§4:
-   - 3 zone per lato, mano 4, mazzo 8, Anima 80, 20 turni
-   - 1 azione per turno: pesca-sostituzione / posiziona / attacca
-   - danno = ATK × (2 / 0.5 / 1) per tipo (12 tipi, tabella TYPE_BEATS)
-   - abilità con trigger (on_play/on_destroy/on_attack/on_hit/
-     on_turn_start/passive)
-   - pila scarti -> nuovo mazzo; limite turni -> vince chi ha più Anima
-   - bot euristico (15% mossa subottimale)
-   - EVENTI: il motore emette un log di eventi per la UI
-   ========================================================= */
+﻿// Pure "Squer Clash" match engine (turn-based, no 3D scene deps, unit-testable).
+// GDD §2-§4: 3 zones per side, hand 4, deck 8, Anima 60, 20 turns; one action
+// per turn (draw-replace / place / attack); damage = ATK × (2/0.5/1) per type
+// (12 types, TYPE_BEATS table); triggered abilities (on_play/on_destroy/
+// on_attack/on_hit/on_turn_start/passive); discard pile reshuffles into the
+// deck; turn limit -> higher Anima wins; heuristic bot (15% suboptimal move);
+// the engine emits an event log for the UI.
 
 var SQUER = (typeof window !== 'undefined' ? window.SQUER : globalThis.SQUER) || {};
 
-// ---- makeRNG disponibile in browser e Node ----
+// resolve makeRNG in both browser and Node
 let _makeRNG = null;
+let _makeRNGFromState = null;
 if (typeof require !== 'undefined' && typeof module !== 'undefined' && module.exports) {
   _makeRNG = require('./rng.js').makeRNG;
+  _makeRNGFromState = require('./rng.js').makeRNGFromState;
 } else if (typeof makeRNG === 'function') {
   _makeRNG = makeRNG;
 }
@@ -25,19 +21,23 @@ function rngFor(seed) {
   if (_makeRNG) return _makeRNG(seed);
   return { next: Math.random, int: (a, b) => a + Math.floor(Math.random() * (b - a + 1)), pick: (arr) => arr[Math.floor(Math.random() * arr.length)], shuffle: (arr) => { const x = arr.slice(); for (let i = x.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [x[i], x[j]] = [x[j], x[i]]; } return x; } };
 }
+function rngFromState(state) {
+  if (_makeRNGFromState) return _makeRNGFromState(state);
+  return rngFor('state:' + state);
+}
 const CFG = () => SQUER.CONFIG || {};
 const ZONES = ['left', 'center', 'right'];
 const BEATS = () => CFG().TYPE_BEATS || { fuoco: ['erba', 'metallo'] };
 
 function other(p) { return p === 'p' ? 'b' : 'p'; }
 
-/** Massimo Anima per giocatore (dalla config) */
+/** Max Anima per player (from config) */
 function cfgAnimaMax() {
   const a = CFG().ANIMA;
   return a != null ? a : 80;
 }
 
-/** Vantaggio di tipo di a su b: 1 a vince, -1 b vince, 0 neutro. */
+/** Type advantage of a over b: 1 a wins, -1 b wins, 0 neutral. */
 function typeAdvantage(a, b) {
   if (a === b) return 0;
   const beats = BEATS()[a];
@@ -46,11 +46,11 @@ function typeAdvantage(a, b) {
   return 0;
 }
 
-// ---- istanze carta in partita ----
+// per-card match instances
 let _seq = 0;
 function spawnInstance(card) {
-  // normalizza l'abilità: oggetto {kind,...} (test/motore) oppure
-  // stringa id + campi separati (carte reali da cards.js)
+  // normalize ability: object {kind,...} (engine/tests) or string id plus
+  // separate fields (real cards from cards.js)
   let ability = null;
   const ab = card.ability;
   if (ab && typeof ab === 'object' && (ab.kind || ab.id)) {
@@ -75,7 +75,7 @@ function spawnInstance(card) {
   };
 }
 
-/** Snapshot leggibile dalla UI per gli eventi */
+/** Readable snapshot of a card for UI events */
 function cardRef(inst) {
   return {
     id: inst.id, uid: inst.uid, name: inst.name,
@@ -87,8 +87,8 @@ function cardRef(inst) {
 
 function ev(state, e) { state.events.push(e); }
 
-/** Pesca 1 carta in mano; se il mazzo è vuoto rimischia gli scarti.
-    Ritorna la carta o null se non c'è nulla da pescare. */
+/** Draw 1 card to hand; reshuffles the discard pile into the deck if empty.
+    Returns the card, or null when nothing can be drawn. */
 function drawCardToHand(state, player, silent) {
   if (!state.deck[player].length) {
     if (!state.discard[player].length) return null;
@@ -106,7 +106,7 @@ function canDraw(state, player) {
   return state.deck[player].length > 0 || state.discard[player].length > 0;
 }
 
-/** Nuova partita: deck = 8 carte a testa, mano = HAND_SIZE, Anima = ANIMA. */
+/** New match: deck = DECK_SIZE per player, hand = HAND_SIZE, Anima = ANIMA. */
 function newMatch(playerDeck, botDeck, opts) {
   opts = opts || {};
   const rng = rngFor(opts.seed || ('match-' + Date.now()));
@@ -129,10 +129,10 @@ function newMatch(playerDeck, botDeck, opts) {
     rng,
   };
   for (let i = 0; i < handSize; i++) { drawCardToHand(state, 'p', true); drawCardToHand(state, 'b', true); }
-  // ★ FIRST_HAND_BONUS: il giocatore che NON inizia parte con 1 carta in più
-  // (4 vs 5): compensa il vantaggio dell'iniziativa (simulazione 12 tipi:
-  // col bonus al primo il 1° vinceva il 70%, al secondo ~62%; combinato con
-  // PV/Anima più alti e abilità più forti → ~55/20/25, accettabile PvE).
+  // ★ FIRST_HAND_BONUS: the player who does NOT go first draws one extra card
+  // (4 vs 5) to offset the first-move advantage (12-type simulation: first
+  // player won 70% with the bonus to first, ~62% to second; combined with
+  // higher HP/Anima and stronger abilities → ~55/20/25, acceptable for PvE).
   if ((cfg.FIRST_HAND_BONUS !== false) && state.deck[other(state.turnPlayer)].length) {
     drawCardToHand(state, other(state.turnPlayer), true);
   }
@@ -155,7 +155,7 @@ function finish(state) {
   ev(state, { type: 'end', outcome: state.outcome });
 }
 
-/* ---------- danno e morte ---------- */
+/* ---------- damage & death ---------- */
 
 function dealDamage(state, targetPlayer, zone, amount, sourcePlayer, opts) {
   const slot = state.zones[targetPlayer][zone];
@@ -178,7 +178,7 @@ function killCard(state, player, zone, killer) {
   const card = slot.card;
   state.zones[player][zone] = null;
   ev(state, { type: 'kill', player, zone, card: cardRef(card) });
-  // revive: torna in campo con metà PV
+  // revive: comes back to the field with half HP
   if (card.ability && card.ability.kind === 'revive') {
     card.curHp = Math.ceil(card.hp / 2);
     state.zones[player][zone] = { card };
@@ -186,7 +186,7 @@ function killCard(state, player, zone, killer) {
     return;
   }
   state.discard[player].push(card);
-  // aoe_destroy: danno a tutte le carte avversarie in campo
+  // aoe_destroy: damages every enemy card on the field
   if (card.ability && card.ability.kind === 'aoe_destroy') {
     const opp = other(player);
     ev(state, { type: 'ability', player, zone, text: card.ability.name + ': ' + card.ability.value + ' danni a tutte le carte avversarie' });
@@ -196,7 +196,7 @@ function killCard(state, player, zone, killer) {
   }
 }
 
-/** Carta alleata con meno PV correnti (target di heal_card) */
+/** Allied card with the lowest current HP (heal_card target) */
 function weakestAlly(state, player) {
   let best = null, bestRatio = Infinity;
   for (const z of ZONES) {
@@ -208,7 +208,7 @@ function weakestAlly(state, player) {
   return best;
 }
 
-/* ---------- trigger abilità ---------- */
+/* ---------- ability triggers ---------- */
 
 function triggerOnPlay(state, player, zone, card) {
   const ab = card.ability;
@@ -253,11 +253,11 @@ function triggerOnPlay(state, player, zone, card) {
   }
 }
 
-/* ---------- azioni (1 per turno) ---------- */
+/* ---------- actions (1 per turn) ---------- */
 
-/** Azione Pesca (in due tempi, per la UI):
-    1) peekDraw: pesco 1 e la metto in mano (ultima).
-    2) resolveDrawChoice: choice = { keep:true, handIndex } o { keep:false }. */
+/** Draw action, split in two steps for the UI:
+    1) peekDraw: draw 1 and put it at the end of hand.
+    2) resolveDrawChoice: choice = { keep:true, handIndex } or { keep:false }. */
 function peekDraw(state, player) {
   if (state.over) return { ok: false, reason: 'over' };
   const card = drawCardToHand(state, player, false);
@@ -267,7 +267,7 @@ function peekDraw(state, player) {
 
 function resolveDrawChoice(state, player, choice) {
   const hand = state.hand[player];
-  const card = hand[hand.length - 1]; // la pescata è l'ultima
+  const card = hand[hand.length - 1]; // the drawn card is the last one
   if (!card) return { ok: false, reason: 'no_draw' };
   const keep = choice && choice.keep;
   if (keep && choice.handIndex != null) {
@@ -291,7 +291,7 @@ function actionDraw(state, player, choice) {
   return resolveDrawChoice(state, player, choice || { keep: false });
 }
 
-/** Azione Posiziona: carta dalla mano in una zona (sostituzione -> scarti). */
+/** Place action: move a hand card into a zone (replacing one -> discard). */
 function actionPlace(state, player, handIndex, zone) {
   if (state.over) return { ok: false, reason: 'over' };
   if (ZONES.indexOf(zone) < 0) return { ok: false, reason: 'bad_zone' };
@@ -309,7 +309,7 @@ function actionPlace(state, player, handIndex, zone) {
   return { ok: true };
 }
 
-/** Azione Attacca: carta in zona X attacca la zona X avversaria. */
+/** Attack action: card in zone X attacks the opposing zone X. */
 function actionAttack(state, player, zone) {
   if (state.over) return { ok: false, reason: 'over' };
   const atkSlot = state.zones[player][zone];
@@ -317,7 +317,7 @@ function actionAttack(state, player, zone) {
   const attacker = atkSlot.card;
   const opp = other(player);
 
-  // on_attack: drain_anima (ruba Anima prima del danno)
+  // on_attack: drain_anima steals Anima before dealing damage
   if (attacker.ability && attacker.ability.kind === 'drain_anima') {
     const v = Math.min(attacker.ability.value, state.anima[opp]);
     state.anima[opp] -= v;
@@ -329,7 +329,7 @@ function actionAttack(state, player, zone) {
 
   const target = state.zones[opp][zone];
   if (!target) {
-    // zona scoperta: colpo diretto all'Anima (il surplus non passa: colpisce sempre l'Anima)
+    // open zone: direct Anima hit (deals the full ATK, always connects)
     const dmg = attacker.curAtk;
     state.anima[opp] -= dmg;
     ev(state, { type: 'attack_anima', player, zone, dmg, attacker: cardRef(attacker) });
@@ -345,9 +345,9 @@ function actionAttack(state, player, zone) {
   else if (adv === -1) dmg = Math.floor(dmg * 0.5);
   ev(state, { type: 'attack', player, zone, dmg, adv, attacker: cardRef(attacker), defender: cardRef(def) });
 
-  // SURPLUS_PASSES (config): il danno in eccesso sui PV della carta
-  // "trabocca" sull'Anima (i muri riducono il danno, non lo bloccano).
-  // Valori: true = surplus intero, 'half' = surplus dimezzato.
+  // SURPLUS_PASSES (config): excess damage to a card "spills over" onto the
+  // Anima (walls reduce damage, they don't block it).
+  // Values: true = full surplus, 'half' = halved surplus.
   const cfgS = CFG();
   if (cfgS.SURPLUS_PASSES) {
     let eff = dmg;
@@ -364,7 +364,7 @@ function actionAttack(state, player, zone) {
   checkWin(state);
   if (state.over) return { ok: true };
 
-  // counter: il difensore risponde SOLO se sopravvive
+  // counter: defender strikes back only if it survived
   const def2 = state.zones[opp][zone];
   if (def2 && def2.card.ability && def2.card.ability.kind === 'counter') {
     ev(state, { type: 'ability', player: opp, zone, text: def2.card.ability.name + ': ' + def2.card.ability.value + " danni all'attaccante" });
@@ -373,7 +373,7 @@ function actionAttack(state, player, zone) {
   return { ok: true };
 }
 
-/** Fine turno: alterna il giocatore, trigger on_turn_start (ramp), limite turni. */
+/** End turn: swap the active player, fire on_turn_start triggers (ramp), check turn limit. */
 function endTurn(state) {
   if (state.over) return;
   checkWin(state);
@@ -393,8 +393,8 @@ function endTurn(state) {
 
 /* ---------- bot ---------- */
 
-/** Mazzo casuale per SquerBot: 8 carte, niente duplicati, max 2 per tipo,
-    mai una leggendaria che il giocatore non possiede (niente spoiler). */
+/** Random SquerBot deck: DECK_SIZE cards, no duplicates, max 2 per type,
+    never a legendary the player doesn't own (no spoilers). */
 function makeBotDeck(allCards, ownedUids, rng) {
   const r = rng || rngFor('bot-deck');
   const pool = allCards.filter(c =>
@@ -409,21 +409,21 @@ function makeBotDeck(allCards, ownedUids, rng) {
     byType[c.type] = (byType[c.type] || 0) + 1;
     deck.push(c);
   }
-  for (const c of shuffled) { // caso limite: riempi fino a 8
+  for (const c of shuffled) { // edge case: top up to the full deck size
     if (deck.length >= (CFG().DECK_SIZE || 8)) break;
     if (deck.indexOf(c) < 0) deck.push(c);
   }
   return deck;
 }
 
-/** Mossa del bot: applica un'azione legale (euristica + 15% subottimale). */
+/** Bot move: apply a legal action (heuristic + 15% suboptimal). */
 function botAct(state) {
   if (state.over || state.turnPlayer !== 'b') return { ok: false };
   const cfg = CFG();
   const threshold = cfg.BOT_ATTACK_ANIMA_THRESHOLD != null ? cfg.BOT_ATTACK_ANIMA_THRESHOLD : 25;
   const actions = [];
 
-  // 1. attacco diretto all'Anima scoperta con danno >= soglia
+  // 1. direct Anima attack on an open zone with damage >= threshold
   for (const z of ZONES) {
     const atkSlot = state.zones.b[z];
     if (atkSlot && !state.zones.p[z]) {
@@ -431,7 +431,7 @@ function botAct(state) {
       if (dmg >= threshold) actions.push({ type: 'attack', zone: z, score: 100 + dmg });
     }
   }
-  // 2. eliminare una carta avversaria in vantaggio di tipo
+  // 2. take out an enemy card with a type disadvantage
   for (const z of ZONES) {
     const atkSlot = state.zones.b[z];
     const def = state.zones.p[z];
@@ -439,7 +439,7 @@ function botAct(state) {
       actions.push({ type: 'attack', zone: z, score: 90 - def.card.curHp });
     }
   }
-  // 3. posiziona la carta migliore in una zona vuota
+  // 3. place the best card into an empty zone
   if (state.hand.b.length && ZONES.some(z => !state.zones.b[z])) {
     let best = null, bestScore = -1;
     state.hand.b.forEach((c, i) => {
@@ -454,9 +454,9 @@ function botAct(state) {
     });
     if (best) actions.push({ type: 'place', handIndex: best.handIndex, zone: best.zone, score: 60 + bestScore });
   }
-  // 4. pesca
+  // 4. draw
   if (canDraw(state, 'b')) actions.push({ type: 'draw', score: 10 });
-  // 5. fallback: qualsiasi attacco/posizionamento legale
+  // 5. fallback: any legal attack/placement
   if (!actions.length) {
     for (const z of ZONES) { if (state.zones.b[z]) actions.push({ type: 'attack', zone: z, score: 5 }); }
     if (state.hand.b.length) {
@@ -473,7 +473,7 @@ function botAct(state) {
   }
   if (chosen.type === 'attack') return actionAttack(state, 'b', chosen.zone);
   if (chosen.type === 'place') return actionPlace(state, 'b', chosen.handIndex, chosen.zone);
-  // pesca: tiene la pescata scartando la carta peggiore (se mano piena)
+  // draw: keep the drawn card, discarding the worst one if the hand is full
   const hand = state.hand.b;
   let worstIdx = null, worstSum = Infinity;
   hand.forEach((c, i) => { const s = c.curAtk + c.curHp; if (s < worstSum) { worstSum = s; worstIdx = i; } });
@@ -481,11 +481,32 @@ function botAct(state) {
   return actionDraw(state, 'b', { keep: true, handIndex: full && worstIdx != null ? worstIdx : null });
 }
 
-/* ---------- premi ---------- */
+/* ---------- rewards ---------- */
 
 function matchReward(outcome) {
   const r = (CFG().AI_REWARDS) || { win: 12, draw: 6, lose: 3 };
   return r[outcome] || 0;
+}
+
+/* ---------- state serialization (PvP: persist mid-match) ---------- */
+
+/** JSON-safe copy of a match state: strips the live rng object (functions
+    can't be JSON'd) and records its internal state via getState(). */
+function serializeMatch(state) {
+  const copy = JSON.parse(JSON.stringify(state));
+  copy.rngState = state.rng && typeof state.rng.getState === 'function' ? state.rng.getState() : 0;
+  delete copy.rng;
+  return copy;
+}
+
+/** Rebuild a live state from serializeMatch() output (e.g. D1 state_json). */
+function restoreMatch(json) {
+  const state = JSON.parse(JSON.stringify(json));
+  const rs = state.rngState != null ? state.rngState : 0;
+  delete state.rngState;
+  state.rng = rngFromState(rs);
+  if (!Array.isArray(state.events)) state.events = [];
+  return state;
 }
 
 /* ---------- API ---------- */
@@ -502,7 +523,8 @@ SQUER.GAME = {
   matchReward,
   other,
   ZONE_KEYS: ZONES.slice(),
+  serializeMatch,
+  restoreMatch,
 };
 
-// testabilità in Node
 if (typeof module !== 'undefined' && module.exports) module.exports = SQUER.GAME;

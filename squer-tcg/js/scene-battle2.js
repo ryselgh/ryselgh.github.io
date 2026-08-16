@@ -1,15 +1,5 @@
-/* =========================================================
-   Squer TCG - BattleScene2 (v2): battaglia a turni in 3D
-   Campo in PROSPETTIVA come un tavolo reale: le zone sono
-   "a terra" (pad piatti sul tavolo, carte zona appoggiate),
-   la mano del giocatore è a VENTAGLIO davanti al tavolo.
-   - drag&drop dalla mano alle zone (come la v1)
-   - tap su carta in mano = seleziona/deseleziona
-   - tap su zona/carta = posiziona / seleziona (attacca) / info avversario
-   - pesca animata (ingresso della carta nel ventaglio)
-   - overlay PV/ATK live, danno flottante, animazioni attacco/morte/ramp
-   La logica resta in game.js; qui solo visualizzazione e input.
-   ========================================================= */
+// Squer TCG BattleScene2: 3D turn-based battle on a perspective table.
+// Zones are flat pads, the player hand is a fan; logic stays in game.js.
 
 var SQUER = window.SQUER || (window.SQUER = {});
 
@@ -20,31 +10,31 @@ const BZ = {
   ZONE_X: { left: -2.3, center: 0, right: 2.3 },
   ROW_BOT: -1.75,
   ROW_PLAYER: 1.75,
-  ZONE_Y: 0.035,           // carte zona: appoggiate sul tavolo
+  ZONE_Y: 0.035,           // zone cards: laid flat on the table
   PAD_W: 2.05, PAD_H: 2.35,
-  HAND_Y: -1.3, HAND_Z: 4.0,     // mano del giocatore: davanti al tavolo, in basso
-  BOT_HAND_Y: 3.0, BOT_HAND_Z: 1.0, BOT_HAND_SCALE: 0.8,  // dorsi del bot: grandi, ravvicinati, avanti
-  CARD_ZONE_SCALE_P: 1.0,   // carte in campo del giocatore
-  CARD_ZONE_SCALE_B: 1.2,   // carte in campo del bot (piu' grandi: e' piu' lontano)
-  CARD_HAND_SCALE: 1.15,   // carte in mano (più grandi)
-  DRAG_PLANE_Y: 1.7,       // piano di volo del drag
-  DRAG_SCALE: 0.95,        // scala della carta trascinata
-  DRAG_PIVOT_OFFSET: 1.0,  // il cursore aggancia la carta in BASSO (non al centro)
-  DRAG_MIN_Z: 0.9,         // la carta non va oltre meta' campo del giocatore (+ offset)
+  HAND_Y: -1.3, HAND_Z: 4.0,     // player hand: low, in front of the table
+  BOT_HAND_Y: 3.0, BOT_HAND_Z: 1.0, BOT_HAND_SCALE: 0.8,  // bot backs: big, close together, up front
+  CARD_ZONE_SCALE_P: 1.0,   // player zone cards
+  CARD_ZONE_SCALE_B: 1.2,   // bot zone cards (bigger: further away)
+  CARD_HAND_SCALE: 1.15,   // hand cards (bigger)
+  DRAG_PLANE_Y: 1.7,       // drag flight plane
+  DRAG_SCALE: 0.95,        // dragged card scale
+  DRAG_PIVOT_OFFSET: 1.0,  // cursor grips the card at the BOTTOM (not center)
+  DRAG_MIN_Z: 0.9,         // card never passes the player's mid-field (+ offset)
   TAP_DIST: 12, TAP_MAX_MS: 600,
 };
 const PAD_COLORS = { neutral: 0x3d7bff, place: 0xffc93d, sel: 0xffc93d, front: 0xff8a5f };
-// colore bordo overlay per tipo (coerente con le palette delle carte)
+// overlay border color per type (consistent with card palettes)
 const OV_TYPE_COLORS = {
   fuoco: 0xff6b4a, erba: 0x6bc95f, acqua: 0x4aa8ff, folgore: 0xffd54a,
   psico: 0xb86bff, lottatore: 0xff9a4a, buio: 0x7a5c99, fata: 0xff7ab8,
   drago: 0x5a6bff, metallo: 0xa8b0bf, spettrale: 0x8f7ae8, normale: 0xc8cdd6,
 };
-const OV_H = 96; // altezza overlay zone (px)
+const OV_H = 96; // zone overlay height (px)
 
 function fanPos(n, i, baseY, spreadMul = 1) {
-  // spread: angolo tra carte adiacenti. Con mani piccole il ventaglio si
-  // apre di più (le carte non si compenetrano, anche le 2 centrali a 4).
+  // spread: angle between adjacent cards. Small hands open the fan wider
+  // so cards never overlap (even the 2 middle ones out of 4).
   const spread = Math.min(0.85, 1.9 / Math.max(n - 1, 1)) * spreadMul;
   const r = 3.1;
   const a = (i - (n - 1) / 2) * spread;
@@ -57,12 +47,13 @@ function fanPos(n, i, baseY, spreadMul = 1) {
 }
 
 class BattleScene2 {
-  constructor(container, { onZoneTap, onHandTap, onHandDrop, onHandDrag } = {}) {
+  constructor(container, { onZoneTap, onHandTap, onHandDrop, onHandDrag, onPadMatchup } = {}) {
     this.container = container;
     this.onZoneTap = onZoneTap || (() => {});
     this.onHandTap = onHandTap || (() => {});
     this.onHandDrop = onHandDrop || (() => {});
-    this.onHandDrag = onHandDrag || (() => {}); // hint matchup durante il drag
+    this.onHandDrag = onHandDrag || (() => {}); // matchup hint during drag
+    this.onPadMatchup = onPadMatchup || (() => {}); // drag sopra un pad: adv 1/-1/0/null
     this.width = container.clientWidth || 340;
     this.height = container.clientHeight || 420;
 
@@ -85,14 +76,14 @@ class BattleScene2 {
     rim.position.set(-3, -1, -2);
     this.scene.add(rim);
 
-    // tavolo (orizzontale a y=0)
+    // table (horizontal at y=0)
     const table = new THREE.Mesh(
       new THREE.PlaneGeometry(BZ.TABLE_W, BZ.TABLE_D),
       new THREE.MeshStandardMaterial({ color: 0x161b28, roughness: 0.9 })
     );
     table.rotation.x = -Math.PI / 2;
     this.scene.add(table);
-    // linea di metà campo
+    // mid-field line
     const line = new THREE.Mesh(
       new THREE.PlaneGeometry(8.4, 0.07),
       new THREE.MeshBasicMaterial({ color: 0x39425c, transparent: true, opacity: 0.65 })
@@ -114,24 +105,24 @@ class BattleScene2 {
     this.zoneState = { p: {}, b: {} };
     for (const pl of ['p', 'b']) for (const z of Z2) this._buildPad(pl, z);
 
-    // mano
+    // player hand (fan)
     this.handGroup = new THREE.Group();
     this.scene.add(this.handGroup);
-    this.handMeshes = [];   // indice mano -> mesh
+    this.handMeshes = [];   // hand index -> mesh
     this._handIds = [];
 
-    // mano del bot (dorsi in alto)
+    // bot hand (card backs up)
     this.botHandGroup = new THREE.Group();
     this.scene.add(this.botHandGroup);
     this._botHandCount = 0;
 
-    // overlay PV/ATK + danno flottante
+    // HP/ATK overlay + floating damage
     this.overlayEl = document.createElement('div');
     this.overlayEl.className = 'zone-overlays';
     container.appendChild(this.overlayEl);
     this.ovEls = {};
     for (const pl of ['p', 'b']) for (const z of Z2) this._buildOverlay(pl, z);
-    // badge dati carta in mano (hover/selezione)
+    // in-hand card info badge (hover/select)
     this._handInfoEl = document.createElement('div');
     this._handInfoEl.className = 'hand-info hidden';
     this.overlayEl.appendChild(this._handInfoEl);
@@ -140,7 +131,7 @@ class BattleScene2 {
 
     this.raycaster = new THREE.Raycaster();
     this._bindInput();
-    // tap sui mini badge: espande/collassa (mobile non ha hover)
+    // tap mini badges to expand/collapse (no hover on mobile)
     this._expandedBadge = null;
     this.overlayEl.addEventListener('click', (e) => {
       const ov = e.target.closest('.zone-ov');
@@ -223,7 +214,7 @@ class BattleScene2 {
     }
   }
 
-  // =================== STATO ZONE ===================
+  // ZONE STATE
   /** stateVis = { p: { zone: {id, orig, curHp, curAtk, hp, ability} | null }, b: {...} } */
   setState(stateVis, sel) {
     for (const pl of ['p', 'b']) {
@@ -237,7 +228,7 @@ class BattleScene2 {
         } else if (cur) {
           this._removeZoneCard(pl, z, true);
           const el = this.ovEls[pl + '/' + z];
-          if (el) el.classList.add('hidden'); // niente mini badge su zona vuota
+          if (el) el.classList.add('hidden'); // no mini badge on empty zone
         }
         this.zoneState[pl][z] = sv ? sv.id : null;
       }
@@ -256,7 +247,8 @@ class BattleScene2 {
     mesh.userData.cardId = sv.id;
     mesh.userData.player = pl;
     mesh.userData.zone = z;
-    mesh.rotation.x = -Math.PI / 2; // piatta sul tavolo
+    mesh.userData.orig = sv.orig; // per il matchup del drag (tipo della carta di fronte)
+    mesh.rotation.x = -Math.PI / 2; // flat on the table
     mesh.position.copy(this._zonePos(pl, z));
     mesh.scale.setScalar(0.01);
     this.zoneGroup.add(mesh);
@@ -291,7 +283,7 @@ class BattleScene2 {
     el.querySelector('.zo-hpfill').className = 'zo-hpfill' + (pct < 35 ? ' low' : '');
     el.querySelector('.zo-el').textContent = (sv.orig && sv.orig.typeSymbol) || (sv.typeSymbol) || '';
     el.querySelector('.zo-atk').textContent = sv.curAtk;
-    el.querySelector('.zo-hp-mini').textContent = sv.curHp; // hp residui, rosso
+    el.querySelector('.zo-hp-mini').textContent = sv.curHp; // remaining HP, red
     el.querySelector('.zo-atk-full').textContent = '⚔️ ' + sv.curAtk;
     el.querySelector('.zo-ab-icon').textContent = sv.ability ? sv.ability.symbol : '';
     el.querySelector('.zo-hp').textContent = '❤️ ' + sv.curHp + '/' + sv.hp;
@@ -303,7 +295,7 @@ class BattleScene2 {
   }
 
   _positionOverlay(el, pl, z) {
-    // angolo in alto a DESTRA della carta a terra
+    // top-RIGHT corner of the laid-down card
     const p = new THREE.Vector3(BZ.ZONE_X[z] + 0.82, 0.9, pl === 'p' ? BZ.ROW_PLAYER : BZ.ROW_BOT);
     const v = p.clone().project(this.camera);
     const x = (v.x + 1) / 2 * this.width;
@@ -326,11 +318,11 @@ class BattleScene2 {
     }
   }
 
-  // =================== MANO A VENTAGLIO ===================
-  /** handCards = [{ id, orig }] — la mano del giocatore (ordine = indice) */
+  // PLAYER HAND (FAN)
+  /** handCards = [{ id, orig }] — player hand (order = index) */
   setHand(handCards, selIndex) {
     const n = handCards.length;
-    // rimuovi carte non più in mano
+    // remove cards no longer in hand
     for (let i = this.handMeshes.length - 1; i >= 0; i--) {
       const m = this.handMeshes[i];
       if (!handCards.some(hc => hc.id === m.userData.cardId)) {
@@ -338,7 +330,7 @@ class BattleScene2 {
         this.handMeshes.splice(i, 1);
       }
     }
-    // aggiungi/aggiorna carte
+    // add/update cards
     for (let i = 0; i < n; i++) {
       const hc = handCards[i];
       const p = fanPos(n, i, BZ.HAND_Y);
@@ -353,7 +345,7 @@ class BattleScene2 {
         mesh.scale.setScalar(0.01);
         this.handGroup.add(mesh);
         this.handMeshes.push(mesh);
-        // pesca animata: entra dal basso e si mette nel ventaglio
+        // animated draw: rises from below into the fan
         mesh.position.set(p.x, BZ.HAND_Y - 1.6, BZ.HAND_Z + p.z);
         this._tween(0.45, (k) => {
           const e = easeOutCubic(k);
@@ -373,26 +365,26 @@ class BattleScene2 {
     this._applyHandVisual();
   }
 
-  /** Visual della mano: hover (la carta guardata AVANZA verso la camera,
-      dritta; le altre si allontanano comprimendo il ventaglio dai lati
-      opposti) e selezione (carta sollevata). Transizioni morbide. */
+  /** Hand visual: the hovered card moves FORWARD toward the camera,
+      upright, while the others recede compressing the fan from both
+      sides; the selected card lifts up. Smooth transitions. */
   _applyHandVisual() {
     const hover = this._hoverHand;
     const sel = this._selHand;
     for (const m of this.handMeshes) {
-      if (m === this._dragMesh) continue; // la carta trascinata e' controllata dal follow
+      if (m === this._dragMesh) continue; // dragged card is controlled by follow
       const h = m.userData.home;
       if (!h) continue;
       const i = m.userData.handIndex;
       let tx = h.x, ty = h.y, tz = h.z, tr = h.rotY, ts = BZ.CARD_HAND_SCALE;
       if (i === hover) {
         ty += 0.5;
-        tz += 0.55;             // verso la camera
-        tr = 0;                 // dritta
+        tz += 0.55;             // toward the camera
+        tr = 0;                 // upright
         ts = BZ.CARD_HAND_SCALE * 1.18;
       } else if (hover >= 0) {
-        // compressione: si allontana in x mantenendo l'arco del ventaglio,
-        // più lontano quanto più è distante dalla carta in focus
+        // compression: pushed out in x while keeping the fan arc,
+        // farther the more distant from the focused card
         const d = Math.abs(i - hover);
         const off = 0.28 + d * 0.16;
         tx += (i < hover ? -off : off);
@@ -412,8 +404,8 @@ class BattleScene2 {
     this._updateHandInfo();
   }
 
-  /** Badge dati della carta in HOVER (solo hover: premendo/spostando la
-      carta sparisce per dare visibilità al campo). Niente barra PV. */
+  /** Data badge for the HOVERED card (hover only: pressing/dragging the
+      card hides it to keep the field visible). No HP bar. */
   _updateHandInfo() {
     const el = this._handInfoEl;
     const idx = this._hoverHand;
@@ -427,15 +419,15 @@ class BattleScene2 {
     const v = mesh.position.clone().project(this.camera);
     let x = (v.x + 1) / 2 * this.width;
     const y = (-v.y + 1) / 2 * this.height;
-    // mostro per misurare la larghezza reale, poi la blocco dentro lo schermo
-    // (shift verso il centro quando la carta e' vicina al bordo)
+    // show to measure real width, then clamp inside the screen
+    // (shift toward center when the card is near an edge)
     el.classList.remove('hidden');
     const bw = el.offsetWidth || 120;
     const margin = 8;
     x = THREE.MathUtils.clamp(x, bw / 2 + margin, this.width - bw / 2 - margin);
     el.style.left = x + 'px';
-    // sopra la carta; se non c'è spazio (sarebbe fuori schermo) va SOTTO
-    const bh = 90; // stima altezza badge
+    // above the card; if it would go off-screen, place it BELOW
+    const bh = 90; // badge height estimate
     let top = y - 125;
     if (top - bh < 6) top = y + 105;
     top = Math.max(6, Math.min(top, this.height - bh - 6));
@@ -443,7 +435,7 @@ class BattleScene2 {
     el.style.transform = 'translate(-50%, 0)';
   }
 
-  /** Mano del bot: n dorsi in alto (dummyCard = carta con canvas per il dorso) */
+  /** Bot hand: n card backs up top (dummyCard has the back canvas) */
   setBotHand(n, dummyCard) {
     n = Math.max(0, n || 0);
     if (!this._botHandMeshes) this._botHandMeshes = [];
@@ -454,11 +446,11 @@ class BattleScene2 {
     }
     for (let i = 0; i < n; i++) {
       let m = this._botHandMeshes[i];
-      // ventaglio stretto: dorsi ravvicinati
+      // tight fan: backs close together
       const p = fanPos(n, i, BZ.BOT_HAND_Y, 0.5);
       if (!m) {
         m = buildCardMesh(dummyCard, BZ.BOT_HAND_SCALE);
-        m.rotation.y = Math.PI; // dorso
+        m.rotation.y = Math.PI; // card back
         m.rotation.x = -0.12;
         m.scale.setScalar(0.01);
         m.position.set(p.x, p.y - 1.2, BZ.BOT_HAND_Z + p.z);
@@ -481,7 +473,7 @@ class BattleScene2 {
     }
   }
 
-  // =================== INPUT (tap vs drag) ===================
+  // INPUT (tap vs drag)
   _collapseBadges() {
     for (const el of this.overlayEl.querySelectorAll('.zone-ov.expanded')) {
       el.classList.remove('expanded');
@@ -492,8 +484,8 @@ class BattleScene2 {
     const el = this.renderer.domElement;
     const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -BZ.DRAG_PLANE_Y);
     let sx = null, sy = null, downTime = 0;
-    let pressHand = null;    // indice carta mano premuta
-    let pressZone = null;    // { player, zone } premuto
+    let pressHand = null;    // pressed hand card index
+    let pressZone = null;    // pressed { player, zone }
     let dragging = false;
 
     const toNdc = (p) => {
@@ -509,7 +501,7 @@ class BattleScene2 {
     this._dragPlane = dragPlane;
     this._lastP = null;
     this._dragOffset = { x: 0, z: 0 };
-    // debug del trascinamento: registra gli eventi per l'analisi
+    // drag debug: log events for analysis
     this._debugLog = [];
     this._logDebug = (entry) => {
       this._debugLog.push(entry);
@@ -519,7 +511,7 @@ class BattleScene2 {
     const down = (e) => {
       const p = e.touches ? e.touches[0] : e;
       this._lastP = p;
-      // premendo/tenendo premuto il badge sparisce: visibilità sul campo
+      // pressing hides the hover badge to keep the field visible
       if (this._hoverHand !== -1) { this._hoverHand = -1; this._applyHandVisual(); }
       sx = p.clientX; sy = p.clientY; downTime = Date.now();
       dragging = false;
@@ -534,10 +526,10 @@ class BattleScene2 {
       if (!ud) { pressHand = null; pressZone = null; return; }
       if (ud.kind === 'hand') {
         pressHand = ud.handIndex;
-        this._startDrag(pressHand); // la carta si STACCA subito e si aggancia al pivot
-        this.onHandDrag(pressHand); // hint matchup: carta sollevata
-        // tocco prolungato (mobile): se il dito non si muove, dopo 450ms
-        // compare il badge delle info della carta
+        this._startDrag(pressHand); // card detaches immediately and snaps to the pivot
+        this.onHandDrag(pressHand); // matchup hint: card lifted
+        // long press (mobile): if the finger doesn't move, show the card
+        // info badge after 450ms
         clearTimeout(this._longPressT);
         this._longPressT = setTimeout(() => {
           if (pressHand !== null && !dragging) {
@@ -553,7 +545,7 @@ class BattleScene2 {
     const move = (e) => {
       const p = e.touches ? e.touches[0] : e;
       this._lastP = p;
-      // hover (desktop) solo quando non c'è presa in corso
+      // hover (desktop) only when no press is in progress
       if (pressHand === null && sx === null && !e.touches && e.pointerType !== 'touch') {
         const ndc = toNdc(p);
         const ud = pick(ndc, this.handMeshes);
@@ -564,7 +556,7 @@ class BattleScene2 {
       const dx = p.clientX - sx, dy = p.clientY - sy;
       if (Math.hypot(dx, dy) > BZ.TAP_DIST) {
         if (!dragging) {
-          clearTimeout(this._longPressT); // il dito si e' mosso: niente badge
+          clearTimeout(this._longPressT); // finger moved: no badge
           this._hoverHand = -1;
           this._applyHandVisual();
         }
@@ -599,13 +591,13 @@ class BattleScene2 {
       if (idx !== null) {
         this._logDebug({ t: Math.round(performance.now()), e: 'up', x: Math.round(p.clientX), y: Math.round(p.clientY), dist: Math.round(dist), drag: dist >= BZ.TAP_DIST, hand: idx });
         if (dist >= BZ.TAP_DIST) {
-          // trascinamento: rilascio su pad libero del giocatore -> piazza
+          // drag: release over a free player pad -> place
           const ud = pick(ndc, this.padMeshes);
           this._endDrag();
-          this.onHandDrag(null); // hint matchup: drag terminato
+          this.onHandDrag(null); // matchup hint: drag ended
           if (ud && ud.player === 'p') this.onHandDrop(idx, ud.zone);
         } else {
-          // tap: torna in mano e seleziona; il badge sparisce
+          // tap: back to hand and select; badge hides
           this._endDrag();
           this._hoverHand = -1;
           this._applyHandVisual();
@@ -638,27 +630,27 @@ class BattleScene2 {
     if (!mesh) return;
     this._dragMesh = mesh;
     this._hoverHand = -1;
-    this._cancelTag('hand'); // ferma i tween della visual: il drag ha il controllo
-    // la carta si STACCA dal ventaglio: si alza un po' (pivot in basso:
-    // sta sopra il dito) e si aggancia al mouse in PIXEL
+    this._cancelTag('hand'); // stop visual tweens: drag takes control
+    // card detaches from the fan: lifts slightly (bottom pivot, so it
+    // sits above the finger) and locks to the mouse in PIXELS
     mesh.rotation.y = 0;
     mesh.rotation.x = -0.2;
     this._setCardScale(mesh, BZ.DRAG_SCALE);
     mesh.position.y += 0.6;
-    // LAYER SUPERIORE: la carta trascinata sta SEMPRE sopra tavolo, pad,
-    // carte e badge. Deve entrare nella PASSATA TRASPARENTE (pad e foil
-    // holo sono trasparenti e vengono disegnati dopo gli opachi):
-    // transparent=true + depthTest=false + renderOrder 1000 (mesh e materiali)
+    // TOP LAYER: the dragged card always sits above table, pads, cards
+    // and badges. It must render in the TRANSPARENT pass (pads and holo
+    // foil are transparent and drawn after opaque objects):
+    // transparent=true + depthTest=false + renderOrder 1000 (mesh and materials)
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     mats.forEach((m) => { m.transparent = true; m.depthTest = false; m.renderOrder = 1000; });
     mesh.renderOrder = 1000;
-    // nascondi i mini badge delle zone durante il trascinamento
+    // hide zone mini badges while dragging
     for (const pl of ['p', 'b']) for (const z of Z2) {
       const el = this.ovEls[pl + '/' + z];
       if (el) el.classList.add('drag-hide');
     }
-    // offset di presa in PIXEL: proiezione della carta (dopo lo stacco)
-    // rispetto al mouse -> la carta segue il mouse 1:1 senza saltare
+    // pixel grab offset: card projection (after detach) vs the mouse, so
+    // the card follows 1:1 with no jump
     const v = mesh.position.clone().project(this.camera);
     const sx = (v.x + 1) / 2 * this.width;
     const sy = (-v.y + 1) / 2 * this.height;
@@ -669,12 +661,12 @@ class BattleScene2 {
     };
   }
 
-  /** Segue il mouse 1:1 in modo STABILE: la carta sta SEMPRE sul raggio del
-      mouse (target schermo = mouse + offset di presa). La quota (dalla mano
-      al piano di volo) dipende dalla profondita' del punto a quota 2.7:
-      se il mouse e' fermo, la carta resta ferma. La profondita' e'
-      clampata SUL RAGGIO (punto a z limite), quindi la proiezione resta
-      sempre al target: niente flicker, niente esplosione, niente scappata. */
+  /** Track the mouse 1:1 and stably: the card ALWAYS stays on the mouse
+      ray (screen target = mouse + grab offset). Height (hand to flight
+      plane) depends on the depth of the point at height 2.7, so a still
+      mouse keeps the card still. Depth is clamped ON THE RAY (point at
+      the limit z), so the projection always matches the target: no
+      flicker, no explosion, no runaway. */
   _dragFollow(p) {
     const mesh = this._dragMesh;
     if (!mesh) return;
@@ -690,23 +682,23 @@ class BattleScene2 {
     const tOfZ = (z) => (z - cam.z) / d.z;
     const pointAt = (t) => new THREE.Vector3().copy(cam).addScaledVector(d, t);
     const targetY = BZ.DRAG_PLANE_Y + BZ.DRAG_PIVOT_OFFSET;
-    // profondita' di riferimento (a quota 2.7) -> salita 0 vicino alla mano,
-    // 1 a meta' campo amica
+    // reference depth (at height 2.7) -> rise 0 near the hand,
+    // 1 at the friendly mid-field
     const zRef = cam.z + tOfY(targetY) * d.z;
     const salita = THREE.MathUtils.clamp(1 - (zRef - BZ.DRAG_MIN_Z) / 3.4, 0, 1);
     const yDes = (1 - salita) * (BZ.HAND_Y + 0.6) + salita * targetY;
     let pos = pointAt(tOfY(yDes));
-    // clamp profondita' SUL RAGGIO: mai oltre meta' campo, mai oltre la mano
+    // clamp depth ON THE RAY: never past mid-field or beyond the hand
     if (pos.z < BZ.DRAG_MIN_Z) pos = pointAt(tOfZ(BZ.DRAG_MIN_Z));
     else if (pos.z > 4.3) pos = pointAt(tOfZ(4.3));
     pos.x = THREE.MathUtils.clamp(pos.x, -4.6, 4.6);
     mesh.position.copy(pos);
-    mesh.rotation.y = 0; // sempre dritta durante il trascinamento
-    // inclinazione sincronizzata con la posizione
+    mesh.rotation.y = 0; // always upright while dragging
+    // tilt synced with position
     const flatAt = BZ.DRAG_MIN_Z + 0.05;
     const zoneDist = THREE.MathUtils.clamp(1 - Math.max(0, pos.z - flatAt) / 3.1, 0, 1);
     mesh.rotation.x = THREE.MathUtils.lerp(-0.25, -Math.PI / 2 + 0.08, zoneDist);
-    // pad sotto il CURSORE (mouse reale)
+    // pad under the real CURSOR (mouse)
     const ndcMouse = { nx: ((p.clientX - r.left) / r.width) * 2 - 1, ny: -(((p.clientY - r.top) / r.height) * 2 - 1) };
     this.raycaster.setFromCamera({ x: ndcMouse.nx, y: ndcMouse.ny }, this.camera);
     const hits = this.raycaster.intersectObjects(this.padMeshes, false);
@@ -714,7 +706,7 @@ class BattleScene2 {
     this._setPadHover(ud && ud.player === 'p' ? ud.zone : null);
   }
 
-  /** Punto del mouse corrente sul piano di volo */
+  /** Current mouse point on the flight plane */
   _mousePoint() {
     if (!this._lastP) return null;
     const el = this.renderer.domElement;
@@ -731,7 +723,7 @@ class BattleScene2 {
     const mesh = this._dragMesh;
     this._dragMesh = null;
     this._setPadHover(null);
-    // ripristina i materiali (depth test) e mostra i mini badge
+    // restore materials (depth test) and show mini badges
     for (const pl of ['p', 'b']) for (const z of Z2) {
       const el = this.ovEls[pl + '/' + z];
       if (el) el.classList.remove('drag-hide');
@@ -742,7 +734,7 @@ class BattleScene2 {
       mesh.renderOrder = 0;
     }
     if (!mesh) return;
-    // ritorna nel ventaglio (posizione dal fan corrente)
+    // return to the fan (position from the current fan)
     const idx = this.handMeshes.indexOf(mesh);
     if (idx < 0) return;
     const n = this.handMeshes.length;
@@ -754,7 +746,7 @@ class BattleScene2 {
       mesh.position.z += (BZ.HAND_Z + p.z - mesh.position.z) * e;
       mesh.rotation.y += (p.rotY - mesh.rotation.y) * e;
       mesh.rotation.x += (-0.12 - mesh.rotation.x) * e;
-      // ripristina anche la scala da campo (DRAG_SCALE) a quella del ventaglio
+      // also restore scale from field (DRAG_SCALE) to the fan one
       mesh.scale.setScalar(mesh.scale.x + (BZ.CARD_HAND_SCALE - mesh.scale.x) * e);
     }, () => this._setOverlay(mesh, false), null, 'hand');
   }
@@ -766,9 +758,18 @@ class BattleScene2 {
         pad.material.opacity = zone === pad.userData.zone ? 0.55 : 0.34;
       }
     }
+    // matchup della carta trascinata contro la carta sul pad avversario di fronte
+    let adv = null;
+    const dragCard = this._dragMesh && this._dragMesh.userData.orig;
+    const front = zone != null && this.cardMeshes.b && this.cardMeshes.b[zone]
+      ? this.cardMeshes.b[zone].userData.orig : null;
+    if (dragCard && dragCard.type && front && front.type) {
+      adv = SQUER.GAME.typeAdvantage(dragCard.type, front.type); // 1 forte, -1 debole, 0 neutro
+    }
+    this.onPadMatchup(zone != null ? zone : null, adv);
   }
 
-  // =================== ANIMAZIONI EVENTO ===================
+  // EVENT ANIMATIONS
   animateAttack(attackerId, targetPl, targetZone, cb) {
     const from = this._findCardMesh(attackerId);
     if (!from) { if (cb) cb(); return; }
@@ -821,7 +822,7 @@ class BattleScene2 {
     return null;
   }
 
-  // =================== EFFECTS (foil + sparkles) ===================
+  // EFFECTS (foil + sparkles)
   _applyEffects(card, mesh) {
     const fx = card.effects || [];
     const { w: cw, h: ch, d: cd } = mesh.userData.dims;
@@ -884,7 +885,7 @@ class BattleScene2 {
   }
 
   _setOverlay(mesh, on) {
-    // placeholder per compatibilità (non usato attualmente)
+    // compatibility placeholder (not currently used)
   }
 
   _onResize() {
