@@ -3,7 +3,7 @@
    Cache SEPARATA dalla prod (squer-tcg-vXX): scope dev, nessun
    conflitto con l'app installata in produzione.
    ========================================================= */
-const CACHE = 'squer-tcg-dev-v7';
+const CACHE = 'squer-tcg-dev-v8';
 const PRECACHE = [
   './',
   'index.html',

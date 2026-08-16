@@ -549,20 +549,44 @@ body.app-ready .squerini-badge { display: inline-flex; }
    regole erano IRRAGGIUNGIBILI dopo la prima apertura. */
 #screen-battle .screen-header { padding-left: 64px; padding-right: 50px; }
 #screen-battle .screen-header h2 { text-align: center; }
-/* album e dettaglio: tasto indietro nel flusso dell'header (a sinistra),
-   STILE PILLOLA come gli altri tasti; il titolo resta centrato */
-#btn-collection-back, #btn-detail-back {
+/* album, dettaglio, mazzo, sfida, amici: tasto indietro nel flusso
+   dell'header (a sinistra), STILE PILLOLA come gli altri tasti; il titolo
+   resta centrato */
+#btn-collection-back, #btn-detail-back, #btn-deck-back, #btn-sfida-back, #btn-friends-back {
   padding: 8px 14px; font-size: 20px; line-height: 1;
   border-radius: 99px; margin-left: 0;
   display: flex; align-items: center; justify-content: center;
 }
 .btn-nav { padding: 8px 14px; font-size: 20px; line-height: 1; border-radius: 99px; }
-#screen-collection .screen-header { position: relative; }
-#screen-collection .screen-header h2 {
-  position: absolute; left: 0; right: 0; top: 14px; bottom: 6px;
+
+/* Header centrati (mazzo, sfida, amici): titolo assoluto centrato sul
+   viewport, back a sinistra, eventuali azioni a destra. flex:0 0 auto
+   annulla il flex:1 della regola base (altrimenti width=0).
+   width:100% è ESSENZIALE: lo screen ha align-items:center, senza
+   lo header si restringe al contenuto e left:50% centra sul parent stretto. */
+#screen-deck .screen-header, #screen-sfida .screen-header, #screen-friends .screen-header {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+#screen-deck .screen-header h2, #screen-sfida .screen-header h2, #screen-friends .screen-header h2 {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 14px; bottom: 6px;
+  margin: 0;
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: calc(100% - 150px);
   display: flex; align-items: center; justify-content: center;
-  margin: 0 auto; width: auto; max-width: calc(100% - 120px);
-  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-align: center;
+  font-size: 17px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Amici: azioni a destra (⚔️ sfida + ＋ amico) */
+#screen-friends .screen-header .header-spacer {
+  display: flex; gap: 6px; justify-content: flex-end;
+  margin-left: auto; flex-shrink: 0;
 }
 /* dettaglio: titolo centrato sull'INTERO header, nella stessa riga di back
    e frecce (allineato verticalmente tra i padding dell'header) */
