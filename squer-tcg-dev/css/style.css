@@ -552,24 +552,24 @@ body.app-ready .squerini-badge { display: inline-flex; }
 /* album, dettaglio, mazzo, sfida, amici: tasto indietro nel flusso
    dell'header (a sinistra), STILE PILLOLA come gli altri tasti; il titolo
    resta centrato */
-#btn-collection-back, #btn-detail-back, #btn-deck-back, #btn-sfida-back, #btn-friends-back {
+#btn-collection-back, #btn-detail-back, #btn-deck-back, #btn-sfida-back, #btn-friends-back, #btn-trade-back {
   padding: 8px 14px; font-size: 20px; line-height: 1;
   border-radius: 99px; margin-left: 0;
   display: flex; align-items: center; justify-content: center;
 }
 .btn-nav { padding: 8px 14px; font-size: 20px; line-height: 1; border-radius: 99px; }
 
-/* Header centrati (mazzo, sfida, amici): titolo assoluto centrato sul
-   viewport, back a sinistra, eventuali azioni a destra. flex:0 0 auto
+/* Header centrati (mazzo, sfida, amici, scambio): titolo assoluto centrato
+   sul viewport, back a sinistra, eventuali azioni a destra. flex:0 0 auto
    annulla il flex:1 della regola base (altrimenti width=0).
    width:100% è ESSENZIALE: lo screen ha align-items:center, senza
    lo header si restringe al contenuto e left:50% centra sul parent stretto. */
-#screen-deck .screen-header, #screen-sfida .screen-header, #screen-friends .screen-header {
+#screen-deck .screen-header, #screen-sfida .screen-header, #screen-friends .screen-header, #screen-trade .screen-header {
   position: relative;
   width: 100%;
   box-sizing: border-box;
 }
-#screen-deck .screen-header h2, #screen-sfida .screen-header h2, #screen-friends .screen-header h2 {
+#screen-deck .screen-header h2, #screen-sfida .screen-header h2, #screen-friends .screen-header h2, #screen-trade .screen-header h2 {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
