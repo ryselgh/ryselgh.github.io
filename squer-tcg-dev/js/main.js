@@ -828,6 +828,7 @@ const App = {
       onHandTap: (index) => this.onHandTap(index),
       onHandDrop: (handIndex, zone) => this.onHandDrop(handIndex, zone),
       onHandDrag: (index) => this.onHandDrag(index),
+      onPadMatchup: (zone, adv) => this.onPadMatchup(zone, adv),
     });
     $('#battle-nick').textContent = loadState().nickname || 'Tu';
     // emoji profilo locale accanto alla propria Anima (online)
@@ -1055,6 +1056,24 @@ const App = {
   clearMatchupHint() {
     const el = $('#matchup-hint');
     if (el) { el.innerHTML = ''; el.classList.add('hidden'); }
+  },
+
+  /** Badge del pad durante il drag: Superefficace (verde) / Poco efficace
+      (rosso) in base al tipo della carta sul pad avversario di fronte.
+      adv: 1 forte, -1 debole, 0 neutro, null nessun pad/nessuna carta. */
+  onPadMatchup(zone, adv) {
+    const el = $('#pad-matchup');
+    if (!el) return;
+    if (adv === 1) {
+      el.textContent = 'Superefficace';
+      el.className = 'pad-matchup super';
+    } else if (adv === -1) {
+      el.textContent = 'Poco efficace';
+      el.className = 'pad-matchup weak';
+    } else {
+      el.textContent = '';
+      el.className = 'pad-matchup hidden';
+    }
   },
 
   processEvents(events) {
@@ -2003,6 +2022,7 @@ const App = {
       onHandTap: (index) => this.onHandTap(index),
       onHandDrop: (handIndex, zone) => this.onHandDrop(handIndex, zone),
       onHandDrag: (index) => this.onHandDrag(index),
+      onPadMatchup: (zone, adv) => this.onPadMatchup(zone, adv),
     });
     $('#battle-nick').textContent = SQUER.Online.user ? (SQUER.Online.user.nickname || 'Tu') : 'Tu';
     if (SQUER.Online.user && SQUER.Online.user.avatar_emoji) {

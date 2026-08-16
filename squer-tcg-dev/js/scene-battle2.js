@@ -47,12 +47,13 @@ function fanPos(n, i, baseY, spreadMul = 1) {
 }
 
 class BattleScene2 {
-  constructor(container, { onZoneTap, onHandTap, onHandDrop, onHandDrag } = {}) {
+  constructor(container, { onZoneTap, onHandTap, onHandDrop, onHandDrag, onPadMatchup } = {}) {
     this.container = container;
     this.onZoneTap = onZoneTap || (() => {});
     this.onHandTap = onHandTap || (() => {});
     this.onHandDrop = onHandDrop || (() => {});
     this.onHandDrag = onHandDrag || (() => {}); // matchup hint during drag
+    this.onPadMatchup = onPadMatchup || (() => {}); // drag sopra un pad: adv 1/-1/0/null
     this.width = container.clientWidth || 340;
     this.height = container.clientHeight || 420;
 
@@ -246,6 +247,7 @@ class BattleScene2 {
     mesh.userData.cardId = sv.id;
     mesh.userData.player = pl;
     mesh.userData.zone = z;
+    mesh.userData.orig = sv.orig; // per il matchup del drag (tipo della carta di fronte)
     mesh.rotation.x = -Math.PI / 2; // flat on the table
     mesh.position.copy(this._zonePos(pl, z));
     mesh.scale.setScalar(0.01);
@@ -756,6 +758,15 @@ class BattleScene2 {
         pad.material.opacity = zone === pad.userData.zone ? 0.55 : 0.34;
       }
     }
+    // matchup della carta trascinata contro la carta sul pad avversario di fronte
+    let adv = null;
+    const dragCard = this._dragMesh && this._dragMesh.userData.orig;
+    const front = zone != null && this.cardMeshes.b && this.cardMeshes.b[zone]
+      ? this.cardMeshes.b[zone].userData.orig : null;
+    if (dragCard && dragCard.type && front && front.type) {
+      adv = SQUER.GAME.typeAdvantage(dragCard.type, front.type); // 1 forte, -1 debole, 0 neutro
+    }
+    this.onPadMatchup(zone != null ? zone : null, adv);
   }
 
   // EVENT ANIMATIONS
