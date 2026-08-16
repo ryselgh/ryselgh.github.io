@@ -583,10 +583,17 @@ body.app-ready .squerini-badge { display: inline-flex; }
   font-size: 17px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Amici: azioni a destra (⚔️ sfida + ＋ amico) */
+/* Amici: azioni a destra (⚔️ sfida + ＋ amico) nel flusso dell'header,
+   allineate verticalmente col tasto indietro (stessa altezza del back). */
 #screen-friends .screen-header .header-spacer {
   display: flex; gap: 6px; justify-content: flex-end;
   margin-left: auto; flex-shrink: 0;
+}
+#screen-friends .screen-header .header-spacer .btn-help {
+  position: static;
+  width: auto; height: auto;
+  padding: 8px 14px; font-size: 15px;
+  border-radius: 99px;
 }
 /* dettaglio: titolo centrato sull'INTERO header, nella stessa riga di back
    e frecce (allineato verticalmente tra i padding dell'header) */
