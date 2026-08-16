@@ -2477,8 +2477,14 @@ const App = {
       const s = SQUER.PACKS.loadState();
       s.collection = SQUER.Online.mergeCollections(s.collection, d.collection);
       if (d.squerini > (s.squerini || 0)) s.squerini = d.squerini;
-      // pacchetti aperti: merge max (il server è autorevole se più alto)
-      if (d.packs_opened > (s.packsOpened || 0)) s.packsOpened = d.packs_opened;
+      // pacchetti aperti: merge max (il server è autorevole se più alto);
+      // se invece il LOCALE è più alto (es. account già migrato prima del
+      // contatore), lo spingiamo su così il server si allinea
+      if (d.packs_opened > (s.packsOpened || 0)) {
+        s.packsOpened = d.packs_opened;
+      } else if ((s.packsOpened || 0) > (d.packs_opened || 0)) {
+        SQUER.Online.pushCollection({ collection: {}, squerini: 0, packsOpened: s.packsOpened }).catch(() => {});
+      }
       SQUER.PACKS.saveState(s);
       setPhase(3, 'ok');
       SQUER.Online.synced = true;
