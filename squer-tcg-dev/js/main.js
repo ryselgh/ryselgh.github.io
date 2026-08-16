@@ -1809,7 +1809,8 @@ const App = {
     return `<div class="friend-card">
       <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
       <div class="friend-info"><b>${f.nickname}</b>
-        <span class="friend-sub">${f.level_text} · ${coll}${pvp ? ' · ' + pvp : ''}</span></div>
+        <span class="friend-sub">${f.level_text} · ${coll}</span>
+        ${pvp ? `<span class="friend-sub friend-pvp">${pvp}</span>` : ''}</div>
       <button class="btn btn-ghost btn-sm" data-act="trade" data-id="${f.id}" data-name="${f.nickname}" title="Scambia">🤝</button>
       <button class="btn btn-ghost btn-sm" data-act="profile" data-id="${f.id}">👁</button>
       <button class="btn btn-ghost btn-sm" data-act="remove" data-id="${f.id}">🗑</button>
@@ -1822,8 +1823,8 @@ const App = {
       <div class="fp-row"><span>Livello collezionista</span><b>${p.level_text}</b></div>
       <div class="fp-row"><span>Scambi fatti</span><b>${p.trades_done}</b></div>
       <div class="fp-row"><span>Carte possedute</span><b>${p.collection.cards} / 180</b></div>
-      <div class="fp-row"><span>Copie totali</span><b>${p.collection.totalCopies}</b></div>
-      <div class="fp-row"><span>PvP (V-P-P)</span><b>${p.pvp.wins}-${p.pvp.losses}-${p.pvp.draws}</b></div>`;
+      <div class="fp-row"><span>Pacchetti aperti</span><b>${p.packs_opened != null ? p.packs_opened : '—'}</b></div>
+      <div class="fp-row"><span>PvP (W-L-D)</span><b>${p.pvp.wins}-${p.pvp.losses}-${p.pvp.draws}</b></div>`;
     $('#friends-profile-modal').classList.remove('hidden');
   },
 
@@ -2476,6 +2477,8 @@ const App = {
       const s = SQUER.PACKS.loadState();
       s.collection = SQUER.Online.mergeCollections(s.collection, d.collection);
       if (d.squerini > (s.squerini || 0)) s.squerini = d.squerini;
+      // pacchetti aperti: merge max (il server è autorevole se più alto)
+      if (d.packs_opened > (s.packsOpened || 0)) s.packsOpened = d.packs_opened;
       SQUER.PACKS.saveState(s);
       setPhase(3, 'ok');
       SQUER.Online.synced = true;

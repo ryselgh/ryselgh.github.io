@@ -79,6 +79,7 @@ const Online = {
       squerini: s.squerini || 0,
       deck: s.deck || [],
       welcome_packs: s.welcomePacks || 0,
+      packs_opened: s.packsOpened || 0,
     };
     try {
       return await this.api('/me/migrate', { method: 'POST', body: JSON.stringify(payload) });
@@ -94,7 +95,7 @@ const Online = {
     return d; // { collection: {uid:{count,level}}, squerini }
   },
   async pushCollection(localState) {
-    const payload = { collection: localState.collection || {}, squerini: localState.squerini || 0 };
+    const payload = { collection: localState.collection || {}, squerini: localState.squerini || 0, packs_opened: localState.packsOpened || 0 };
     return this.api('/me/collection', { method: 'PUT', body: JSON.stringify(payload) });
   },
 
