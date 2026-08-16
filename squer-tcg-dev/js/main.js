@@ -2254,6 +2254,8 @@ const App = {
     this.tradeMyRole = null;
     this.tradeOpp = { id: friendId, name: friendName };
     this.showScreen('trade');
+    // nuovo scambio: renderizza subito lo stato vuoto (pulsante ＋ visibile)
+    this.renderTrade();
     this.tradeRefresh();
   },
 
@@ -2296,7 +2298,17 @@ const App = {
 
   renderTrade() {
     const t = this.trade;
-    if (!t) return;
+    // Stato "nuovo scambio": nessuna proposta ancora — mostra il pulsante
+    // per aggiungere le prime carte (e un messaggio chiaro).
+    if (!t) {
+      $('#trade-status').textContent = 'Offri le tue carte per iniziare lo scambio';
+      $('#trade-mine').innerHTML = '<div class="trade-empty">Nessuna carta offerta</div>';
+      $('#trade-opp').innerHTML = '<div class="trade-empty">…</div>';
+      $('#trade-opp-label').textContent = `🤖 ${this.tradeOpp ? this.tradeOpp.name : 'Avversario'}`;
+      $('#trade-actions').innerHTML = '';
+      $('#trade-log').textContent = '';
+      return;
+    }
     const myCards = t.cards[this.tradeMyRole] || [];
     const oppCards = t.cards[this.tradeMyRole === 'proposer' ? 'receiver' : 'proposer'] || [];
     const myRole = this.tradeMyRole;
@@ -2341,10 +2353,13 @@ const App = {
     } else if (myRole === 'proposer') {
       acts.innerHTML = `<button class="btn btn-ghost" id="btn-trade-cancel">Annulla scambio</button>`;
     }
-    $('#btn-trade-counter').onclick = () => this.tradeOpenPick();
-    $('#btn-trade-accept').onclick = () => this.tradeDoAccept();
-    $('#btn-trade-decline').onclick = () => this.tradeDoDecline();
-    $('#btn-trade-cancel').onclick = () => this.tradeDoCancel();
+    // guardie: i bottoni non sempre esistono (es. il proposer in attesa vede
+    // solo "Annulla") — senza, null.onclick lancia un errore nel toast
+    const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
+    bind('btn-trade-counter', () => this.tradeOpenPick());
+    bind('btn-trade-accept', () => this.tradeDoAccept());
+    bind('btn-trade-decline', () => this.tradeDoDecline());
+    bind('btn-trade-cancel', () => this.tradeDoCancel());
     log.textContent = '';
   },
 
