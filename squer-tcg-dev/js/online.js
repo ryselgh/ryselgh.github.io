@@ -128,6 +128,8 @@ const Online = {
   async getMatch(id) { return this.api('/matches/' + encodeURIComponent(id)); },
   async moveMatch(id, action, extra = {}) { return this.api('/matches/' + encodeURIComponent(id) + '/move', { method: 'POST', body: JSON.stringify({ action, ...extra }) }); },
   async matchSkip(id) { return this.moveMatch(id, 'skip'); },
+  async matchRematch(id) { return this.api('/matches/' + encodeURIComponent(id) + '/rematch', { method: 'POST' }); },
+  async matchLeave(id) { return this.api('/matches/' + encodeURIComponent(id) + '/leave', { method: 'POST' }); },
 
   // ---- merge helper: la collezione locale diventa max(locale, server) ----
   mergeCollections(localColl, serverColl) {

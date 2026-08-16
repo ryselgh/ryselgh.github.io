@@ -1255,10 +1255,8 @@ const App = {
   rematch() {
     $('#result-modal').classList.add('hidden');
     if (this._pvp) {
-      // PvP: niente rematch automatico (l'avversario non c'è più) -> amici
-      this.quitPvp();
-      this.showScreen('home');
-      this.refreshHome();
+      // PvP: rivincita (se entrambi la chiedono si gioca subito)
+      this.pvpRematch();
       return;
     }
     this.startMatch();
@@ -1267,11 +1265,19 @@ const App = {
   quitBattle() {
     if (this._botTimer) { clearTimeout(this._botTimer); this._botTimer = null; }
     if (this._turnIv) { clearInterval(this._turnIv); this._turnIv = null; }
+    if (this._pvpRematchIv) { clearInterval(this._pvpRematchIv); this._pvpRematchIv = null; }
     this._sel = null;
     $('#draw-modal').classList.add('hidden');
     $('#help-modal').classList.add('hidden');
     $('#result-modal').classList.add('hidden');
-    this.quitPvp();
+    // PvP: avvisa il server che si esce (l'avversario torna a home)
+    if (this._pvp) {
+      const id = this._pvp.id;
+      this.quitPvp();
+      SQUER.Online.matchLeave(id).catch(() => {});
+    } else {
+      this.quitPvp();
+    }
     this.showScreen('home');
     this.refreshHome();
   },
@@ -1280,6 +1286,7 @@ const App = {
   quitPvp() {
     this.pvpPollStop();
     if (this._sfidaPollIv) { clearInterval(this._sfidaPollIv); this._sfidaPollIv = null; }
+    if (this._pvpRematchIv) { clearInterval(this._pvpRematchIv); this._pvpRematchIv = null; }
     this._pvp = null;
     this._pvpOpp = null;
     this._pvpMatchId = null;
@@ -1456,7 +1463,7 @@ const App = {
     });
 
     // ---------- online (auth + sync) ----------
-    // Mappamondo in alto: dropdown con Amici / Scambio (+ Esci se loggato)
+    // Mappamondo in alto: dropdown con Amici / Scambio (+ Logout se loggato)
     $('#btn-online-menu').addEventListener('click', (e) => {
       e.stopPropagation();
       if (!SQUER.Online.API_BASE) { this.toast('Online non configurato in questa build'); return; }
@@ -1475,20 +1482,20 @@ const App = {
     });
     $('#online-friends').addEventListener('click', () => {
       $('#online-dropdown').classList.add('hidden');
-      if (!SQUER.Online.token) { this.showScreen('auth'); return; }
+      if (!SQUER.Online.token) { this.openAuthLogin(); return; }
       this.openFriends();
     });
     $('#online-trade').addEventListener('click', () => {
       $('#online-dropdown').classList.add('hidden');
-      if (!SQUER.Online.token) { this.showScreen('auth'); return; }
+      if (!SQUER.Online.token) { this.openAuthLogin(); return; }
       this.openTradeHub();
     });
     $('#online-logout').addEventListener('click', async () => {
       $('#online-dropdown').classList.add('hidden');
       await SQUER.Online.logout();
       this.toast('Disconnesso');
-      this.showScreen('home');
-      this.refreshHome();
+      // dopo il logout: schermata di Accedi (default)
+      this.openAuthLogin();
     });
 
     // auth tabs
@@ -1797,15 +1804,23 @@ const App = {
     $('#play-modal').classList.remove('hidden');
   },
 
+  /** Apre la schermata auth con il tab ACCEDI attivo (default). */
+  openAuthLogin() {
+    this._pendingSfida = false;
+    this.showScreen('auth');
+    this.showAuthPanel('login');
+    $('#login-nickname').value = this.normalizeNickname(loadState().nickname);
+    $('#login-password').value = '';
+    $('#login-error').classList.add('hidden');
+    $('#login-nickname').focus();
+  },
+
   /** Scelta "Online" dal modale: richiede l'account, poi apre la sfida. */
   async playOnline() {
     if (!SQUER.Online.isOnline()) {
-      // non loggato: mostra la registrazione, poi riprende la sfida
+      // non loggato: mostra Accedi (default); si può passare a Registrati
       this._pendingSfida = true;
-      this.showScreen('auth');
-      this.showAuthPanel('register');
-      const local = loadState().nickname;
-      if (local) $('#reg-nickname').value = local;
+      this.openAuthLogin();
       return;
     }
     // loggato ma mai sincronizzato in questa sessione
@@ -2048,15 +2063,70 @@ const App = {
     $('#result-icon').textContent = isWin ? '🏆' : (isDraw ? '🤝' : (isAbandon ? '🚪' : '💀'));
     $('#result-title').textContent = isWin ? 'Vittoria!' : (isDraw ? 'Pareggio' : (isAbandon ? 'Avversario assente' : 'Sconfitta'));
     $('#result-score').classList.add('hidden');
-    $('#result-reward').textContent = isAbandon
-      ? 'L\'avversario ha lasciato: partita vinta a tavolino'
-      : (isWin ? '⚔️ Partita vinta! (PvP)' : '⚔️ Partita terminata (PvP)');
+    // PvP: niente pillola ricompensa (solo il titolo + Rigioca/Home)
+    $('#result-reward').classList.add('hidden');
+    $('#result-reward').textContent = '';
     $('#result-zones').innerHTML = '';
     $('#result-zones').classList.add('hidden');
+    $('#result-rematch').textContent = '⚔️ Rigioca';
     clearTimeout(this._resultT);
     this._resultT = setTimeout(() => {
       $('#result-modal').classList.remove('hidden');
     }, 1400);
+  },
+
+  /** Rivincita PvP: chiede al server; se anche l'avversario la chiede si
+      gioca subito, altrimenti si attende (finestra ~30s) con poll. */
+  async pvpRematch() {
+    if (!this._pvp) return;
+    $('#result-modal').classList.add('hidden');
+    try {
+      const v = await SQUER.Online.matchRematch(this._pvp.id);
+      if (v.status === 'active') {
+        // entrambi l'hanno chiesta: nuova partita subito
+        this.startPvp(v);
+        return;
+      }
+      // attesa rivincita
+      this.toast('⏳ In attesa della rivincita… (30s)', true);
+      this._pvpRematchIv = setInterval(() => this.pvpRematchPoll(), 2000);
+    } catch (e) {
+      this.toast(e.message);
+      this.showScreen('home');
+      this.refreshHome();
+    }
+  },
+
+  /** Poll sulla rivincita: se l'avversario la chiede -> nuova partita;
+      se è andato via o la finestra scade -> home. */
+  async pvpRematchPoll() {
+    if (!this._pvp) { clearInterval(this._pvpRematchIv); this._pvpRematchIv = null; return; }
+    try {
+      const v = await SQUER.Online.getMatch(this._pvp.id);
+      if (v.status === 'active') {
+        clearInterval(this._pvpRematchIv); this._pvpRematchIv = null;
+        this.startPvp(v);
+        return;
+      }
+      const mySide = v.my_side;
+      const other = mySide === 'a' ? (v.rematch && v.rematch.b) : (v.rematch && v.rematch.a);
+      if (other === -1) {
+        // l'avversario è andato via: torna a home
+        clearInterval(this._pvpRematchIv); this._pvpRematchIv = null;
+        this.toast('L\'avversario è andato via');
+        this.quitPvp();
+        this.showScreen('home');
+        this.refreshHome();
+        return;
+      }
+      if (v.rematch_deadline && Date.now() > v.rematch_deadline) {
+        clearInterval(this._pvpRematchIv); this._pvpRematchIv = null;
+        this.toast('Nessuna rivincita: avversario non ha risposto');
+        this.quitPvp();
+        this.showScreen('home');
+        this.refreshHome();
+      }
+    } catch (e) { /* rete: riprova */ }
   },
 
   // ---------- trade (stanza scambio) ----------
