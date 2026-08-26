@@ -2338,12 +2338,31 @@ const App = {
     this.tradeRefresh();
   },
 
-  /** Ricarica lo scambio dal server (se è aperto per id) e ridisegna. */
+  /** Ricarica lo scambio dal server (se è aperto per id) e ridisegna.
+      Se siamo in una stanza "nuovo scambio" (this.trade null) ma è arrivata
+      una proposta dall'amico, la rileva e la apre. Se lo scambio è chiuso
+      (completed/declined/cancelled) lo recupera per id per mostrare l'esito. */
   async tradeRefresh() {
-    if (!this.trade || !this.trade.id) return;
+    // stanza "nuovo scambio": cerca se è arrivata una proposta dall'amico
+    if (!this.trade || !this.trade.id) {
+      if (this.tradeOpp && this.tradeOpp.id) {
+        try {
+          const d = await SQUER.Online.listTrades();
+          const active = (d.trades || []).find(t =>
+            (t.proposer === this.tradeOpp.id || t.receiver === this.tradeOpp.id) &&
+            (t.status === 'pending' || t.status === 'countered'));
+          if (active) { this.openTradeById(active); return; }
+        } catch (e) { /* rete */ }
+      }
+      return;
+    }
     try {
       const d = await SQUER.Online.listTrades();
-      const found = d.trades.find(x => x.id === this.trade.id);
+      let found = d.trades.find(x => x.id === this.trade.id);
+      if (!found) {
+        // chiuso: recupera per id per mostrare l'esito
+        try { found = await SQUER.Online.getTrade(this.trade.id); } catch (e) { found = null; }
+      }
       if (!found) { this.toast('Scambio non più attivo'); this.showScreen('friends'); return; }
       this.trade = found;
       this.tradeMyRole = found.proposer === SQUER.Online.user.id ? 'proposer' : 'receiver';
