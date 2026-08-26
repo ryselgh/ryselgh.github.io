@@ -2038,6 +2038,13 @@ const App = {
     await SQUER.Online.pushCollection({ collection: s.collection || {}, squerini: s.squerini || 0, packsOpened: s.packsOpened || 0 });
   },
 
+  /** Sync della collezione locale col server prima dello scambio (stessa
+      logica del PvP): il server valida le carte offerte contro la collezione
+      cloud, quindi le carte locali devono esserci. */
+  tradeSyncCollection() {
+    this.pvpSyncCollection().catch(() => {});
+  },
+
   /** Deck per il PvP: dal mazzo locale, uid + livello. Min 3 carte. */
   pvpDeck() {
     const s = loadState();
@@ -2297,6 +2304,10 @@ const App = {
       attivo (proposta in arrivo o in corso) con quell'amico, lo apre —
       altrimenti parte un nuovo scambio. */
   async openTrade(friendId, friendName) {
+    // sincronizza la collezione locale col server (il server valida le carte
+    // offerte contro la collezione cloud: senza push, carte mai sincronizzate
+    // verrebbero rifiutate con "Non possiedi la carta")
+    this.tradeSyncCollection();
     // cerca uno scambio attivo con questo amico (proposta ricevuta o inviata)
     try {
       const d = await SQUER.Online.listTrades();
@@ -2317,6 +2328,8 @@ const App = {
   /** Voce "Scambio" del menu online: riprende uno scambio in corso, altrimenti
       guida alla lista amici (dove si avvia con 🤝). */
   async openTradeHub() {
+    // sincronizza la collezione locale col server prima di mostrare gli scambi
+    this.tradeSyncCollection();
     try {
       const d = await SQUER.Online.listTrades();
       const active = (d.trades || []).find(t => t.status === 'pending' || t.status === 'countered');
