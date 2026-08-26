@@ -182,10 +182,12 @@ const App = {
     this.currentScreen = name;
     $$('.screen').forEach(s => s.classList.remove('active'));
     $('#screen-' + name).classList.add('active');
-    // polling intelligente: solo su friends/trade, spento altrove
-    if (name === 'friends' || name === 'trade') this.startPoll();
+    // polling intelligente: friends/trade (refresh) + home (solo notifiche)
+    if (name === 'friends' || name === 'trade' || name === 'home') this.startPoll();
     else this.stopPoll();
     if (name !== 'battle') this.pvpPollStop();
+    // il banner notifiche è solo per la home
+    if (name !== 'home') $('#home-notice').classList.add('hidden');
     const topMenu = $('#top-menu');
     if (topMenu) topMenu.classList.toggle('hidden', name !== 'home');
     if (name === 'home') this.refreshHome();
@@ -1578,6 +1580,13 @@ const App = {
       // dopo il logout: schermata di Accedi (default)
       this.openAuthLogin();
     });
+    // banner notifiche in home: cliccabile -> azione (es. apri lo scambio)
+    $('#home-notice').addEventListener('click', () => {
+      $('#home-notice').classList.add('hidden');
+      const fn = this._homeNoticeAction;
+      this._homeNoticeAction = null;
+      if (fn) fn();
+    });
 
     // auth tabs
     $('#tab-login').addEventListener('click', () => this.showAuthPanel('login'));
@@ -1829,15 +1838,15 @@ const App = {
   },
 
   // ---------- polling intelligente (solo dove serve) ----------
-  // Si attiva SOLO su screen-friends e screen-trade (3s); si mette in pausa
-  // quando il tab è nascosto. Zero richieste altrove.
+  // Si attiva su screen-friends, screen-trade e screen-home (3s); si mette in
+  // pausa quando il tab è nascosto. In home polla SOLO le notifiche (banner).
   startPoll() {
     if (this._pollIv || !SQUER.Online.isOnline()) return;
     const tick = async () => {
       if (document.hidden) return; // tab nascosto: pausa, zero richieste
       const screen = this.currentScreen;
       try {
-        // notifiche (richieste amicizia, scambi ricevuti) -> toast
+        // notifiche (richieste amicizia, scambi ricevuti) -> toast/banner
         const n = await SQUER.Online.listNotifications();
         if (n.notifications && n.notifications.length) {
           this.handlePollNotifications(n.notifications);
@@ -1845,21 +1854,29 @@ const App = {
       } catch (e) { /* rete assente: ignora */ }
       if (screen === 'trade' && this.trade && this.trade.id) this.tradeRefresh();
       else if (screen === 'friends') this.renderFriends();
-      else this.stopPoll(); // usciti dalla schermata: spegni
+      else if (screen === 'home') { /* solo notifiche: il banner lo gestisce handlePollNotifications */ }
+      else this.stopPoll(); // usciti dalle schermate online: spegni
     };
     this._pollIv = setInterval(tick, 3000);
   },
 
-  /** Mostra toast per le notifiche nuove e le marca come lette. */
+  /** Mostra toast per le notifiche nuove e le marca come lette.
+      In home mostra anche un BANNER cliccabile per scambi/amicizie. */
   async handlePollNotifications(list) {
     const seen = new Set(this._seenNotifs || []);
     const fresh = list.filter(n => !seen.has(n.id));
     for (const n of fresh) {
       const p = n.payload || {};
-      if (n.type === 'friend_request') this.toast(`📥 ${p.from ? 'Nuova richiesta amicizia' : 'Nuova richiesta amicizia'} — controlla la tab Amici`);
+      if (n.type === 'friend_request') this.toast(`📥 Nuova richiesta amicizia — controlla la tab Amici`);
       else if (n.type === 'friend_accepted') this.toast(`🤝 Richiesta amicizia accettata`);
-      else if (n.type === 'trade_offer') this.toast(`🤝 Hai ricevuto una proposta di scambio!`);
-      else if (n.type === 'trade_counter') this.toast(`🔄 Controproposta di scambio ricevuta`);
+      else if (n.type === 'trade_offer') {
+        this.toast(`🤝 Hai ricevuto una proposta di scambio!`);
+        this.showHomeNotice('🤝', 'Nuova proposta di scambio', () => this.openTradeHub());
+      }
+      else if (n.type === 'trade_counter') {
+        this.toast(`🔄 Controproposta di scambio ricevuta`);
+        this.showHomeNotice('🔄', 'Controproposta di scambio', () => this.openTradeHub());
+      }
       else if (n.type === 'trade_accepted') this.toast(`✅ Scambio accettato!`);
       else if (n.type === 'trade_declined') this.toast(`❌ Scambio rifiutato`);
       else if (n.type === 'match_started') this.toast(`⚔️ Un avversario si è unito alla tua sfida!`);
@@ -1869,6 +1886,15 @@ const App = {
     this._seenNotifs = Array.from(seen).slice(-100);
     // marca come lette quelle mostrate
     if (fresh.length) SQUER.Online.markNotificationsRead(fresh.map(n => n.id)).catch(() => {});
+  },
+
+  /** Banner cliccabile in home (solo se siamo in home). */
+  showHomeNotice(icon, text, onClick) {
+    if (this.currentScreen !== 'home') return;
+    $('#home-notice-icon').textContent = icon;
+    $('#home-notice-text').textContent = text;
+    $('#home-notice').classList.remove('hidden');
+    this._homeNoticeAction = onClick;
   },
 
   stopPoll() {
@@ -2331,12 +2357,14 @@ const App = {
     const oppCards = t.cards[this.tradeMyRole === 'proposer' ? 'receiver' : 'proposer'] || [];
     const myRole = this.tradeMyRole;
 
-    $('#trade-mine').innerHTML = myCards.length
+    // riscrive l'innerHTML SOLO se cambiato: evita che l'animazione CSS
+    // (tradeIn) riparta a ogni refresh del polling (effetto "popping")
+    this.setTradeCards($('#trade-mine'), myCards.length
       ? myCards.map(c => this.tradeCardHtml(c.uid, c.level)).join('')
-      : '<div class="trade-empty">Nessuna carta offerta</div>';
-    $('#trade-opp').innerHTML = oppCards.length
+      : '<div class="trade-empty">Nessuna carta offerta</div>');
+    this.setTradeCards($('#trade-opp'), oppCards.length
       ? oppCards.map(c => this.tradeCardHtml(c.uid, c.level, true)).join('')
-      : '<div class="trade-empty">…</div>';
+      : '<div class="trade-empty">…</div>');
     $('#trade-opp-label').textContent = `🤖 ${this.tradeOpp.name}`;
 
     // azioni contestuali
@@ -2379,6 +2407,13 @@ const App = {
     bind('btn-trade-decline', () => this.tradeDoDecline());
     bind('btn-trade-cancel', () => this.tradeDoCancel());
     log.textContent = '';
+  },
+
+  /** Aggiorna un contenitore carte SOLO se il contenuto è cambiato
+      (evita che l'animazione tradeIn riparta a ogni refresh). */
+  setTradeCards(el, html) {
+    if (!el) return;
+    if (el.innerHTML !== html) el.innerHTML = html;
   },
 
   tradeCardHtml(uid, level, opp) {

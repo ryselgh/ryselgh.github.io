@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0d1117">
   <title>Squer TCG</title>
-  <link rel="stylesheet" href="css/style.css?v=91">
+  <link rel="stylesheet" href="css/style.css?v=92">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23ffc93d'/><text x='50' y='66' font-size='52' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%23141b2b'>S</text></svg>">
@@ -45,6 +45,13 @@
       <p class="tagline">Acchiappali tutti!</p>
       <p class="home-nickname">👋 Ciao, <b id="home-nickname">Squer Trainer</b>!</p>
     </header>
+
+    <!-- notifiche online cliccabili (richieste scambio/amicizia) -->
+    <div class="home-notice hidden" id="home-notice">
+      <span class="home-notice-icon" id="home-notice-icon">🤝</span>
+      <span class="home-notice-text" id="home-notice-text">Nuova proposta di scambio</span>
+      <span class="home-notice-arrow">›</span>
+    </div>
 
     <div class="home-stats" id="home-stats">
       <div class="stat-card">
@@ -546,29 +553,29 @@
     </div>
   </div>
 
-  <script src="vendor/three.min.js?v=91"></script>
+  <script src="vendor/three.min.js?v=92"></script>
   <script>
     // CDN fallback if local copy missing
     if (typeof THREE === 'undefined') {
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
     }
   </script>
-  <script src="js/rng.js?v=91"></script>
-  <script src="js/rarity.js?v=91"></script>
-  <script src="js/cardgen.js?v=91"></script>
-  <script src="js/abilities.js?v=91"></script>
-  <script src="js/cards.js?v=91"></script>
-  <script src="js/game-config.js?v=91"></script>
-  <script src="js/packs.js?v=91"></script>
-  <script src="js/game.js?v=91"></script>
-  <script src="js/sound.js?v=91"></script>
-  <script src="js/scene.js?v=91"></script>
-  <script src="js/scene-battle2.js?v=91"></script>
+  <script src="js/rng.js?v=92"></script>
+  <script src="js/rarity.js?v=92"></script>
+  <script src="js/cardgen.js?v=92"></script>
+  <script src="js/abilities.js?v=92"></script>
+  <script src="js/cards.js?v=92"></script>
+  <script src="js/game-config.js?v=92"></script>
+  <script src="js/packs.js?v=92"></script>
+  <script src="js/game.js?v=92"></script>
+  <script src="js/sound.js?v=92"></script>
+  <script src="js/scene.js?v=92"></script>
+  <script src="js/scene-battle2.js?v=92"></script>
   <!-- BUILD DEV: punta all'API di sviluppo (worker deployato). In prod questo
        blocco non c'è: online.js usa l'API di default. -->
   <script>window.SQUER_ONLINE_API = 'https://squer-tcg-api.squer-online.workers.dev';</script>
-  <script src="js/online.js?v=91"></script>
-  <script src="js/main.js?v=91"></script>
-<script src="js/install.js?v=91"></script>
+  <script src="js/online.js?v=92"></script>
+  <script src="js/main.js?v=92"></script>
+<script src="js/install.js?v=92"></script>
 </body>
 </html>

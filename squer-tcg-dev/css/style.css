@@ -79,6 +79,21 @@ body { position: fixed; inset: 0; }
 .home-nickname b { color: var(--gold); }
 
 .home-stats { display: flex; gap: 10px; width: 100%; max-width: 460px; padding: 18px 16px 0; }
+
+/* notifica online cliccabile in home */
+.home-notice {
+  display: flex; align-items: center; gap: 10px;
+  width: calc(100% - 32px); max-width: 428px; margin: 10px auto 0;
+  background: linear-gradient(135deg, rgba(255,201,61,.16), rgba(255,138,61,.12));
+  border: 1px solid rgba(255,201,61,.45); border-radius: 14px;
+  padding: 10px 14px; cursor: pointer;
+  animation: noticeIn .3s ease;
+}
+.home-notice.hidden { display: none; }
+.home-notice-icon { font-size: 20px; }
+.home-notice-text { flex: 1; font-size: 13px; font-weight: 700; color: #ffc93d; }
+.home-notice-arrow { font-size: 18px; color: #ffc93d; }
+@keyframes noticeIn { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
 .stat-card {
   flex: 1; background: var(--panel); border: 1px solid #2a3450; border-radius: var(--radius);
   padding: 14px 6px; box-shadow: var(--shadow);
