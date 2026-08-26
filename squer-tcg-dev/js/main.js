@@ -186,8 +186,8 @@ const App = {
     if (name === 'friends' || name === 'trade' || name === 'home') this.startPoll();
     else this.stopPoll();
     if (name !== 'battle') this.pvpPollStop();
-    // il banner notifiche è solo per la home
-    if (name !== 'home') $('#home-notice').classList.add('hidden');
+    // il banner notifiche è globale: si nasconde solo in battaglia
+    if (name === 'battle') $('#home-notice').classList.add('hidden');
     const topMenu = $('#top-menu');
     if (topMenu) topMenu.classList.toggle('hidden', name !== 'home');
     if (name === 'home') this.refreshHome();
@@ -1871,11 +1871,11 @@ const App = {
       else if (n.type === 'friend_accepted') this.toast(`🤝 Richiesta amicizia accettata`);
       else if (n.type === 'trade_offer') {
         this.toast(`🤝 Hai ricevuto una proposta di scambio!`);
-        this.showHomeNotice('🤝', 'Nuova proposta di scambio', () => this.openTradeHub());
+        this.showNotice('🤝', 'Nuova proposta di scambio', () => this.openTradeHub());
       }
       else if (n.type === 'trade_counter') {
         this.toast(`🔄 Controproposta di scambio ricevuta`);
-        this.showHomeNotice('🔄', 'Controproposta di scambio', () => this.openTradeHub());
+        this.showNotice('🔄', 'Controproposta di scambio', () => this.openTradeHub());
       }
       else if (n.type === 'trade_accepted') this.toast(`✅ Scambio accettato!`);
       else if (n.type === 'trade_declined') this.toast(`❌ Scambio rifiutato`);
@@ -1888,9 +1888,10 @@ const App = {
     if (fresh.length) SQUER.Online.markNotificationsRead(fresh.map(n => n.id)).catch(() => {});
   },
 
-  /** Banner cliccabile in home (solo se siamo in home). */
-  showHomeNotice(icon, text, onClick) {
-    if (this.currentScreen !== 'home') return;
+  /** Banner cliccabile (visibile su home, friends e altre schermate —
+      non in battaglia). */
+  showNotice(icon, text, onClick) {
+    if (this.currentScreen === 'battle') return;
     $('#home-notice-icon').textContent = icon;
     $('#home-notice-text').textContent = text;
     $('#home-notice').classList.remove('hidden');
@@ -2292,8 +2293,18 @@ const App = {
   tradeMyRole: null,    // 'proposer' | 'receiver'
   tradePick: [],        // carte selezionate nella modale di scelta
 
-  /** Avvia la stanza di scambio con un amico. */
+  /** Avvia la stanza di scambio con un amico. Se esiste già uno scambio
+      attivo (proposta in arrivo o in corso) con quell'amico, lo apre —
+      altrimenti parte un nuovo scambio. */
   async openTrade(friendId, friendName) {
+    // cerca uno scambio attivo con questo amico (proposta ricevuta o inviata)
+    try {
+      const d = await SQUER.Online.listTrades();
+      const active = (d.trades || []).find(t =>
+        (t.proposer === friendId || t.receiver === friendId) &&
+        (t.status === 'pending' || t.status === 'countered'));
+      if (active) { this.openTradeById(active); return; }
+    } catch (e) { /* rete: continua con nuovo scambio */ }
     this.trade = null;
     this.tradeMyRole = null;
     this.tradeOpp = { id: friendId, name: friendName };
