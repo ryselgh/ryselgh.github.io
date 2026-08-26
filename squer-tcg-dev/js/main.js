@@ -1852,7 +1852,11 @@ const App = {
           this.handlePollNotifications(n.notifications);
         }
       } catch (e) { /* rete assente: ignora */ }
-      if (screen === 'trade' && this.trade && this.trade.id) this.tradeRefresh();
+      if (screen === 'trade') {
+        // su screen-trade il poll continua SEMPRE (anche con this.trade null:
+        // serve a rilevare proposte in arrivo nella stanza "nuovo scambio")
+        this.tradeRefresh();
+      }
       else if (screen === 'friends') this.renderFriends();
       else if (screen === 'home') { /* solo notifiche: il banner lo gestisce handlePollNotifications */ }
       else this.stopPoll(); // usciti dalle schermate online: spegni
