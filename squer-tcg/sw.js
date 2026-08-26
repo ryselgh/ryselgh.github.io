@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    Squer TCG - Service Worker
    - Precache della "shell" (html, css, js, icone) -> l'app
      si apre sempre, anche offline
@@ -7,7 +7,7 @@
    - Navigazioni: network-first (aggiornamenti immediati,
      fallback offline sull'ultima copia)
    ========================================================= */
-const CACHE = 'squer-tcg-v29';
+const CACHE = 'squer-tcg-v30';
 const PRECACHE = [
   './',
   'index.html',

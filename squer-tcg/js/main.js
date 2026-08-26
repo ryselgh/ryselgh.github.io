@@ -1954,6 +1954,10 @@ const App = {
     const deck = this.pvpDeck();
     if (!deck) return;
     try {
+      // sincronizza la collezione locale col server (il server valida il deck
+      // contro la collezione cloud: senza push, carte mai sincronizzate
+      // verrebbero rifiutate con "Non possiedi la carta")
+      await this.pvpSyncCollection();
       const d = await SQUER.Online.createMatch(deck);
       this._pvpMatchId = d.id;
       $('#sfida-pin').textContent = d.pin;
@@ -1991,6 +1995,7 @@ const App = {
     const deck = this.pvpDeck();
     if (!deck) return;
     try {
+      await this.pvpSyncCollection();
       const v = await SQUER.Online.joinMatch(pin, deck);
       this.startPvp(v);
     } catch (e) {
@@ -1998,14 +2003,27 @@ const App = {
     }
   },
 
+  /** Push della collezione locale al server prima della sfida: il server
+      valida il deck contro la collezione cloud, quindi le carte locali
+      devono esserci (merge max, mai distruttivo). */
+  async pvpSyncCollection() {
+    const s = loadState();
+    await SQUER.Online.pushCollection({ collection: s.collection || {}, squerini: s.squerini || 0, packsOpened: s.packsOpened || 0 });
+  },
+
   /** Deck per il PvP: dal mazzo locale, uid + livello. Min 3 carte. */
-  pvpDeck() {    const s = loadState();
-    const deck = s.deck.map(uid => {
-      const rec = s.collection[uid];
-      return { uid, level: rec && rec.level > 1 ? rec.level : 1 };
-    });
+  pvpDeck() {
+    const s = loadState();
+    // solo carte POSsedute (count > 0): il server valida contro la collezione
+    // cloud e rifiuta le carte non possedute (es. trasferite via scambio)
+    const deck = s.deck
+      .filter(uid => { const rec = s.collection[uid]; return rec && rec.count > 0; })
+      .map(uid => {
+        const rec = s.collection[uid];
+        return { uid, level: rec && rec.level > 1 ? rec.level : 1 };
+      });
     if (deck.length < (SQUER.CONFIG.MIN_DECK_TO_PLAY || 3)) {
-      this.toast('Costruisci il tuo mazzo (almeno 3 carte) per sfidare');
+      this.toast('Il tuo mazzo ha meno di 3 carte possedute: aggiornalo per sfidare');
       this.showDeck();
       return null;
     }
