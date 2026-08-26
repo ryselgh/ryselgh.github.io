@@ -2429,7 +2429,14 @@ const App = {
       return;
     }
     if (t.status === 'declined' || t.status === 'cancelled') {
-      $('#trade-status').textContent = t.status === 'declined' ? '❌ Scambio rifiutato' : '🚫 Scambio annullato';
+      // annullato per scadenza TTL: mostra chi non ha risposto
+      if (t.status === 'cancelled' && t.reason === 'timeout') {
+        const who = t.proposer === SQUER.Online.user.id ? t.receiver : t.proposer;
+        const name = this.tradeOpp && this.tradeOpp.id === who ? this.tradeOpp.name : 'L\'avversario';
+        $('#trade-status').textContent = `⏰ ${name} non ha risposto alla richiesta`;
+      } else {
+        $('#trade-status').textContent = t.status === 'declined' ? '❌ Scambio rifiutato' : '🚫 Scambio annullato';
+      }
       acts.innerHTML = '<button class="btn btn-ghost" id="btn-trade-close">Chiudi</button>';
       $('#btn-trade-close').onclick = () => this.showScreen('friends');
       return;
