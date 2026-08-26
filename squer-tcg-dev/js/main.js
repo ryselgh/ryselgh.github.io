@@ -2470,11 +2470,14 @@ const App = {
     try {
       await SQUER.Online.tradeAccept(this.trade.id);
       await this.tradeRefresh();
-      // push locale: aggiorna collezione dal server
+      // dopo lo scambio il SERVER è autorevole: la collezione locale va
+      // SOSTITUITA con quella server (le carte date sono state rimosse, le
+      // ricevute aggiunte) — un merge max terrebbe carte non più possedute
       const d = await SQUER.Online.pullCollection();
       const s = SQUER.PACKS.loadState();
-      s.collection = SQUER.Online.mergeCollections(s.collection, d.collection);
+      s.collection = d.collection || {};
       if (d.squerini > (s.squerini || 0)) s.squerini = d.squerini;
+      if (d.packs_opened > (s.packsOpened || 0)) s.packsOpened = d.packs_opened;
       SQUER.PACKS.saveState(s);
     } catch (e) { this.toast(e.message); }
   },
@@ -2489,9 +2492,11 @@ const App = {
     $('#trade-pick-grid').innerHTML = owned.length
       ? owned.map(c => {
           const rec = s.collection[c.uid];
+          const copies = rec.count > 1 ? `<span class="trade-pick-copies">×${rec.count}</span>` : '';
           return `<div class="trade-pick" data-uid="${c.uid}" data-lv="${rec.level}">
             <img src="${this.thumbDataUrl(c)}" alt="${c.name}">
             <span class="trade-pick-lv">Lv${rec.level}</span>
+            ${copies}
           </div>`;
         }).join('')
       : '<div class="trade-empty">Nessuna carta posseduta</div>';

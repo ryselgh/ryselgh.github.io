@@ -804,6 +804,7 @@ body.app-ready .squerini-badge { display: inline-flex; }
 .trade-pick img { width: 100%; display: block; }
 .trade-pick.sel { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,201,61,.5); }
 .trade-pick-lv { position: absolute; top: 2px; right: 2px; background: var(--gold); color: #141b2b; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 6px; }
+.trade-pick-copies { position: absolute; bottom: 2px; left: 2px; background: rgba(20,27,43,.85); color: #ffc93d; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 6px; border: 1px solid rgba(255,201,61,.4); }
 
 /* sigillo */
 .trade-sigil {
