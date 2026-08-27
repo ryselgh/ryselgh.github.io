@@ -651,8 +651,10 @@ body.app-ready .squerini-badge { display: inline-flex; }
   padding: 15px clamp(16px, 6vw, 34px);
 }
 
-/* modal online: Amici/Scambio uno sull'altro, Logout rosso piccolo centrato */
-.online-mode-buttons { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 4px; }
+/* modal online: Amici/Scambio uno sull'altro, Logout rosso piccolo centrato.
+   Spaziatura verticale equidistante: gap ridotto tra i due tasti, margine
+   leggermente maggiore prima del Logout. */
+.online-mode-buttons { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 0; }
 .online-mode-buttons .btn {
   width: 100%; min-width: 0; white-space: nowrap;
   /* se il tasto diventa molto stretto il testo si ridimensiona invece di sbordare */
@@ -660,7 +662,7 @@ body.app-ready .squerini-badge { display: inline-flex; }
   overflow: hidden; text-overflow: ellipsis;
 }
 .online-logout {
-  display: block; margin: 10px auto 2px;
+  display: block; margin: 14px auto 2px;
   color: #ffb3ba; border-color: rgba(255,95,109,.5);
 }
 .online-logout:active { background: rgba(255,95,109,.15); }

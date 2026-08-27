@@ -1667,7 +1667,6 @@ const App = {
 
     // friends screen
     $('#btn-friends-back').addEventListener('click', () => this.showScreen('home'));
-    $('#btn-sfida-open').addEventListener('click', () => this.openSfida());
     $('#btn-sfida-back').addEventListener('click', () => {
       this._pendingSfida = false;
       this.showScreen('home');
