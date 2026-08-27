@@ -149,11 +149,15 @@ const App = {
       .then(reg => {
         if (!reg) { done('Nessun service worker attivo'); return; }
         const hadWaiting = !!reg.waiting;
+        // timeout "già all'ultima versione": va cancellato se arriva un update
+        let noUpdateTimer = null;
+        const cancelNoUpdate = () => { if (noUpdateTimer) { clearTimeout(noUpdateTimer); noUpdateTimer = null; } };
         // Wait for a new version to finish installing
         reg.addEventListener('updatefound', () => {
           const w = reg.installing;
           if (w) w.addEventListener('statechange', () => {
             if (w.state === 'installed' && reg.waiting) {
+              cancelNoUpdate();
               done('✅ Aggiornamento scaricato, applico…');
               reg.waiting.postMessage({ type: 'SKIP_WAITING' });
             }
@@ -161,6 +165,7 @@ const App = {
         });
         // A version was already waiting: activate it right away
         if (hadWaiting && reg.waiting) {
+          cancelNoUpdate();
           done('✅ Aggiornamento scaricato, applico…');
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           return;
@@ -168,7 +173,7 @@ const App = {
         reg.update()
           .then(() => {
             // No new version: cache already up to date
-            setTimeout(() => {
+            noUpdateTimer = setTimeout(() => {
               if (!reg.waiting && !reg.installing) done('✅ Già all\'ultima versione');
             }, 1500);
           })
@@ -1881,8 +1886,8 @@ const App = {
         this.toast(`🔄 Controproposta di scambio ricevuta`);
         this.showNotice('🔄', 'Controproposta di scambio', () => this.openTradeHub());
       }
-      else if (n.type === 'trade_accepted') this.toast(`✅ Scambio accettato!`);
-      else if (n.type === 'trade_declined') this.toast(`❌ Scambio rifiutato`);
+      else if (n.type === 'trade_accepted') { this.toast(`✅ Scambio accettato!`); this.hideNotice(); }
+      else if (n.type === 'trade_declined') { this.toast(`❌ Scambio rifiutato`); this.hideNotice(); }
       else if (n.type === 'match_started') this.toast(`⚔️ Un avversario si è unito alla tua sfida!`);
       else if (n.type === 'match_move') this.toast(`⚔️ Il tuo avversario ha mosso`);
       seen.add(n.id);
@@ -1900,6 +1905,12 @@ const App = {
     $('#home-notice-text').textContent = text;
     $('#home-notice').classList.remove('hidden');
     this._homeNoticeAction = onClick;
+  },
+
+  /** Nasconde il banner notifiche (es. quando lo scambio è terminato). */
+  hideNotice() {
+    $('#home-notice').classList.add('hidden');
+    this._homeNoticeAction = null;
   },
 
   stopPoll() {
@@ -2425,11 +2436,13 @@ const App = {
 
     if (t.status === 'completed') {
       this.stopTradeTimer();
+      this.hideNotice();
       this.renderTradeSigil('🤝', 'Scambio completato!');
       return;
     }
     if (t.status === 'declined' || t.status === 'cancelled') {
       this.stopTradeTimer();
+      this.hideNotice();
       // annullato per scadenza TTL: mostra chi non ha risposto
       let text = t.status === 'declined' ? 'Scambio rifiutato' : 'Scambio annullato';
       if (t.status === 'cancelled' && t.reason === 'timeout') {
