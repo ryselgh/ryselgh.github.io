@@ -1812,16 +1812,18 @@ const App = {
   friendCard(f, kind) {
     const pvp = f.pvp ? `⚔️ ${f.pvp.wins}-${f.pvp.losses}-${f.pvp.draws}` : '';
     const coll = f.collection ? `🃏 ${f.collection.cards} carte` : '';
+    // card speciale dorata (es. Squer): in tutte le sezioni
+    const gold = f.nickname === 'Squer' ? ' friend-gold' : '';
     if (kind === 'suggest') {
       // utente non ancora amico: card minimali, niente statistiche/grado
-      return `<div class="friend-card">
+      return `<div class="friend-card${gold}">
         <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
         <div class="friend-info"><b>${f.nickname}</b><span class="friend-sub">Giocatore</span></div>
         <button class="btn btn-ghost btn-sm" data-act="suggest-add" data-id="${f.id}" data-name="${f.nickname}" title="Aggiungi amico">＋</button>
       </div>`;
     }
     if (kind === 'incoming') {
-      return `<div class="friend-card">
+      return `<div class="friend-card${gold}">
         <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
         <div class="friend-info"><b>${f.nickname}</b><span class="friend-sub">${f.level_text}</span></div>
         <button class="btn btn-ghost btn-sm" data-act="accept" data-id="${f.id}">✓</button>
@@ -1829,12 +1831,12 @@ const App = {
       </div>`;
     }
     if (kind === 'outgoing') {
-      return `<div class="friend-card">
+      return `<div class="friend-card${gold}">
         <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
         <div class="friend-info"><b>${f.nickname}</b><span class="friend-sub">in attesa…</span></div>
       </div>`;
     }
-    return `<div class="friend-card">
+    return `<div class="friend-card${gold}">
       <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
       <div class="friend-info"><b>${f.nickname}</b>
         <span class="friend-sub">${f.level_text} · ${coll}</span>
