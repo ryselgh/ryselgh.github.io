@@ -105,6 +105,7 @@ const Online = {
 
   // ---- amici ----
   async listFriends() { return this.api('/friends'); },
+  async listFriendSuggest() { return this.api('/friends/suggest'); },
   async friendRequest(nickname) { return this.api('/friends/request', { method: 'POST', body: JSON.stringify({ nickname }) }); },
   async friendAccept(userId) { return this.api('/friends/accept', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); },
   async friendDecline(userId) { return this.api('/friends/decline', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); },

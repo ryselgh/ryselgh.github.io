@@ -1714,6 +1714,10 @@ const App = {
         if (act === 'accept') await SQUER.Online.friendAccept(id);
         else if (act === 'decline') await SQUER.Online.friendDecline(id);
         else if (act === 'remove') await SQUER.Online.friendRemove(id);
+        else if (act === 'suggest-add') {
+          await SQUER.Online.friendRequest(btn.dataset.name);
+          this.toast(`Richiesta inviata a ${btn.dataset.name}`);
+        }
         else if (act === 'profile') {
           const p = await SQUER.Online.friendProfile(id);
           this.showFriendProfile(p);
@@ -1793,6 +1797,13 @@ const App = {
       outgoing.innerHTML = d.outgoing.length
         ? d.outgoing.map(f => this.friendCard(f, 'outgoing')).join('')
         : '<div class="friends-empty">—</div>';
+
+      // suggerimenti: utenti del server non ancora amici (card minimali, solo ＋)
+      const sug = await SQUER.Online.listFriendSuggest();
+      const suggest = $('#friends-suggest');
+      suggest.innerHTML = (sug.suggest || []).length
+        ? sug.suggest.map(f => this.friendCard(f, 'suggest')).join('')
+        : '<div class="friends-empty">Nessun altro giocatore da aggiungere</div>';
     } catch (e) {
       $('#friends-list').innerHTML = '<div class="friends-empty">Errore: ' + e.message + '</div>';
     }
@@ -1801,6 +1812,14 @@ const App = {
   friendCard(f, kind) {
     const pvp = f.pvp ? `⚔️ ${f.pvp.wins}-${f.pvp.losses}-${f.pvp.draws}` : '';
     const coll = f.collection ? `🃏 ${f.collection.cards} carte` : '';
+    if (kind === 'suggest') {
+      // utente non ancora amico: card minimali, niente statistiche/grado
+      return `<div class="friend-card">
+        <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
+        <div class="friend-info"><b>${f.nickname}</b><span class="friend-sub">Giocatore</span></div>
+        <button class="btn btn-ghost btn-sm" data-act="suggest-add" data-id="${f.id}" data-name="${f.nickname}" title="Aggiungi amico">＋</button>
+      </div>`;
+    }
     if (kind === 'incoming') {
       return `<div class="friend-card">
         <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
