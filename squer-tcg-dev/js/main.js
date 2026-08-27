@@ -2358,12 +2358,16 @@ const App = {
   },
 
   /** Elenco contatti dedicato nella stanza di scambio: mostra gli amici e
-      al tocco avvia lo scambio con quello selezionato. */
+      al tocco avvia lo scambio con quello selezionato. Nasconde il tavolo
+      (carte/separatore) per una UI pulita: torna visibile alla selezione. */
   async renderTradeFriendPick() {
     const box = $('#trade-friend-pick');
     const list = $('#trade-friend-pick-list');
     if (!box || !list) return;
     box.classList.remove('hidden');
+    // nascondi il tavolo e le azioni: resta solo l'elenco contatti
+    const hide = ['.trade-table', '#trade-actions', '#trade-log'];
+    hide.forEach(sel => { const el = document.querySelector(sel); if (el) el.style.display = 'none'; });
     list.innerHTML = '<div class="friends-empty">Caricamento…</div>';
     try {
       const d = await SQUER.Online.listFriends();
@@ -2383,6 +2387,8 @@ const App = {
       list.querySelectorAll('.trade-friend-pick-item').forEach(el => {
         el.addEventListener('click', () => {
           box.classList.add('hidden');
+          // ripristina il tavolo: openTrade lo ridisegna col flusso normale
+          this.resetTradeLayout();
           this.openTrade(el.dataset.id, el.dataset.name);
         });
       });
