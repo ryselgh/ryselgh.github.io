@@ -1733,7 +1733,7 @@ const App = {
     });
 
     // trade screen listeners
-    $('#btn-trade-back').addEventListener('click', () => { this.stopTradeTimer(); this.showScreen('friends'); });
+    $('#btn-trade-back').addEventListener('click', () => this.showScreen('friends'));
     $('#btn-trade-add').addEventListener('click', () => this.tradeOpenPick());
     $('#btn-trade-pick-cancel').addEventListener('click', () => $('#trade-pick-modal').classList.add('hidden'));
     $('#btn-trade-pick-done').addEventListener('click', async () => {
@@ -2308,7 +2308,7 @@ const App = {
       attivo (proposta in arrivo o in corso) con quell'amico, lo apre —
       altrimenti parte un nuovo scambio. */
   async openTrade(friendId, friendName) {
-    // ripristina i riquadri (un sigillo precedente li ha nascosti)
+    // ripristina i riquadri della stanza (un sigillo precedente li ha nascosti)
     this.resetTradeLayout();
     // sincronizza la collezione locale col server (il server valida le carte
     // offerte contro la collezione cloud: senza push, carte mai sincronizzate
@@ -2424,12 +2424,10 @@ const App = {
     const canAccept = myTurn && myCards.length && oppCards.length;
 
     if (t.status === 'completed') {
-      this.stopTradeTimer();
       this.renderTradeSigil('🤝', 'Scambio completato!');
       return;
     }
     if (t.status === 'declined' || t.status === 'cancelled') {
-      this.stopTradeTimer();
       // annullato per scadenza TTL: mostra chi non ha risposto
       let text = t.status === 'declined' ? 'Scambio rifiutato' : 'Scambio annullato';
       if (t.status === 'cancelled' && t.reason === 'timeout') {
@@ -2440,9 +2438,6 @@ const App = {
       this.renderTradeSigil('🖕', text);
       return;
     }
-
-    // scambio attivo: avvia (o aggiorna) il countdown del tempo rimanente
-    this.startTradeTimer(t);
 
     $('#trade-status').textContent = myTurn
       ? '👈 Tocca a te: rispondi alla proposta'
@@ -2482,49 +2477,11 @@ const App = {
     </div>`;
   },
 
-  /** Countdown del tempo rimanente dello scambio (TTL speculare al server:
-      pending 5 min, countered 2 min). Aggiorna #trade-timer ogni secondo. */
-  startTradeTimer(t) {
-    const TTL = t.status === 'countered' ? 2 * 60 * 1000 : 5 * 60 * 1000;
-    const el = $('#trade-timer');
-    if (!el) return;
-    const tick = () => {
-      const remain = TTL - (Date.now() - t.updated_at);
-      if (remain <= 0) {
-        el.textContent = '⏳ 0:00';
-        el.classList.add('warn');
-        // scaduto: il prossimo poll del server lo annullerà; forziamo subito
-        this.tradeRefresh();
-        return;
-      }
-      const m = Math.floor(remain / 60000);
-      const s = Math.floor((remain % 60000) / 1000);
-      el.textContent = `⏳ ${m}:${String(s).padStart(2, '0')}`;
-      el.classList.toggle('warn', remain < 30000);
-    };
-    tick();
-    this.stopTradeTimer();
-    this._tradeTimerIv = setInterval(tick, 1000);
-  },
-
-  stopTradeTimer() {
-    if (this._tradeTimerIv) { clearInterval(this._tradeTimerIv); this._tradeTimerIv = null; }
-    const el = $('#trade-timer');
-    if (el) { el.textContent = ''; el.classList.remove('warn'); }
-  },
-
-  /** Ripristina la visibilità dei riquadri della stanza (dopo un sigillo). */
-  resetTradeLayout() {
-    const show = ['#trade-status', '#trade-timer', '#trade-table', '#trade-actions', '#trade-log'];
-    show.forEach(sel => { const el = document.querySelector(sel); if (el) el.style.display = ''; });
-    this.stopTradeTimer();
-  },
-
   /** Sigillo dello scambio: nasconde i riquadri, mostra l'animazione al centro
       (anello di luce + emoji) e torna alla home da solo a fine animazione. */
   renderTradeSigil(emoji = '🤝', text = '') {
     // nascondi i riquadri della stanza: l'animazione resta pulita al centro
-    const hide = ['#trade-status', '#trade-timer', '#trade-table', '#trade-actions', '#trade-log'];
+    const hide = ['#trade-status', '.trade-table', '#trade-actions', '#trade-log'];
     hide.forEach(sel => { const el = document.querySelector(sel); if (el) el.style.display = 'none'; });
     const sigil = document.createElement('div');
     sigil.className = 'trade-sigil';
@@ -2537,6 +2494,12 @@ const App = {
       setTimeout(() => sigil.remove(), 600);
       this.showScreen('home');
     }, 1800);
+  },
+
+  /** Ripristina la visibilità dei riquadri della stanza (dopo un sigillo). */
+  resetTradeLayout() {
+    const show = ['#trade-status', '.trade-table', '#trade-actions', '#trade-log'];
+    show.forEach(sel => { const el = document.querySelector(sel); if (el) el.style.display = ''; });
   },
 
   async tradeDoAccept() {
