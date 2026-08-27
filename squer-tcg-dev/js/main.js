@@ -1551,35 +1551,26 @@ const App = {
     });
 
     // ---------- online (auth + sync) ----------
-    // Mappamondo in alto: dropdown con Amici / Scambio (+ Logout se loggato)
-    $('#btn-online-menu').addEventListener('click', (e) => {
-      e.stopPropagation();
+    // Bottone "Online" in home: se non loggato porta all'auth, altrimenti
+    // apre la card con Amici / Scambio (+ Logout).
+    $('#btn-online').addEventListener('click', () => {
       if (!SQUER.Online.API_BASE) { this.toast('Online non configurato in questa build'); return; }
-      // chiusura reciproca dei dropdown
-      $('#menu-dropdown').classList.add('hidden');
-      const dd = $('#online-dropdown');
-      dd.classList.toggle('hidden');
-      if (!SQUER.Online.token) {
-        // non loggato: il dropdown offre solo Amici/Scambio che portano all'auth
-        $('#online-friends').textContent = '👥 Amici';
-        $('#online-trade').textContent = '🤝 Scambio';
-        $('#online-logout').classList.add('hidden');
-      } else {
-        $('#online-logout').classList.remove('hidden');
-      }
+      if (!SQUER.Online.token) { this.openAuthLogin(); return; }
+      $('#online-modal').classList.remove('hidden');
     });
+    $('#online-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) $('#online-modal').classList.add('hidden'); });
     $('#online-friends').addEventListener('click', () => {
-      $('#online-dropdown').classList.add('hidden');
+      $('#online-modal').classList.add('hidden');
       if (!SQUER.Online.token) { this.openAuthLogin(); return; }
       this.openFriends();
     });
     $('#online-trade').addEventListener('click', () => {
-      $('#online-dropdown').classList.add('hidden');
+      $('#online-modal').classList.add('hidden');
       if (!SQUER.Online.token) { this.openAuthLogin(); return; }
       this.openTradeHub();
     });
     $('#online-logout').addEventListener('click', async () => {
-      $('#online-dropdown').classList.add('hidden');
+      $('#online-modal').classList.add('hidden');
       await SQUER.Online.logout();
       this.toast('Disconnesso');
       // dopo il logout: schermata di Accedi (default)
@@ -2321,6 +2312,9 @@ const App = {
   async openTrade(friendId, friendName) {
     // ripristina i riquadri della stanza (un sigillo precedente li ha nascosti)
     this.resetTradeLayout();
+    // chiudi l'elenco contatti dedicato (se visibile)
+    const fp = $('#trade-friend-pick');
+    if (fp) fp.classList.add('hidden');
     // sincronizza la collezione locale col server (il server valida le carte
     // offerte contro la collezione cloud: senza push, carte mai sincronizzate
     // verrebbero rifiutate con "Non possiedi la carta")
@@ -2343,7 +2337,8 @@ const App = {
   },
 
   /** Voce "Scambio" del menu online: riprende uno scambio in corso, altrimenti
-      guida alla lista amici (dove si avvia con 🤝). */
+      apre la stanza di scambio con l'elenco contatti dedicato (si sceglie
+      l'amico da lì, poi parte il flusso normale). */
   async openTradeHub() {
     // sincronizza la collezione locale col server prima di mostrare gli scambi
     this.tradeSyncCollection();
@@ -2351,14 +2346,56 @@ const App = {
       const d = await SQUER.Online.listTrades();
       const active = (d.trades || []).find(t => t.status === 'pending' || t.status === 'countered');
       if (active) { this.openTradeById(active); return; }
-    } catch (e) { /* ignora: va dagli amici */ }
-    this.toast('Scegli un amico e tocca 🤝 per scambiare');
-    this.openFriends();
+    } catch (e) { /* ignora: mostra l'elenco amici */ }
+    // nessuno scambio attivo: stanza con elenco contatti dedicato
+    this.trade = null;
+    this.tradeMyRole = null;
+    this.tradeOpp = null;
+    this.resetTradeLayout();
+    this.showScreen('trade');
+    this.renderTrade();
+    this.renderTradeFriendPick();
+  },
+
+  /** Elenco contatti dedicato nella stanza di scambio: mostra gli amici e
+      al tocco avvia lo scambio con quello selezionato. */
+  async renderTradeFriendPick() {
+    const box = $('#trade-friend-pick');
+    const list = $('#trade-friend-pick-list');
+    if (!box || !list) return;
+    box.classList.remove('hidden');
+    list.innerHTML = '<div class="friends-empty">Caricamento…</div>';
+    try {
+      const d = await SQUER.Online.listFriends();
+      const friends = d.friends || [];
+      if (!friends.length) {
+        list.innerHTML = '<div class="friends-empty">Nessun amico — aggiungine uno dalla tab Amici</div>';
+        return;
+      }
+      list.innerHTML = friends.map(f => `
+        <div class="trade-friend-pick-item" data-id="${f.id}" data-name="${f.nickname}">
+          <span class="fp-avatar">${f.avatar_emoji || '🙂'}</span>
+          <span>
+            <div class="fp-name">${f.nickname}</div>
+            <div class="fp-sub">${f.level_text || ''}</div>
+          </span>
+        </div>`).join('');
+      list.querySelectorAll('.trade-friend-pick-item').forEach(el => {
+        el.addEventListener('click', () => {
+          box.classList.add('hidden');
+          this.openTrade(el.dataset.id, el.dataset.name);
+        });
+      });
+    } catch (e) {
+      list.innerHTML = '<div class="friends-empty">Errore: ' + e.message + '</div>';
+    }
   },
 
   /** Apre lo scambio esistente (da lista). */
   async openTradeById(t) {
     this.resetTradeLayout();
+    const fp = $('#trade-friend-pick');
+    if (fp) fp.classList.add('hidden');
     this.trade = t;
     this.tradeMyRole = t.proposer === SQUER.Online.user.id ? 'proposer' : 'receiver';
     this.tradeOpp = {
@@ -2406,6 +2443,16 @@ const App = {
     // Stato "nuovo scambio": nessuna proposta ancora — mostra il pulsante
     // per aggiungere le prime carte (e un messaggio chiaro).
     if (!t) {
+      // senza amico selezionato (elenco contatti dedicato): nascondi il tavolo
+      if (!this.tradeOpp) {
+        $('#trade-status').textContent = 'Scegli un amico per iniziare lo scambio';
+        $('#trade-mine').innerHTML = '';
+        $('#trade-opp').innerHTML = '';
+        $('#trade-opp-label').textContent = '🤖 Avversario';
+        $('#trade-actions').innerHTML = '';
+        $('#trade-log').textContent = '';
+        return;
+      }
       $('#trade-status').textContent = 'Offri le tue carte per iniziare lo scambio';
       $('#trade-mine').innerHTML = '<div class="trade-empty">Nessuna carta offerta</div>';
       $('#trade-opp').innerHTML = '<div class="trade-empty">…</div>';

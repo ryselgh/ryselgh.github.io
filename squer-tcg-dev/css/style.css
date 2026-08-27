@@ -642,6 +642,37 @@ body.app-ready .squerini-badge { display: inline-flex; }
   background: linear-gradient(135deg, #6ee7b7, #34d399);
   color: #082f1f; box-shadow: 0 8px 24px rgba(52,211,153,.35);
 }
+/* Online = azzurrino, sotto Gioca */
+#btn-online {
+  background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+  color: #082f49; box-shadow: 0 8px 24px rgba(56,189,248,.35);
+  white-space: nowrap;
+  font-size: clamp(13px, 4vw, 16px);
+  padding: 12px clamp(14px, 5vw, 26px);
+}
+
+/* modal online: Amici/Scambio affiancati, Logout piccolo centrato sotto */
+.online-mode-buttons { display: flex; gap: 10px; margin: 14px 0 4px; }
+.online-mode-buttons .btn { flex: 1; min-width: 0; white-space: nowrap; }
+.online-logout { display: block; margin: 10px auto 2px; }
+
+/* elenco contatti dedicato nella stanza scambio */
+.trade-friend-pick { width: 100%; max-width: 420px; margin: 0 auto; padding: 0 16px; }
+.trade-friend-pick-title {
+  text-align: center; font-size: 14px; font-weight: 700; color: var(--muted);
+  margin-bottom: 10px;
+}
+.trade-friend-pick-list { display: flex; flex-direction: column; gap: 8px; }
+.trade-friend-pick-item {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px; padding: 10px 12px; cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.trade-friend-pick-item:active { background: rgba(255,255,255,.12); border-color: var(--gold); }
+.trade-friend-pick-item .fp-avatar { font-size: 22px; }
+.trade-friend-pick-item .fp-name { font-weight: 700; font-size: 14px; }
+.trade-friend-pick-item .fp-sub { font-size: 11px; color: var(--muted); }
 
 /* ---------- nickname (primo avvio) ---------- */
 #screen-nickname { align-items: center; justify-content: center; background: var(--bg); }
