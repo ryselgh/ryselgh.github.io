@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0d1117">
   <title>Squer TCG</title>
-  <link rel="stylesheet" href="css/style.css?v=91">
+  <link rel="stylesheet" href="css/style.css?v=110">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23ffc93d'/><text x='50' y='66' font-size='52' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%23141b2b'>S</text></svg>">
@@ -23,17 +23,11 @@
   <div id="top-menu" class="top-menu">
     <div class="top-menu-btns">
       <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
-      <button class="menu-btn" id="btn-online-menu" aria-label="Online" title="Online: amici e scambi">🌐</button>
     </div>
     <div class="menu-dropdown hidden" id="menu-dropdown">
       <button class="menu-item" id="menu-update">↻ Forza Update</button>
       <button class="menu-item" id="menu-reset">↺ Azzera progressi</button>
       <button class="menu-item menu-danger" id="menu-wipe">🗑 Cancella tutti i dati</button>
-    </div>
-    <div class="menu-dropdown hidden online-dropdown" id="online-dropdown">
-      <button class="menu-item" id="online-friends">👥 Amici</button>
-      <button class="menu-item" id="online-trade">🤝 Scambio</button>
-      <button class="menu-item menu-danger" id="online-logout">🚪 Logout</button>
     </div>
   </div>
 
@@ -45,6 +39,13 @@
       <p class="tagline">Acchiappali tutti!</p>
       <p class="home-nickname">👋 Ciao, <b id="home-nickname">Squer Trainer</b>!</p>
     </header>
+
+    <!-- notifiche online cliccabili (solo in home) -->
+    <div class="home-notice hidden" id="home-notice">
+      <span class="home-notice-icon" id="home-notice-icon">🤝</span>
+      <span class="home-notice-text" id="home-notice-text">Nuova proposta di scambio</span>
+      <span class="home-notice-arrow">›</span>
+    </div>
 
     <div class="home-stats" id="home-stats">
       <div class="stat-card">
@@ -78,6 +79,7 @@
 
     <div class="home-actions">
       <button class="btn btn-play" id="btn-play">Gioca</button>
+      <button class="btn btn-online" id="btn-online">Online</button>
       <div class="home-actions-row">
         <button class="btn btn-ghost" id="btn-collection">Album</button>
         <button class="btn btn-ghost" id="btn-deck">Mazzo</button>
@@ -169,7 +171,6 @@
       <button class="btn btn-ghost btn-back" id="btn-friends-back" title="Indietro">←</button>
       <h2>👥 Amici</h2>
       <div class="header-spacer">
-        <button class="btn btn-ghost btn-help" id="btn-sfida-open" title="Sfida un giocatore (PvP)">⚔️</button>
         <button class="btn btn-ghost btn-help" id="btn-friends-add" title="Aggiungi amico">＋</button>
       </div>
     </header>
@@ -182,6 +183,8 @@
       <div class="friends-list" id="friends-list"></div>
       <h3 class="friends-title">Richieste inviate</h3>
       <div class="friends-list" id="friends-outgoing"></div>
+      <h3 class="friends-title">Scopri giocatori</h3>
+      <div class="friends-list" id="friends-suggest"></div>
     </div>
 
     <!-- modale aggiungi amico -->
@@ -217,6 +220,13 @@
     </header>
 
     <div class="trade-status" id="trade-status">…</div>
+    <div class="trade-timer" id="trade-timer"></div>
+
+    <!-- elenco contatti dedicato: scelta dell'amico con cui scambiare -->
+    <div class="trade-friend-pick hidden" id="trade-friend-pick">
+      <div class="trade-friend-pick-title">👥 Scegli un amico</div>
+      <div class="trade-friend-pick-list" id="trade-friend-pick-list"></div>
+    </div>
 
     <div class="trade-table">
       <!-- lato mio -->
@@ -375,8 +385,19 @@
     <div class="modal-card">
       <div class="play-mode-buttons">
         <button class="btn btn-primary btn-big" id="btn-play-bot">🤖 SquerBot</button>
-        <button class="btn btn-primary btn-big" id="btn-play-online">🌐 Online</button>
+        <button class="btn btn-primary btn-big" id="btn-play-online">⚔️ PvP</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ======= MODALE ONLINE (amici / scambio / logout) ======= -->
+  <div id="online-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="online-mode-buttons">
+        <button class="btn btn-primary btn-big" id="online-friends">👥 Amici</button>
+        <button class="btn btn-primary btn-big" id="online-trade">🤝🏻 Scambio</button>
+      </div>
+      <button class="btn btn-ghost btn-sm online-logout" id="online-logout">🚪 Logout</button>
     </div>
   </div>
 
@@ -546,26 +567,26 @@
     </div>
   </div>
 
-  <script src="vendor/three.min.js?v=91"></script>
+  <script src="vendor/three.min.js?v=110"></script>
   <script>
     // CDN fallback if local copy missing
     if (typeof THREE === 'undefined') {
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
     }
   </script>
-  <script src="js/rng.js?v=91"></script>
-  <script src="js/rarity.js?v=91"></script>
-  <script src="js/cardgen.js?v=91"></script>
-  <script src="js/abilities.js?v=91"></script>
-  <script src="js/cards.js?v=91"></script>
-  <script src="js/game-config.js?v=91"></script>
-  <script src="js/packs.js?v=91"></script>
-  <script src="js/game.js?v=91"></script>
-  <script src="js/sound.js?v=91"></script>
-  <script src="js/scene.js?v=91"></script>
-  <script src="js/scene-battle2.js?v=91"></script>
-  <script src="js/online.js?v=91"></script>
-  <script src="js/main.js?v=91"></script>
-<script src="js/install.js?v=91"></script>
+  <script src="js/rng.js?v=110"></script>
+  <script src="js/rarity.js?v=110"></script>
+  <script src="js/cardgen.js?v=110"></script>
+  <script src="js/abilities.js?v=110"></script>
+  <script src="js/cards.js?v=110"></script>
+  <script src="js/game-config.js?v=110"></script>
+  <script src="js/packs.js?v=110"></script>
+  <script src="js/game.js?v=110"></script>
+  <script src="js/sound.js?v=110"></script>
+  <script src="js/scene.js?v=110"></script>
+  <script src="js/scene-battle2.js?v=110"></script>
+  <script src="js/online.js?v=110"></script>
+  <script src="js/main.js?v=110"></script>
+<script src="js/install.js?v=110"></script>
 </body>
 </html>

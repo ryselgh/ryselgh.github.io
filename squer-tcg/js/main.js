@@ -149,11 +149,15 @@ const App = {
       .then(reg => {
         if (!reg) { done('Nessun service worker attivo'); return; }
         const hadWaiting = !!reg.waiting;
+        // timeout "già all'ultima versione": va cancellato se arriva un update
+        let noUpdateTimer = null;
+        const cancelNoUpdate = () => { if (noUpdateTimer) { clearTimeout(noUpdateTimer); noUpdateTimer = null; } };
         // Wait for a new version to finish installing
         reg.addEventListener('updatefound', () => {
           const w = reg.installing;
           if (w) w.addEventListener('statechange', () => {
             if (w.state === 'installed' && reg.waiting) {
+              cancelNoUpdate();
               done('✅ Aggiornamento scaricato, applico…');
               reg.waiting.postMessage({ type: 'SKIP_WAITING' });
             }
@@ -161,6 +165,7 @@ const App = {
         });
         // A version was already waiting: activate it right away
         if (hadWaiting && reg.waiting) {
+          cancelNoUpdate();
           done('✅ Aggiornamento scaricato, applico…');
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           return;
@@ -168,7 +173,7 @@ const App = {
         reg.update()
           .then(() => {
             // No new version: cache already up to date
-            setTimeout(() => {
+            noUpdateTimer = setTimeout(() => {
               if (!reg.waiting && !reg.installing) done('✅ Già all\'ultima versione');
             }, 1500);
           })
@@ -182,10 +187,12 @@ const App = {
     this.currentScreen = name;
     $$('.screen').forEach(s => s.classList.remove('active'));
     $('#screen-' + name).classList.add('active');
-    // polling intelligente: solo su friends/trade, spento altrove
-    if (name === 'friends' || name === 'trade') this.startPoll();
+    // polling intelligente: friends/trade (refresh) + home (solo notifiche)
+    if (name === 'friends' || name === 'trade' || name === 'home') this.startPoll();
     else this.stopPoll();
     if (name !== 'battle') this.pvpPollStop();
+    // il banner notifiche è globale: si nasconde solo in battaglia
+    if (name === 'battle') $('#home-notice').classList.add('hidden');
     const topMenu = $('#top-menu');
     if (topMenu) topMenu.classList.toggle('hidden', name !== 'home');
     if (name === 'home') this.refreshHome();
@@ -1544,39 +1551,37 @@ const App = {
     });
 
     // ---------- online (auth + sync) ----------
-    // Mappamondo in alto: dropdown con Amici / Scambio (+ Logout se loggato)
-    $('#btn-online-menu').addEventListener('click', (e) => {
-      e.stopPropagation();
+    // Bottone "Online" in home: se non loggato porta all'auth, altrimenti
+    // apre la card con Amici / Scambio (+ Logout).
+    $('#btn-online').addEventListener('click', () => {
       if (!SQUER.Online.API_BASE) { this.toast('Online non configurato in questa build'); return; }
-      // chiusura reciproca dei dropdown
-      $('#menu-dropdown').classList.add('hidden');
-      const dd = $('#online-dropdown');
-      dd.classList.toggle('hidden');
-      if (!SQUER.Online.token) {
-        // non loggato: il dropdown offre solo Amici/Scambio che portano all'auth
-        $('#online-friends').textContent = '👥 Amici';
-        $('#online-trade').textContent = '🤝 Scambio';
-        $('#online-logout').classList.add('hidden');
-      } else {
-        $('#online-logout').classList.remove('hidden');
-      }
+      if (!SQUER.Online.token) { this.openAuthLogin(); return; }
+      $('#online-modal').classList.remove('hidden');
     });
+    $('#online-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) $('#online-modal').classList.add('hidden'); });
     $('#online-friends').addEventListener('click', () => {
-      $('#online-dropdown').classList.add('hidden');
+      $('#online-modal').classList.add('hidden');
       if (!SQUER.Online.token) { this.openAuthLogin(); return; }
       this.openFriends();
     });
     $('#online-trade').addEventListener('click', () => {
-      $('#online-dropdown').classList.add('hidden');
+      $('#online-modal').classList.add('hidden');
       if (!SQUER.Online.token) { this.openAuthLogin(); return; }
       this.openTradeHub();
     });
     $('#online-logout').addEventListener('click', async () => {
-      $('#online-dropdown').classList.add('hidden');
+      $('#online-modal').classList.add('hidden');
       await SQUER.Online.logout();
       this.toast('Disconnesso');
       // dopo il logout: schermata di Accedi (default)
       this.openAuthLogin();
+    });
+    // banner notifiche in home: cliccabile -> azione (es. apri lo scambio)
+    $('#home-notice').addEventListener('click', () => {
+      $('#home-notice').classList.add('hidden');
+      const fn = this._homeNoticeAction;
+      this._homeNoticeAction = null;
+      if (fn) fn();
     });
 
     // auth tabs
@@ -1662,7 +1667,6 @@ const App = {
 
     // friends screen
     $('#btn-friends-back').addEventListener('click', () => this.showScreen('home'));
-    $('#btn-sfida-open').addEventListener('click', () => this.openSfida());
     $('#btn-sfida-back').addEventListener('click', () => {
       this._pendingSfida = false;
       this.showScreen('home');
@@ -1710,6 +1714,10 @@ const App = {
         if (act === 'accept') await SQUER.Online.friendAccept(id);
         else if (act === 'decline') await SQUER.Online.friendDecline(id);
         else if (act === 'remove') await SQUER.Online.friendRemove(id);
+        else if (act === 'suggest-add') {
+          await SQUER.Online.friendRequest(btn.dataset.name);
+          this.toast(`Richiesta inviata a ${btn.dataset.name}`);
+        }
         else if (act === 'profile') {
           const p = await SQUER.Online.friendProfile(id);
           this.showFriendProfile(p);
@@ -1724,7 +1732,12 @@ const App = {
     });
 
     // trade screen listeners
-    $('#btn-trade-back').addEventListener('click', () => this.showScreen('friends'));
+    $('#btn-trade-back').addEventListener('click', () => {
+      this.stopTradeTimer();
+      // torna alla schermata da cui si è arrivati (home se da Online→Scambio,
+      // friends se da un amico) — non sempre friends
+      this.showScreen(this._tradeBackScreen || 'friends');
+    });
     $('#btn-trade-add').addEventListener('click', () => this.tradeOpenPick());
     $('#btn-trade-pick-cancel').addEventListener('click', () => $('#trade-pick-modal').classList.add('hidden'));
     $('#btn-trade-pick-done').addEventListener('click', async () => {
@@ -1784,6 +1797,13 @@ const App = {
       outgoing.innerHTML = d.outgoing.length
         ? d.outgoing.map(f => this.friendCard(f, 'outgoing')).join('')
         : '<div class="friends-empty">—</div>';
+
+      // suggerimenti: utenti del server non ancora amici (card minimali, solo ＋)
+      const sug = await SQUER.Online.listFriendSuggest();
+      const suggest = $('#friends-suggest');
+      suggest.innerHTML = (sug.suggest || []).length
+        ? sug.suggest.map(f => this.friendCard(f, 'suggest')).join('')
+        : '<div class="friends-empty">Nessun altro giocatore da aggiungere</div>';
     } catch (e) {
       $('#friends-list').innerHTML = '<div class="friends-empty">Errore: ' + e.message + '</div>';
     }
@@ -1792,8 +1812,18 @@ const App = {
   friendCard(f, kind) {
     const pvp = f.pvp ? `⚔️ ${f.pvp.wins}-${f.pvp.losses}-${f.pvp.draws}` : '';
     const coll = f.collection ? `🃏 ${f.collection.cards} carte` : '';
+    // card speciale dorata (es. Squer): in tutte le sezioni
+    const gold = f.nickname === 'Squer' ? ' friend-gold' : '';
+    if (kind === 'suggest') {
+      // utente non ancora amico: card minimali, niente statistiche/grado
+      return `<div class="friend-card${gold}">
+        <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
+        <div class="friend-info"><b>${f.nickname}</b><span class="friend-sub">Giocatore</span></div>
+        <button class="btn btn-ghost btn-sm" data-act="suggest-add" data-id="${f.id}" data-name="${f.nickname}" title="Aggiungi amico">＋</button>
+      </div>`;
+    }
     if (kind === 'incoming') {
-      return `<div class="friend-card">
+      return `<div class="friend-card${gold}">
         <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
         <div class="friend-info"><b>${f.nickname}</b><span class="friend-sub">${f.level_text}</span></div>
         <button class="btn btn-ghost btn-sm" data-act="accept" data-id="${f.id}">✓</button>
@@ -1801,12 +1831,12 @@ const App = {
       </div>`;
     }
     if (kind === 'outgoing') {
-      return `<div class="friend-card">
+      return `<div class="friend-card${gold}">
         <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
         <div class="friend-info"><b>${f.nickname}</b><span class="friend-sub">in attesa…</span></div>
       </div>`;
     }
-    return `<div class="friend-card">
+    return `<div class="friend-card${gold}">
       <span class="friend-avatar">${f.avatar_emoji || '🙂'}</span>
       <div class="friend-info"><b>${f.nickname}</b>
         <span class="friend-sub">${f.level_text} · ${coll}</span>
@@ -1829,39 +1859,51 @@ const App = {
   },
 
   // ---------- polling intelligente (solo dove serve) ----------
-  // Si attiva SOLO su screen-friends e screen-trade (3s); si mette in pausa
-  // quando il tab è nascosto. Zero richieste altrove.
+  // Si attiva su screen-friends, screen-trade e screen-home (3s); si mette in
+  // pausa quando il tab è nascosto. In home polla SOLO le notifiche (banner).
   startPoll() {
     if (this._pollIv || !SQUER.Online.isOnline()) return;
     const tick = async () => {
       if (document.hidden) return; // tab nascosto: pausa, zero richieste
       const screen = this.currentScreen;
       try {
-        // notifiche (richieste amicizia, scambi ricevuti) -> toast
+        // notifiche (richieste amicizia, scambi ricevuti) -> toast/banner
         const n = await SQUER.Online.listNotifications();
         if (n.notifications && n.notifications.length) {
           this.handlePollNotifications(n.notifications);
         }
       } catch (e) { /* rete assente: ignora */ }
-      if (screen === 'trade' && this.trade && this.trade.id) this.tradeRefresh();
+      if (screen === 'trade') {
+        // su screen-trade il poll continua SEMPRE (anche con this.trade null:
+        // serve a rilevare proposte in arrivo nella stanza "nuovo scambio")
+        this.tradeRefresh();
+      }
       else if (screen === 'friends') this.renderFriends();
-      else this.stopPoll(); // usciti dalla schermata: spegni
+      else if (screen === 'home') { /* solo notifiche: il banner lo gestisce handlePollNotifications */ }
+      else this.stopPoll(); // usciti dalle schermate online: spegni
     };
     this._pollIv = setInterval(tick, 3000);
   },
 
-  /** Mostra toast per le notifiche nuove e le marca come lette. */
+  /** Mostra toast per le notifiche nuove e le marca come lette.
+      In home mostra anche un BANNER cliccabile per scambi/amicizie. */
   async handlePollNotifications(list) {
     const seen = new Set(this._seenNotifs || []);
     const fresh = list.filter(n => !seen.has(n.id));
     for (const n of fresh) {
       const p = n.payload || {};
-      if (n.type === 'friend_request') this.toast(`📥 ${p.from ? 'Nuova richiesta amicizia' : 'Nuova richiesta amicizia'} — controlla la tab Amici`);
+      if (n.type === 'friend_request') this.toast(`📥 Nuova richiesta amicizia — controlla la tab Amici`);
       else if (n.type === 'friend_accepted') this.toast(`🤝 Richiesta amicizia accettata`);
-      else if (n.type === 'trade_offer') this.toast(`🤝 Hai ricevuto una proposta di scambio!`);
-      else if (n.type === 'trade_counter') this.toast(`🔄 Controproposta di scambio ricevuta`);
-      else if (n.type === 'trade_accepted') this.toast(`✅ Scambio accettato!`);
-      else if (n.type === 'trade_declined') this.toast(`❌ Scambio rifiutato`);
+      else if (n.type === 'trade_offer') {
+        this.toast(`🤝 Hai ricevuto una proposta di scambio!`);
+        this.showNotice('🤝', 'Nuova proposta di scambio', () => this.openTradeHub());
+      }
+      else if (n.type === 'trade_counter') {
+        this.toast(`🔄 Controproposta di scambio ricevuta`);
+        this.showNotice('🔄', 'Controproposta di scambio', () => this.openTradeHub());
+      }
+      else if (n.type === 'trade_accepted') { this.toast(`✅ Scambio accettato!`); this.hideNotice(); }
+      else if (n.type === 'trade_declined') { this.toast(`❌ Scambio rifiutato`); this.hideNotice(); }
       else if (n.type === 'match_started') this.toast(`⚔️ Un avversario si è unito alla tua sfida!`);
       else if (n.type === 'match_move') this.toast(`⚔️ Il tuo avversario ha mosso`);
       seen.add(n.id);
@@ -1869,6 +1911,22 @@ const App = {
     this._seenNotifs = Array.from(seen).slice(-100);
     // marca come lette quelle mostrate
     if (fresh.length) SQUER.Online.markNotificationsRead(fresh.map(n => n.id)).catch(() => {});
+  },
+
+  /** Banner cliccabile (visibile su home, friends e altre schermate —
+      non in battaglia). */
+  showNotice(icon, text, onClick) {
+    if (this.currentScreen === 'battle') return;
+    $('#home-notice-icon').textContent = icon;
+    $('#home-notice-text').textContent = text;
+    $('#home-notice').classList.remove('hidden');
+    this._homeNoticeAction = onClick;
+  },
+
+  /** Nasconde il banner notifiche (es. quando lo scambio è terminato). */
+  hideNotice() {
+    $('#home-notice').classList.add('hidden');
+    this._homeNoticeAction = null;
   },
 
   stopPoll() {
@@ -2009,6 +2067,13 @@ const App = {
   async pvpSyncCollection() {
     const s = loadState();
     await SQUER.Online.pushCollection({ collection: s.collection || {}, squerini: s.squerini || 0, packsOpened: s.packsOpened || 0 });
+  },
+
+  /** Sync della collezione locale col server prima dello scambio (stessa
+      logica del PvP): il server valida le carte offerte contro la collezione
+      cloud, quindi le carte locali devono esserci. */
+  tradeSyncCollection() {
+    this.pvpSyncCollection().catch(() => {});
   },
 
   /** Deck per il PvP: dal mazzo locale, uid + livello. Min 3 carte. */
@@ -2266,8 +2331,30 @@ const App = {
   tradeMyRole: null,    // 'proposer' | 'receiver'
   tradePick: [],        // carte selezionate nella modale di scelta
 
-  /** Avvia la stanza di scambio con un amico. */
-  async openTrade(friendId, friendName) {
+  /** Avvia la stanza di scambio con un amico. Se esiste già uno scambio
+      attivo (proposta in arrivo o in corso) con quell'amico, lo apre —
+      altrimenti parte un nuovo scambio. */
+  async openTrade(friendId, friendName, backScreen) {
+    // provenienza: 'home' se dall'elenco contatti (Online→Scambio), altrimenti
+    // 'friends' (default) — il back torna alla schermata giusta
+    this._tradeBackScreen = backScreen || 'friends';
+    // ripristina i riquadri della stanza (un sigillo precedente li ha nascosti)
+    this.resetTradeLayout();
+    // chiudi l'elenco contatti dedicato (se visibile)
+    const fp = $('#trade-friend-pick');
+    if (fp) fp.classList.add('hidden');
+    // sincronizza la collezione locale col server (il server valida le carte
+    // offerte contro la collezione cloud: senza push, carte mai sincronizzate
+    // verrebbero rifiutate con "Non possiedi la carta")
+    this.tradeSyncCollection();
+    // cerca uno scambio attivo con questo amico (proposta ricevuta o inviata)
+    try {
+      const d = await SQUER.Online.listTrades();
+      const active = (d.trades || []).find(t =>
+        (t.proposer === friendId || t.receiver === friendId) &&
+        (t.status === 'pending' || t.status === 'countered'));
+      if (active) { this.openTradeById(active); return; }
+    } catch (e) { /* rete: continua con nuovo scambio */ }
     this.trade = null;
     this.tradeMyRole = null;
     this.tradeOpp = { id: friendId, name: friendName };
@@ -2278,19 +2365,73 @@ const App = {
   },
 
   /** Voce "Scambio" del menu online: riprende uno scambio in corso, altrimenti
-      guida alla lista amici (dove si avvia con 🤝). */
+      apre la stanza di scambio con l'elenco contatti dedicato (si sceglie
+      l'amico da lì, poi parte il flusso normale). */
   async openTradeHub() {
+    // arrivati dalla home (Online → Scambio): il back torna alla home
+    this._tradeBackScreen = 'home';
+    // sincronizza la collezione locale col server prima di mostrare gli scambi
+    this.tradeSyncCollection();
     try {
       const d = await SQUER.Online.listTrades();
       const active = (d.trades || []).find(t => t.status === 'pending' || t.status === 'countered');
       if (active) { this.openTradeById(active); return; }
-    } catch (e) { /* ignora: va dagli amici */ }
-    this.toast('Scegli un amico e tocca 🤝 per scambiare');
-    this.openFriends();
+    } catch (e) { /* ignora: mostra l'elenco amici */ }
+    // nessuno scambio attivo: stanza con elenco contatti dedicato
+    this.trade = null;
+    this.tradeMyRole = null;
+    this.tradeOpp = null;
+    this.resetTradeLayout();
+    this.showScreen('trade');
+    this.renderTrade();
+    this.renderTradeFriendPick();
+  },
+
+  /** Elenco contatti dedicato nella stanza di scambio: mostra gli amici e
+      al tocco avvia lo scambio con quello selezionato. Nasconde il tavolo
+      (carte/separatore) per una UI pulita: torna visibile alla selezione. */
+  async renderTradeFriendPick() {
+    const box = $('#trade-friend-pick');
+    const list = $('#trade-friend-pick-list');
+    if (!box || !list) return;
+    box.classList.remove('hidden');
+    // nascondi il tavolo e le azioni: resta solo l'elenco contatti
+    const hide = ['.trade-table', '#trade-actions', '#trade-log'];
+    hide.forEach(sel => { const el = document.querySelector(sel); if (el) el.style.display = 'none'; });
+    list.innerHTML = '<div class="friends-empty">Caricamento…</div>';
+    try {
+      const d = await SQUER.Online.listFriends();
+      const friends = d.friends || [];
+      if (!friends.length) {
+        list.innerHTML = '<div class="friends-empty">Nessun amico — aggiungine uno dalla tab Amici</div>';
+        return;
+      }
+      list.innerHTML = friends.map(f => `
+        <div class="trade-friend-pick-item" data-id="${f.id}" data-name="${f.nickname}">
+          <span class="fp-avatar">${f.avatar_emoji || '🙂'}</span>
+          <span>
+            <div class="fp-name">${f.nickname}</div>
+            <div class="fp-sub">${f.level_text || ''}</div>
+          </span>
+        </div>`).join('');
+      list.querySelectorAll('.trade-friend-pick-item').forEach(el => {
+        el.addEventListener('click', () => {
+          box.classList.add('hidden');
+          // ripristina il tavolo: openTrade lo ridisegna col flusso normale
+          this.resetTradeLayout();
+          this.openTrade(el.dataset.id, el.dataset.name, 'home');
+        });
+      });
+    } catch (e) {
+      list.innerHTML = '<div class="friends-empty">Errore: ' + e.message + '</div>';
+    }
   },
 
   /** Apre lo scambio esistente (da lista). */
   async openTradeById(t) {
+    this.resetTradeLayout();
+    const fp = $('#trade-friend-pick');
+    if (fp) fp.classList.add('hidden');
     this.trade = t;
     this.tradeMyRole = t.proposer === SQUER.Online.user.id ? 'proposer' : 'receiver';
     this.tradeOpp = {
@@ -2301,12 +2442,31 @@ const App = {
     this.tradeRefresh();
   },
 
-  /** Ricarica lo scambio dal server (se è aperto per id) e ridisegna. */
+  /** Ricarica lo scambio dal server (se è aperto per id) e ridisegna.
+      Se siamo in una stanza "nuovo scambio" (this.trade null) ma è arrivata
+      una proposta dall'amico, la rileva e la apre. Se lo scambio è chiuso
+      (completed/declined/cancelled) lo recupera per id per mostrare l'esito. */
   async tradeRefresh() {
-    if (!this.trade || !this.trade.id) return;
+    // stanza "nuovo scambio": cerca se è arrivata una proposta dall'amico
+    if (!this.trade || !this.trade.id) {
+      if (this.tradeOpp && this.tradeOpp.id) {
+        try {
+          const d = await SQUER.Online.listTrades();
+          const active = (d.trades || []).find(t =>
+            (t.proposer === this.tradeOpp.id || t.receiver === this.tradeOpp.id) &&
+            (t.status === 'pending' || t.status === 'countered'));
+          if (active) { this.openTradeById(active); return; }
+        } catch (e) { /* rete */ }
+      }
+      return;
+    }
     try {
       const d = await SQUER.Online.listTrades();
-      const found = d.trades.find(x => x.id === this.trade.id);
+      let found = d.trades.find(x => x.id === this.trade.id);
+      if (!found) {
+        // chiuso: recupera per id per mostrare l'esito
+        try { found = await SQUER.Online.getTrade(this.trade.id); } catch (e) { found = null; }
+      }
       if (!found) { this.toast('Scambio non più attivo'); this.showScreen('friends'); return; }
       this.trade = found;
       this.tradeMyRole = found.proposer === SQUER.Online.user.id ? 'proposer' : 'receiver';
@@ -2319,6 +2479,16 @@ const App = {
     // Stato "nuovo scambio": nessuna proposta ancora — mostra il pulsante
     // per aggiungere le prime carte (e un messaggio chiaro).
     if (!t) {
+      // senza amico selezionato (elenco contatti dedicato): nascondi il tavolo
+      if (!this.tradeOpp) {
+        $('#trade-status').textContent = 'Scegli un amico per iniziare lo scambio';
+        $('#trade-mine').innerHTML = '';
+        $('#trade-opp').innerHTML = '';
+        $('#trade-opp-label').textContent = '🤖 Avversario';
+        $('#trade-actions').innerHTML = '';
+        $('#trade-log').textContent = '';
+        return;
+      }
       $('#trade-status').textContent = 'Offri le tue carte per iniziare lo scambio';
       $('#trade-mine').innerHTML = '<div class="trade-empty">Nessuna carta offerta</div>';
       $('#trade-opp').innerHTML = '<div class="trade-empty">…</div>';
@@ -2331,12 +2501,14 @@ const App = {
     const oppCards = t.cards[this.tradeMyRole === 'proposer' ? 'receiver' : 'proposer'] || [];
     const myRole = this.tradeMyRole;
 
-    $('#trade-mine').innerHTML = myCards.length
+    // riscrive l'innerHTML SOLO se cambiato: evita che l'animazione CSS
+    // (tradeIn) riparta a ogni refresh del polling (effetto "popping")
+    this.setTradeCards($('#trade-mine'), myCards.length
       ? myCards.map(c => this.tradeCardHtml(c.uid, c.level)).join('')
-      : '<div class="trade-empty">Nessuna carta offerta</div>';
-    $('#trade-opp').innerHTML = oppCards.length
+      : '<div class="trade-empty">Nessuna carta offerta</div>');
+    this.setTradeCards($('#trade-opp'), oppCards.length
       ? oppCards.map(c => this.tradeCardHtml(c.uid, c.level, true)).join('')
-      : '<div class="trade-empty">…</div>';
+      : '<div class="trade-empty">…</div>');
     $('#trade-opp-label').textContent = `🤖 ${this.tradeOpp.name}`;
 
     // azioni contestuali
@@ -2346,19 +2518,27 @@ const App = {
     const canAccept = myTurn && myCards.length && oppCards.length;
 
     if (t.status === 'completed') {
-      $('#trade-status').textContent = '✅ Scambio completato!';
-      acts.innerHTML = '<button class="btn btn-primary" id="btn-trade-close">Chiudi</button>';
-      log.textContent = 'Carte trasferite. Livello collezionista aggiornato!';
-      $('#btn-trade-close').onclick = () => this.showScreen('friends');
-      this.renderTradeSigil();
+      this.stopTradeTimer();
+      this.hideNotice();
+      this.renderTradeSigil('🤝', 'Scambio completato!');
       return;
     }
     if (t.status === 'declined' || t.status === 'cancelled') {
-      $('#trade-status').textContent = t.status === 'declined' ? '❌ Scambio rifiutato' : '🚫 Scambio annullato';
-      acts.innerHTML = '<button class="btn btn-ghost" id="btn-trade-close">Chiudi</button>';
-      $('#btn-trade-close').onclick = () => this.showScreen('friends');
+      this.stopTradeTimer();
+      this.hideNotice();
+      // annullato per scadenza TTL: mostra chi non ha risposto
+      let text = t.status === 'declined' ? 'Scambio rifiutato' : 'Scambio annullato';
+      if (t.status === 'cancelled' && t.reason === 'timeout') {
+        const who = t.proposer === SQUER.Online.user.id ? t.receiver : t.proposer;
+        const name = this.tradeOpp && this.tradeOpp.id === who ? this.tradeOpp.name : 'L\'avversario';
+        text = `${name} non ha risposto alla richiesta`;
+      }
+      this.renderTradeSigil('🖕', text);
       return;
     }
+
+    // scambio attivo: avvia (o aggiorna) il countdown del tempo rimanente
+    this.startTradeTimer(t);
 
     $('#trade-status').textContent = myTurn
       ? '👈 Tocca a te: rispondi alla proposta'
@@ -2381,6 +2561,13 @@ const App = {
     log.textContent = '';
   },
 
+  /** Aggiorna un contenitore carte SOLO se il contenuto è cambiato
+      (evita che l'animazione tradeIn riparta a ogni refresh). */
+  setTradeCards(el, html) {
+    if (!el) return;
+    if (el.innerHTML !== html) el.innerHTML = html;
+  },
+
   tradeCardHtml(uid, level, opp) {
     const c = this.cards.find(x => x.uid === uid);
     if (!c) return `<div class="trade-card"><span>❓</span></div>`;
@@ -2391,25 +2578,85 @@ const App = {
     </div>`;
   },
 
-  /** Sigillo dello scambio: animazione finale (anello di luce + carte). */
-  renderTradeSigil() {
+  /** Sigillo dello scambio: nasconde i riquadri, mostra l'animazione al centro
+      (anello di luce + emoji) e torna alla home da solo a fine animazione. */
+  renderTradeSigil(emoji = '🤝', text = '') {
+    // nascondi i riquadri della stanza: l'animazione resta pulita al centro
+    const hide = ['#trade-status', '.trade-table', '#trade-actions', '#trade-log'];
+    hide.forEach(sel => { const el = document.querySelector(sel); if (el) el.style.display = 'none'; });
     const sigil = document.createElement('div');
     sigil.className = 'trade-sigil';
-    sigil.innerHTML = '<div class="sigil-ring"></div><div class="sigil-emoji">🤝</div>';
+    sigil.innerHTML = `<div class="sigil-ring"></div><div class="sigil-emoji">${emoji}</div>${text ? `<div class="sigil-text">${text}</div>` : ''}`;
     $('#screen-trade').appendChild(sigil);
     setTimeout(() => sigil.classList.add('show'), 50);
-    setTimeout(() => { sigil.classList.add('out'); setTimeout(() => sigil.remove(), 600); }, 1600);
+    // fine animazione: via il sigillo e torna alla home da solo
+    setTimeout(() => {
+      sigil.classList.add('out');
+      setTimeout(() => sigil.remove(), 600);
+      this.showScreen('home');
+    }, 1800);
+  },
+
+  /** Ripristina la visibilità dei riquadri della stanza (dopo un sigillo).
+      NON tocca il countdown: il timer locale continua da solo. */
+  resetTradeLayout() {
+    const show = ['#trade-status', '#trade-timer', '.trade-table', '#trade-actions', '#trade-log'];
+    show.forEach(sel => { const el = document.querySelector(sel); if (el) el.style.display = ''; });
+  },
+
+  /** Countdown LOCALE del tempo rimanente (TTL speculare al server: pending
+      5 min, countered 2 min). Si avvia UNA volta per scambio e il poll non lo
+      tocca: niente lampeggi. Alla scadenza mostra 0:00 e basta — sarà il poll
+      del server a chiudere lo scambio. */
+  startTradeTimer(t) {
+    const el = $('#trade-timer');
+    if (!el) return;
+    // già attivo per questo scambio E stesso status: non riavviare (evita il
+    // lampeggio). Se lo status è cambiato (pending->countered) il TTL cambia:
+    // riavvia con il nuovo tempo.
+    if (this._tradeTimerId === t.id && this._tradeTimerIv && this._tradeTimerStatus === t.status) return;
+    this._tradeTimerId = t.id;
+    this._tradeTimerStatus = t.status;
+    if (this._tradeTimerIv) { clearInterval(this._tradeTimerIv); this._tradeTimerIv = null; }
+    const TTL = t.status === 'countered' ? 2 * 60 * 1000 : 5 * 60 * 1000;
+    const tick = () => {
+      const remain = TTL - (Date.now() - t.updated_at);
+      if (remain <= 0) {
+        el.textContent = '⏳ 0:00';
+        el.classList.add('warn');
+        return;
+      }
+      const m = Math.floor(remain / 60000);
+      const s = Math.floor((remain % 60000) / 1000);
+      el.textContent = `⏳ ${m}:${String(s).padStart(2, '0')}`;
+      el.classList.toggle('warn', remain < 30000);
+    };
+    tick();
+    this._tradeTimerIv = setInterval(tick, 1000);
+  },
+
+  /** Ferma il countdown e svuota il testo (solo quando si esce dalla stanza
+      o lo scambio è chiuso). */
+  stopTradeTimer() {
+    if (this._tradeTimerIv) { clearInterval(this._tradeTimerIv); this._tradeTimerIv = null; }
+    this._tradeTimerId = null;
+    this._tradeTimerStatus = null;
+    const el = $('#trade-timer');
+    if (el) { el.textContent = ''; el.classList.remove('warn'); }
   },
 
   async tradeDoAccept() {
     try {
       await SQUER.Online.tradeAccept(this.trade.id);
       await this.tradeRefresh();
-      // push locale: aggiorna collezione dal server
+      // dopo lo scambio il SERVER è autorevole: la collezione locale va
+      // SOSTITUITA con quella server (le carte date sono state rimosse, le
+      // ricevute aggiunte) — un merge max terrebbe carte non più possedute
       const d = await SQUER.Online.pullCollection();
       const s = SQUER.PACKS.loadState();
-      s.collection = SQUER.Online.mergeCollections(s.collection, d.collection);
+      s.collection = d.collection || {};
       if (d.squerini > (s.squerini || 0)) s.squerini = d.squerini;
+      if (d.packs_opened > (s.packsOpened || 0)) s.packsOpened = d.packs_opened;
       SQUER.PACKS.saveState(s);
     } catch (e) { this.toast(e.message); }
   },
@@ -2424,9 +2671,11 @@ const App = {
     $('#trade-pick-grid').innerHTML = owned.length
       ? owned.map(c => {
           const rec = s.collection[c.uid];
+          const copies = rec.count > 1 ? `<span class="trade-pick-copies">×${rec.count}</span>` : '';
           return `<div class="trade-pick" data-uid="${c.uid}" data-lv="${rec.level}">
             <img src="${this.thumbDataUrl(c)}" alt="${c.name}">
             <span class="trade-pick-lv">Lv${rec.level}</span>
+            ${copies}
           </div>`;
         }).join('')
       : '<div class="trade-empty">Nessuna carta posseduta</div>';

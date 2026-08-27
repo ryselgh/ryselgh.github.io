@@ -105,6 +105,7 @@ const Online = {
 
   // ---- amici ----
   async listFriends() { return this.api('/friends'); },
+  async listFriendSuggest() { return this.api('/friends/suggest'); },
   async friendRequest(nickname) { return this.api('/friends/request', { method: 'POST', body: JSON.stringify({ nickname }) }); },
   async friendAccept(userId) { return this.api('/friends/accept', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); },
   async friendDecline(userId) { return this.api('/friends/decline', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); },
@@ -114,6 +115,7 @@ const Online = {
   // ---- scambi ----
   async createTrade(to, cards) { return this.api('/trades', { method: 'POST', body: JSON.stringify({ to, cards }) }); },
   async listTrades() { return this.api('/trades'); },
+  async getTrade(id) { return this.api('/trades/' + encodeURIComponent(id)); },
   async tradeCounter(id, cards) { return this.api('/trades/' + id + '/counter', { method: 'POST', body: JSON.stringify({ cards }) }); },
   async tradeAccept(id) { return this.api('/trades/' + id + '/accept', { method: 'POST' }); },
   async tradeDecline(id) { return this.api('/trades/' + id + '/decline', { method: 'POST' }); },

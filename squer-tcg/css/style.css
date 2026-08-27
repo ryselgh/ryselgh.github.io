@@ -79,6 +79,21 @@ body { position: fixed; inset: 0; }
 .home-nickname b { color: var(--gold); }
 
 .home-stats { display: flex; gap: 10px; width: 100%; max-width: 460px; padding: 18px 16px 0; }
+
+/* notifica online cliccabile in home */
+.home-notice {
+  display: flex; align-items: center; gap: 10px;
+  width: calc(100% - 32px); max-width: 428px; margin: 10px auto 0;
+  background: linear-gradient(135deg, rgba(255,201,61,.16), rgba(255,138,61,.12));
+  border: 1px solid rgba(255,201,61,.45); border-radius: 14px;
+  padding: 10px 14px; cursor: pointer;
+  animation: noticeIn .3s ease;
+}
+.home-notice.hidden { display: none; }
+.home-notice-icon { font-size: 20px; }
+.home-notice-text { flex: 1; font-size: 13px; font-weight: 700; color: #ffc93d; }
+.home-notice-arrow { font-size: 18px; color: #ffc93d; }
+@keyframes noticeIn { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
 .stat-card {
   flex: 1; background: var(--panel); border: 1px solid #2a3450; border-radius: var(--radius);
   padding: 14px 6px; box-shadow: var(--shadow);
@@ -627,6 +642,48 @@ body.app-ready .squerini-badge { display: inline-flex; }
   background: linear-gradient(135deg, #6ee7b7, #34d399);
   color: #082f1f; box-shadow: 0 8px 24px rgba(52,211,153,.35);
 }
+/* Online = azzurrino, sotto Gioca — stesse dimensioni e spaziature di Gioca */
+#btn-online {
+  background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+  color: #082f49; box-shadow: 0 8px 24px rgba(56,189,248,.35);
+  white-space: nowrap;
+  font-size: clamp(14px, 4.5vw, 18px);
+  padding: 15px clamp(16px, 6vw, 34px);
+}
+
+/* modal online: Amici/Scambio uno sull'altro, Logout rosso piccolo centrato.
+   Spaziatura verticale equidistante: gap ridotto tra i due tasti, margine
+   leggermente maggiore prima del Logout. */
+.online-mode-buttons { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 0; }
+.online-mode-buttons .btn {
+  width: 100%; min-width: 0; white-space: nowrap;
+  /* se il tasto diventa molto stretto il testo si ridimensiona invece di sbordare */
+  font-size: clamp(13px, 4.5vw, 17px);
+  overflow: hidden; text-overflow: ellipsis;
+}
+.online-logout {
+  display: block; margin: 14px auto 2px;
+  color: #ffb3ba; border-color: rgba(255,95,109,.5);
+}
+.online-logout:active { background: rgba(255,95,109,.15); }
+
+/* elenco contatti dedicato nella stanza scambio */
+.trade-friend-pick { width: 100%; max-width: 420px; margin: 0 auto; padding: 0 16px; }
+.trade-friend-pick-title {
+  text-align: center; font-size: 14px; font-weight: 700; color: var(--muted);
+  margin-bottom: 10px;
+}
+.trade-friend-pick-list { display: flex; flex-direction: column; gap: 8px; }
+.trade-friend-pick-item {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px; padding: 10px 12px; cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.trade-friend-pick-item:active { background: rgba(255,255,255,.12); border-color: var(--gold); }
+.trade-friend-pick-item .fp-avatar { font-size: 22px; }
+.trade-friend-pick-item .fp-name { font-weight: 700; font-size: 14px; }
+.trade-friend-pick-item .fp-sub { font-size: 11px; color: var(--muted); }
 
 /* ---------- nickname (primo avvio) ---------- */
 #screen-nickname { align-items: center; justify-content: center; background: var(--bg); }
@@ -714,6 +771,17 @@ body.app-ready .squerini-badge { display: inline-flex; }
   display: flex; align-items: center; gap: 10px;
   background: var(--panel); border: 1px solid #2a3450; border-radius: 14px; padding: 10px 12px;
 }
+/* card speciale (es. Squer): dorata e luminosa */
+.friend-card.friend-gold {
+  background: linear-gradient(135deg, rgba(255,201,61,.16), rgba(255,201,61,.05));
+  border-color: var(--gold);
+  box-shadow: 0 0 14px rgba(255,201,61,.35), inset 0 0 12px rgba(255,201,61,.08);
+}
+.friend-card.friend-gold .friend-avatar {
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(255,201,61,.5);
+}
+.friend-card.friend-gold .friend-info b { color: #ffd75e; text-shadow: 0 0 8px rgba(255,201,61,.5); }
 .friend-avatar {
   width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
   background: rgba(255,255,255,.06); display: flex; align-items: center; justify-content: center;
@@ -789,6 +857,14 @@ body.app-ready .squerini-badge { display: inline-flex; }
 .trade-pick img { width: 100%; display: block; }
 .trade-pick.sel { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,201,61,.5); }
 .trade-pick-lv { position: absolute; top: 2px; right: 2px; background: var(--gold); color: #141b2b; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 6px; }
+.trade-pick-copies { position: absolute; bottom: 2px; left: 2px; background: rgba(20,27,43,.85); color: #ffc93d; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 6px; border: 1px solid rgba(255,201,61,.4); }
+
+/* countdown scambio */
+.trade-timer {
+  text-align: center; font-size: 13px; font-weight: 700; color: var(--muted);
+  min-height: 18px; margin: 2px 0 6px; letter-spacing: .5px;
+}
+.trade-timer.warn { color: #ff6b6b; }
 
 /* sigillo */
 .trade-sigil {
@@ -803,6 +879,7 @@ body.app-ready .squerini-badge { display: inline-flex; }
   animation: sigilPulse 1.2s ease;
 }
 .sigil-emoji { position: absolute; font-size: 56px; animation: sigilPop .5s ease .3s both; }
+.sigil-text { position: absolute; top: calc(50% + 90px); width: 100%; text-align: center; color: var(--muted); font-size: 13px; font-weight: 600; animation: sigilPop .5s ease .5s both; }
 @keyframes sigilPulse { 0% { transform: scale(.4); opacity: 0; } 50% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
 @keyframes sigilPop { from { transform: scale(0); } to { transform: scale(1); } }
 
