@@ -1729,7 +1729,12 @@ const App = {
     });
 
     // trade screen listeners
-    $('#btn-trade-back').addEventListener('click', () => { this.stopTradeTimer(); this.showScreen('friends'); });
+    $('#btn-trade-back').addEventListener('click', () => {
+      this.stopTradeTimer();
+      // torna alla schermata da cui si è arrivati (home se da Online→Scambio,
+      // friends se da un amico) — non sempre friends
+      this.showScreen(this._tradeBackScreen || 'friends');
+    });
     $('#btn-trade-add').addEventListener('click', () => this.tradeOpenPick());
     $('#btn-trade-pick-cancel').addEventListener('click', () => $('#trade-pick-modal').classList.add('hidden'));
     $('#btn-trade-pick-done').addEventListener('click', async () => {
@@ -2309,7 +2314,10 @@ const App = {
   /** Avvia la stanza di scambio con un amico. Se esiste già uno scambio
       attivo (proposta in arrivo o in corso) con quell'amico, lo apre —
       altrimenti parte un nuovo scambio. */
-  async openTrade(friendId, friendName) {
+  async openTrade(friendId, friendName, backScreen) {
+    // provenienza: 'home' se dall'elenco contatti (Online→Scambio), altrimenti
+    // 'friends' (default) — il back torna alla schermata giusta
+    this._tradeBackScreen = backScreen || 'friends';
     // ripristina i riquadri della stanza (un sigillo precedente li ha nascosti)
     this.resetTradeLayout();
     // chiudi l'elenco contatti dedicato (se visibile)
@@ -2340,6 +2348,8 @@ const App = {
       apre la stanza di scambio con l'elenco contatti dedicato (si sceglie
       l'amico da lì, poi parte il flusso normale). */
   async openTradeHub() {
+    // arrivati dalla home (Online → Scambio): il back torna alla home
+    this._tradeBackScreen = 'home';
     // sincronizza la collezione locale col server prima di mostrare gli scambi
     this.tradeSyncCollection();
     try {
@@ -2389,7 +2399,7 @@ const App = {
           box.classList.add('hidden');
           // ripristina il tavolo: openTrade lo ridisegna col flusso normale
           this.resetTradeLayout();
-          this.openTrade(el.dataset.id, el.dataset.name);
+          this.openTrade(el.dataset.id, el.dataset.name, 'home');
         });
       });
     } catch (e) {
