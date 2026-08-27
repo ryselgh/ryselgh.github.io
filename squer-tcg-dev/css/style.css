@@ -806,6 +806,13 @@ body.app-ready .squerini-badge { display: inline-flex; }
 .trade-pick-lv { position: absolute; top: 2px; right: 2px; background: var(--gold); color: #141b2b; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 6px; }
 .trade-pick-copies { position: absolute; bottom: 2px; left: 2px; background: rgba(20,27,43,.85); color: #ffc93d; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 6px; border: 1px solid rgba(255,201,61,.4); }
 
+/* countdown scambio */
+.trade-timer {
+  text-align: center; font-size: 13px; font-weight: 700; color: var(--muted);
+  min-height: 18px; margin: 2px 0 6px; letter-spacing: .5px;
+}
+.trade-timer.warn { color: #ff6b6b; }
+
 /* sigillo */
 .trade-sigil {
   position: fixed; inset: 0; z-index: 60; pointer-events: none;

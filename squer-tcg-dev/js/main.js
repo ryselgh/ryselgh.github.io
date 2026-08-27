@@ -1733,7 +1733,7 @@ const App = {
     });
 
     // trade screen listeners
-    $('#btn-trade-back').addEventListener('click', () => this.showScreen('friends'));
+    $('#btn-trade-back').addEventListener('click', () => { this.stopTradeTimer(); this.showScreen('friends'); });
     $('#btn-trade-add').addEventListener('click', () => this.tradeOpenPick());
     $('#btn-trade-pick-cancel').addEventListener('click', () => $('#trade-pick-modal').classList.add('hidden'));
     $('#btn-trade-pick-done').addEventListener('click', async () => {
@@ -2424,10 +2424,12 @@ const App = {
     const canAccept = myTurn && myCards.length && oppCards.length;
 
     if (t.status === 'completed') {
+      this.stopTradeTimer();
       this.renderTradeSigil('🤝', 'Scambio completato!');
       return;
     }
     if (t.status === 'declined' || t.status === 'cancelled') {
+      this.stopTradeTimer();
       // annullato per scadenza TTL: mostra chi non ha risposto
       let text = t.status === 'declined' ? 'Scambio rifiutato' : 'Scambio annullato';
       if (t.status === 'cancelled' && t.reason === 'timeout') {
@@ -2438,6 +2440,9 @@ const App = {
       this.renderTradeSigil('🖕', text);
       return;
     }
+
+    // scambio attivo: avvia (o aggiorna) il countdown del tempo rimanente
+    this.startTradeTimer(t);
 
     $('#trade-status').textContent = myTurn
       ? '👈 Tocca a te: rispondi alla proposta'
@@ -2496,10 +2501,52 @@ const App = {
     }, 1800);
   },
 
-  /** Ripristina la visibilità dei riquadri della stanza (dopo un sigillo). */
+  /** Ripristina la visibilità dei riquadri della stanza (dopo un sigillo).
+      NON tocca il countdown: il timer locale continua da solo. */
   resetTradeLayout() {
-    const show = ['#trade-status', '.trade-table', '#trade-actions', '#trade-log'];
+    const show = ['#trade-status', '#trade-timer', '.trade-table', '#trade-actions', '#trade-log'];
     show.forEach(sel => { const el = document.querySelector(sel); if (el) el.style.display = ''; });
+  },
+
+  /** Countdown LOCALE del tempo rimanente (TTL speculare al server: pending
+      5 min, countered 2 min). Si avvia UNA volta per scambio e il poll non lo
+      tocca: niente lampeggi. Alla scadenza mostra 0:00 e basta — sarà il poll
+      del server a chiudere lo scambio. */
+  startTradeTimer(t) {
+    const el = $('#trade-timer');
+    if (!el) return;
+    // già attivo per questo scambio E stesso status: non riavviare (evita il
+    // lampeggio). Se lo status è cambiato (pending->countered) il TTL cambia:
+    // riavvia con il nuovo tempo.
+    if (this._tradeTimerId === t.id && this._tradeTimerIv && this._tradeTimerStatus === t.status) return;
+    this._tradeTimerId = t.id;
+    this._tradeTimerStatus = t.status;
+    if (this._tradeTimerIv) { clearInterval(this._tradeTimerIv); this._tradeTimerIv = null; }
+    const TTL = t.status === 'countered' ? 2 * 60 * 1000 : 5 * 60 * 1000;
+    const tick = () => {
+      const remain = TTL - (Date.now() - t.updated_at);
+      if (remain <= 0) {
+        el.textContent = '⏳ 0:00';
+        el.classList.add('warn');
+        return;
+      }
+      const m = Math.floor(remain / 60000);
+      const s = Math.floor((remain % 60000) / 1000);
+      el.textContent = `⏳ ${m}:${String(s).padStart(2, '0')}`;
+      el.classList.toggle('warn', remain < 30000);
+    };
+    tick();
+    this._tradeTimerIv = setInterval(tick, 1000);
+  },
+
+  /** Ferma il countdown e svuota il testo (solo quando si esce dalla stanza
+      o lo scambio è chiuso). */
+  stopTradeTimer() {
+    if (this._tradeTimerIv) { clearInterval(this._tradeTimerIv); this._tradeTimerIv = null; }
+    this._tradeTimerId = null;
+    this._tradeTimerStatus = null;
+    const el = $('#trade-timer');
+    if (el) { el.textContent = ''; el.classList.remove('warn'); }
   },
 
   async tradeDoAccept() {
