@@ -819,8 +819,16 @@ body.app-ready .squerini-badge { display: inline-flex; }
   animation: sigilPulse 1.2s ease;
 }
 .sigil-emoji { position: absolute; font-size: 56px; animation: sigilPop .5s ease .3s both; }
+.sigil-text { position: absolute; top: calc(50% + 90px); width: 100%; text-align: center; color: var(--muted); font-size: 13px; font-weight: 600; animation: sigilPop .5s ease .5s both; }
 @keyframes sigilPulse { 0% { transform: scale(.4); opacity: 0; } 50% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
 @keyframes sigilPop { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* countdown scambio */
+.trade-timer {
+  text-align: center; font-size: 13px; font-weight: 700; color: var(--muted);
+  min-height: 18px; margin: 2px 0 6px; letter-spacing: .5px;
+}
+.trade-timer.warn { color: #ff6b6b; }
 
 /* ---------- mazzo (deck) ---------- */
 .deck-count { font-size: 14px; color: var(--muted); font-weight: 600; }
